@@ -1087,17 +1087,86 @@ static void perform_statement(list_t *L)
   statement_t *ps = L->data;
   if (ps) {
     switch (ps->type) {
+				
+			case ASK:
+			{
+				// INPUT can mix together prompts and variables, it doesn't
+				// *have* to be a single prompt at the start, although that is
+				// the typical convention. this code handles this possibility
+				// by rolling over the expression list, doing a print if it's
+				// not a variable, and a scan if it is
+				//
+				// NOTE: in C64 an empty input will exit without setting the
+				//    value of the associated variable, leaving it what it
+				//    was. you can see this in SST - for instance, if you
+				//    simply press return on the computer command input it
+				//    will run the last command again.
+				
+				// loop over the items in the variable/prompt list
+				for (list_t *I = ps->parms.input; I != NULL; I = lst_next(I)) {
+					either_t *value;
+					int type = 0;
+					
+					printitem_t *ppi = I->data;
+					if (ppi->expression->type == variable) {
+						char line[80];
+						
+						// if there is a previous item in the printlist, look at the separator
+						// and suppress question mark prompt if it is a comma
+						if (I->prev == NULL)
+							printf("?");
+						else {
+							printitem_t *prev_item = I->prev->data;
+							if (prev_item->separator != ',')
+								printf("?");
+						}
+						
+						// see if we can get some data, we should at least get a return
+						fflush(stdout);
+						if (fgets(line, sizeof(line), stdin) != line)
+							exit(EXIT_FAILURE);
+						
+						// we got something, so null-terminate the string
+						line[strlen(line) - 1] = '\0';
+						
+						// optionally convert to upper case
+						if (upper_case) {
+							char *c = line;
+							while (*c) {
+								*c = toupper((unsigned char) *c);
+								c++;
+							}
+						}
+						
+						// find the storage for this variable, and assign the value
+						value = variable_value(ppi->expression->parms.variable, &type);
+						if (type >= NUMBER) {
+							sscanf(line, "%lg", &value->number);
+						} else {
+							value->string = str_new(line);
+						}
+					}
+					// if it's not a variable, it's some sort of prompt, so print it
+					else {
+						print_expression(ppi->expression, NULL);
+					}
+				}
+			}
+				break;
 
-      case BYE:
-        // unlike END, this exits BASIC entirely
-        exit(EXIT_SUCCESS);
-        break;
-        				
-      case QUIT:
-        // set the instruction pointer to null so it exits below
-        interpreter_state.next_statement = NULL;
-        break;
-                
+			case COMMENT:
+				break;
+				
+			case DO:
+			{
+				gosubcontrol_t *new = malloc(sizeof(*new));
+				
+				new->returnpoint = lst_next(L);
+				interpreter_state.gosubstack = lst_append(interpreter_state.gosubstack, new);
+				interpreter_state.next_statement = find_line(evaluate_expression(ps->parms.gosub).number);
+			}
+				break;
+
       case FOR:
       {
         forcontrol_t *new_for = malloc(sizeof(*new_for));
@@ -1117,16 +1186,6 @@ static void perform_statement(list_t *L)
         loop_value->number = new_for->begin;
         
         interpreter_state.forstack = lst_append(interpreter_state.forstack, new_for);
-      }
-        break;
-        
-      case GOSUB:
-      {
-        gosubcontrol_t *new = malloc(sizeof(*new));
-        
-        new->returnpoint = lst_next(L);
-        interpreter_state.gosubstack = lst_append(interpreter_state.gosubstack, new);
-        interpreter_state.next_statement = find_line(evaluate_expression(ps->parms.gosub).number);
       }
         break;
         
@@ -1164,73 +1223,12 @@ static void perform_statement(list_t *L)
         }
       }
         break;
-        
-      case ASK:
-      {
-        // INPUT can mix together prompts and variables, it doesn't
-        // *have* to be a single prompt at the start, although that is
-        // the typical convention. this code handles this possibility
-        // by rolling over the expression list, doing a print if it's
-        // not a variable, and a scan if it is
-        //
-        // NOTE: in C64 an empty input will exit without setting the
-        //    value of the associated variable, leaving it what it
-				//    was. you can see this in SST - for instance, if you
-				//    simply press return on the computer command input it
-				//    will run the last command again.
-        
-        // loop over the items in the variable/prompt list
-        for (list_t *I = ps->parms.input; I != NULL; I = lst_next(I)) {
-          either_t *value;
-          int type = 0;
-          
-          printitem_t *ppi = I->data;
-          if (ppi->expression->type == variable) {
-            char line[80];
-            
-            // if there is a previous item in the printlist, look at the separator
-            // and suppress question mark prompt if it is a comma
-            if (I->prev == NULL)
-              printf("?");
-            else {
-              printitem_t *prev_item = I->prev->data;
-              if (prev_item->separator != ',')
-                printf("?");
-            }
-            
-            // see if we can get some data, we should at least get a return
-            fflush(stdout);
-            if (fgets(line, sizeof(line), stdin) != line)
-              exit(EXIT_FAILURE);
-            
-            // we got something, so null-terminate the string
-            line[strlen(line) - 1] = '\0';
-            
-            // optionally convert to upper case
-            if (upper_case) {
-              char *c = line;
-              while (*c) {
-                *c = toupper((unsigned char) *c);
-                c++;
-              }
-            }
-            
-            // find the storage for this variable, and assign the value
-            value = variable_value(ppi->expression->parms.variable, &type);
-            if (type >= NUMBER) {
-              sscanf(line, "%lg", &value->number);
-            } else {
-              value->string = str_new(line);
-            }
-          }
-          // if it's not a variable, it's some sort of prompt, so print it
-          else {
-            print_expression(ppi->expression, NULL);
-          }
-        }
-      }
-        break;
-        
+				
+			case QUIT:
+				// set the instruction pointer to null so it exits below
+				interpreter_state.next_statement = NULL;
+				break;
+								
       case SET:
       {
         either_t *stored_val;
@@ -1351,9 +1349,6 @@ static void perform_statement(list_t *L)
       }
         break;
                 
-      case COMMENT:
-        break;
-        
       case RETURN:
       {
 				gosubcontrol_t *pgc;

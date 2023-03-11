@@ -102,7 +102,7 @@ static expression_t *make_operator(int arity, int o)
 %token COMMENT
 %token CONTINUE
 %token DO
-%token ERASE
+%token ERASE // also used as CLEAR, not just to erase lines
 %token FOR
 %token GO
 %token GOTO
@@ -187,6 +187,13 @@ statement:
   {
     statement_t *new = make_statement(COMMENT);
     new->parms.rem = yylval.s;
+    $$ = new;
+  }
+  |
+  ERASE /* ERASE can also be followed by a line or group number to erase those lines, which will return a syntax error here */
+  {
+    statement_t *new = make_statement(ERASE);
+    new->parms._do = $2;
     $$ = new;
   }
   |
