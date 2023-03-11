@@ -192,51 +192,49 @@ either_t *variable_value(const variable_t *variable, int *type)
   // at this point we have either found or created the variable, so...
   
   // compute array index, or leave it at zero if there is none
-  index = 0;
-  if (!string_slicing) {
-    list_t *num_dimensions;         // list of actual dimensions in storage, maybe the default 10
-		list_t *def_dimensions;					// list of DIMmed dimensions, if a DIM was encountered
-    list_t *variable_indexes;       // list of indices in this variable reference, each is an expression, likely a constant
-    
-		num_dimensions = lst_first_node(storage->actual_dimensions);
-		def_dimensions = lst_first_node(storage->defed_dimensions);
-    variable_indexes = lst_first_node(variable->subscripts);
-    
-    // the *number* of dimensions has to match, you can't DIM A(1,1) and then LET B=A(1)
-    if (lst_length(num_dimensions) != lst_length(variable_indexes))
-      basic_error("Array dimension of variable does not match storage"); // should we exit at this point?
-    else
-      while (num_dimensions && variable_indexes) {
-        // evaluate the variable reference's index for a given dimension
-        value_t this_index = evaluate_expression(variable_indexes->data);
-				
-        // and get the originally defined size for that same dimension
-				// NOTE: this may or may not be the same as the DIM, see notes above
-				int original_dimension = POINTER_TO_INT(num_dimensions->data);
-
-				// make sure the index is within the originally DIMed bounds
-				// NOTE: should check against array_base, not 0, but this doesn't work in Dartmouth. see notes
-        if ((this_index.number < 0) || (original_dimension < this_index.number)) {
-          basic_error("Array subscript out of bounds");
-					this_index.number = 0;//array_base; // the first entry in the C array, so it continues
-        }
-				
-				// now check to see if there are dimed_dimensions, and check against them
-				if (def_dimensions != NULL) {
-					int def_dimension = POINTER_TO_INT(def_dimensions->data);
-					if ((this_index.number < 0) || (def_dimension < this_index.number)) {
-						basic_error("Array subscript out of DIMmed bounds");
-						this_index.number = 0;
-					}
+	index = 0;
+	list_t *num_dimensions;         // list of actual dimensions in storage, maybe the default 10
+	list_t *def_dimensions;					// list of DIMmed dimensions, if a DIM was encountered
+	list_t *variable_indexes;       // list of indices in this variable reference, each is an expression, likely a constant
+	
+	num_dimensions = lst_first_node(storage->actual_dimensions);
+	def_dimensions = lst_first_node(storage->defed_dimensions);
+	variable_indexes = lst_first_node(variable->subscripts);
+	
+	// the *number* of dimensions has to match, you can't DIM A(1,1) and then LET B=A(1)
+	if (lst_length(num_dimensions) != lst_length(variable_indexes))
+		basic_error("Array dimension of variable does not match storage"); // should we exit at this point?
+	else
+		while (num_dimensions && variable_indexes) {
+			// evaluate the variable reference's index for a given dimension
+			value_t this_index = evaluate_expression(variable_indexes->data);
+			
+			// and get the originally defined size for that same dimension
+			// NOTE: this may or may not be the same as the DIM, see notes above
+			int original_dimension = POINTER_TO_INT(num_dimensions->data);
+			
+			// make sure the index is within the originally DIMed bounds
+			// NOTE: should check against array_base, not 0, but this doesn't work in Dartmouth. see notes
+			if ((this_index.number < 0) || (original_dimension < this_index.number)) {
+				basic_error("Array subscript out of bounds");
+				this_index.number = 0;//array_base; // the first entry in the C array, so it continues
+			}
+			
+			// now check to see if there are dimed_dimensions, and check against them
+			if (def_dimensions != NULL) {
+				int def_dimension = POINTER_TO_INT(def_dimensions->data);
+				if ((this_index.number < 0) || (def_dimension < this_index.number)) {
+					basic_error("Array subscript out of DIMmed bounds");
+					this_index.number = 0;
 				}
-        
-				index = (index * original_dimension) + this_index.number;
-        
-        // then move on to the next index in the list
-        num_dimensions = lst_next(num_dimensions);
-        variable_indexes = lst_next(variable_indexes);
-      }
-  }
+			}
+			
+			index = (index * original_dimension) + this_index.number;
+			
+			// then move on to the next index in the list
+			num_dimensions = lst_next(num_dimensions);
+			variable_indexes = lst_next(variable_indexes);
+		}
   
   // done with this temp name, but don't pass TRUE or it will kill the original too
   //free(storage_name);
@@ -257,19 +255,6 @@ either_t *variable_value(const variable_t *variable, int *type)
         basic_error("Wrong number of parameters in string slice");
       
       slice_param = variable->slicing;
-    }
-    
-    // the other possibility is that we have the slicing option turned on,
-    // in that case the index we calculated earlier is not correct, so we
-    // return that to zero and then use those params as the slices
-    if (string_slicing && lst_length(variable->subscripts) > 0) {
-      index = 0;
-      
-      // HP style slices will have one or two parameters
-      if (string_slicing && (lst_length(variable->subscripts) != 1 && lst_length(variable->subscripts) != 2))
-        basic_error("Wrong number of parameters in string slice");
-      
-      slice_param = variable->subscripts;
     }
     
     // if either of those got us something, pull out both parameters
@@ -749,19 +734,12 @@ static value_t evaluate_expression(expression_t *expression)
             result.type = STRING;
             result.string = str_new("");
             int tabs = (int)parameters[0].number;
-            if (ansi_tab_behaviour)
-              tabs++;
             if (tabs > interpreter_state.cursor_column) {
               for (int i = interpreter_state.cursor_column; i <= tabs - 1; i++) {
                 str_append(result.string, " ");
               }
             } else {
-              if (ansi_tab_behaviour) {
-                str_append(result.string, "\n");
-                for (int i = 0; i <= tabs - 1; i++) {
-                  str_append(result.string, " ");
-                }
-              }
+							// FIXME: anything to do here?
             }
             break;
           case SPC:
@@ -1073,27 +1051,12 @@ static list_t *find_line(int linenumber)
     basic_error(buffer);
     return NULL;
   }
-  
-  // apparently some BASICs allow you to branch to a non-existant line and it will
-  // go to the next-highest. this is definitely not what MS does, nor ANSI apparently,
-  // but if this does come up we can use this flag on the command line
-  if (goto_next_highest) {
-    while ((linenumber < MAXLINE) && (interpreter_state.lines[linenumber] == NULL))
-      linenumber++;
-    
-    // if we fell off the end, report an error
-    if (linenumber == MAXLINE) {
-      basic_error("Undefined line in branch, beyond highest line number");
-      return NULL;
-    }
-  } else {
-    // in MS-like BASICs, any null target line returns an error
-    if (interpreter_state.lines[linenumber] == NULL) {
-      sprintf(buffer, "Undefined target line %i in branch", linenumber);
-      basic_error(buffer);
-      return NULL;
-    }
-  }
+	
+	if (interpreter_state.lines[linenumber] == NULL) {
+		sprintf(buffer, "Undefined target line %i in branch", linenumber);
+		basic_error(buffer);
+		return NULL;
+	}
   
   // otherwise we did find a line, so return it
   return interpreter_state.lines[linenumber];
@@ -1129,95 +1092,7 @@ static void perform_statement(list_t *L)
         // unlike END, this exits BASIC entirely
         exit(EXIT_SUCCESS);
         break;
-        
-      case CALL:
-        // do nothing
-        break;
-
-			case CHANGE:
-			case CONVERT:
-				// converts a string into a numeric array of ASCII values or vice versa
-				// this code assumes it only works between two variables, and not expressions
-				//
-				// the complexity here is because we are stepping through elements in the array,
-				// which is normally only possible using an index expression in the source code.
-				// So here we have to duplicate a small portion of the code in variable_value to
-				// get the right slot in the heap to insert into. This is somewhat eased by the
-				// fact that the array has to be 1-dimensional so finding the right slot is easy.
-				//
-				// NOTE: In Dartmouth, A and A() are the same variable, and one can CHANGE A to A$
-				//        this means we will have possible confusion between A and A(). However,
-				//        every example of the CHANGE command has a DIM on the array, likely as
-				//        the default value is 10 and that's too small in practice. So this code
-				//        assumes the stored variable is A( and adds the paren where needed
-			{
-				either_t *first_val;
-				variable_storage_t *array_store;
-				int type1 = 0, type2 = 0;
-				
-				// get the types of the two variables
-				first_val = variable_value(ps->parms.change.var1, &type1);
-				variable_value(ps->parms.change.var2, &type2); // we only need the type here, the value is not used
-				
-				// make sure one is a string and the other is snumeric
-				if (type1 == STRING && type2 != NUMBER)
-					basic_error("Type mismatch in CHANGE, string to ?");
-				else if (type1 == NUMBER && type2 != STRING)
-					basic_error("Type mismatch in CHANGE, number to ?");
-				
-				// get the storage for the numeric value by adding the (
-				char *array_storage_name = str_new((type1 == NUMBER) ? ps->parms.change.var1->name : ps->parms.change.var2->name);
-				str_append(array_storage_name, "("); // we are assuming it is missing
-				array_store = lst_data_with_key(interpreter_state.variable_values, array_storage_name);
-				free(array_storage_name);
-
-				// whichever one is a number has to be an array
-				if (lst_length(array_store->actual_dimensions) == 0)
-					basic_error("Type mismatch in CHANGE, numeric variable is not an array");
-				
-				// and that array has to be one-dimensional
-				if (lst_length(array_store->actual_dimensions) > 1)
-					basic_error("Type mismatch in CHANGE, numeric variable has multiple dimensions");
-											
-				// we are good to go...
-				if (type1 == STRING) {
-					// CONVERT STRING TO ARRAY OF ASCII
-					
-					// make sure the array is long enough for the string
-					int string_length = (int)strlen(first_val->string);
-					if (POINTER_TO_INT(array_store->actual_dimensions->data) < string_length)
-						basic_error("Out of memory in CHANGE, numeric variable is too small to hold the string");
-					
-					// put the length in the first slot
-					array_store->value[0].number = string_length;
-
-					// now loop over the string and insert the values
-					for (int i = 1; i <= string_length; i++) {
-						array_store->value[i].number = (int)first_val->string[i - 1];
-					}
-					// and pad out the rest of the array with zeros to be safe
-					for (int i = string_length + 1; i < POINTER_TO_INT(array_store->actual_dimensions->data); i++) {
-						array_store->value[i].number = 0;
-					}
-				}
-				else {
-					// CONVERT ARRAY OF ASCII TO STRING
-					variable_storage_t *string_store;
-
-					// this one is a little easier, we can keep going until we see a zero
-					char new_string[MAXSTRING];
-					for (int i = 1; i <= POINTER_TO_INT(array_store->actual_dimensions->data) && array_store->value[i].number != 0; i++) {
-						new_string[i - 1] = (char)array_store->value[i].number;
-					}
-					
-					// delete any old value in the string and copy in the new one
-					string_store = lst_data_with_key(interpreter_state.variable_values, ps->parms.change.var2->name);
-					free(string_store->value->string);
-					string_store->value->string = str_new(new_string);
-				}
-			}
-				break;
-				
+        				
       case QUIT:
         // set the instruction pointer to null so it exits below
         interpreter_state.next_statement = NULL;

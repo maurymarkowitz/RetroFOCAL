@@ -120,20 +120,6 @@ typedef struct statement_struct {
   union {
     expression_t *generic_parameter, *generic_parameter2, *generic_parameter3;
     struct {
-      variable_t *var1;
-      variable_t *var2;
-    } change;
-    list_t *data; // list of values for data statements
-    struct {
-      variable_t *signature;
-      expression_t *formula;
-    } def;
-    struct {
-      list_t *vars;
-      int type;
-    } deftype;
-    list_t *dim; // list of variable definitions
-    struct {
       variable_t *variable;
       expression_t *begin, *end, *step;
     } _for;
@@ -150,17 +136,11 @@ typedef struct statement_struct {
       variable_t *variable;
       expression_t *expression;
     } let;
-    struct {
-      int type; /* GOTO or GOSUB */
-      expression_t *expression;
-      list_t *numbers;
-    } on;
     list_t *next;
     struct {
       expression_t *format;
       list_t *item_list;
     } print;
-    list_t *read;
     char *rem;
     //        struct {
     //            list_t *numbers;

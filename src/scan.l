@@ -88,21 +88,6 @@ FOUT    { return FOUT; }
  /* various operators and punctuation */
 [:,;()\^=+\-*/\<\>\&]     { return yytext[0]; }
 
- /* binary operators */
-AND       { return AND; }
-OR        { return OR; }
-NOT       { return NOT; }
-XOR       { return XOR; }
-
- /* comparison operators */
-\<=       { return CMP_LE; }
-=\<       { return CMP_LE; }
-\>=       { return CMP_GE; }
-=\>       { return CMP_GE; }
-\<\>      { return CMP_NE; }
-\>\<      { return CMP_NE; }
-#         { return CMP_HASH; } // use a separate token here to preserve it in LIST
-
  /* line numbers */
 [0-9]?[0-9.][0-9][0-9] {
               yylval.d = strtod(yytext, NULL);

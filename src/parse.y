@@ -126,6 +126,10 @@ static expression_t *make_operator(int arity, int o)
 %token FATN
 %token FLOG
 
+// new functions from FOCAL-71
+%token FIN
+%token FOUT
+
  // unsupported, but incluced for parsing
 %token FADC
 %token FDIS
@@ -245,7 +249,7 @@ statement:
     linenum_constants_total++;
 	}
   |
-  IF ( expression ) LINENUMBER , LINENUMBER
+  IF ( expression ) LINENUMBER,LINENUMBER
   {
     statement_t *new = make_statement(IF);
     new->parms._if.condition = $3;
@@ -258,7 +262,7 @@ statement:
     linenum_constants_total++;
   }
   |
-  IF ( expression ) LINENUMBER , LINENUMBER , LINENUMBER
+  IF ( expression ) LINENUMBER,LINENUMBER,LINENUMBER
   {
     statement_t *new = make_statement(IF);
     new->parms._if.condition = $3;
@@ -412,8 +416,7 @@ expression2:
 	;
 
 e2op:   '+' { $$ = '+'; } |
-        '-' { $$ = '-'; } |
-        '&' { $$ = '&'; }
+        '-' { $$ = '-'; }
         ;
 
 expression3:
@@ -444,8 +447,7 @@ expression4:
 	;
 
 unary_op:
-  '-' { $$ = '-'; } |
-  NOT { $$ = NOT; }
+  '-' { $$ = '-'; }
   ;
 
 function:
@@ -465,6 +467,7 @@ function:
     $$ = new;
   }
   |
+  /* it is not clear this is allowed, but we'll keep it for now */
   fn_0 '(' expression ')'
   {
     expression_t *new = make_operator(0, $1);
@@ -478,38 +481,12 @@ function:
 	  new->parms.op.p[0] = $3;
 	  $$ = new;
 	}
-	|
-	fn_2 '(' expression ',' expression ')'
-	{
-	  expression_t *new = make_operator(2, $1);
-	  new->parms.op.p[0] = $3;
-	  new->parms.op.p[1] = $5;
-	  $$ = new;
-	}
-  /* multi-arity function being called with two inputs... */
-  |
-  fn_x '(' expression ',' expression ')'
-  {
-    expression_t *new = make_operator(2, $1);
-    new->parms.op.p[0] = $3;
-    new->parms.op.p[1] = $5;
-    $$ = new;
-  }
-  /* ...or three */
-	|
-	fn_x '(' expression ',' expression ',' expression ')'
-	{
-	  expression_t *new = make_operator(3, $1);
-	  new->parms.op.p[0] = $3;
-	  new->parms.op.p[1] = $5;
-    new->parms.op.p[2] = $7;
-	  $$ = new;
-	}
 	;
   
  /* arity-0 functions */
 fn_0:
   FRAN { $$ = FRAN; }
+  FIN  { $$ = FIN; }
   ;
 
  /* arity-1 functions */
@@ -526,6 +503,7 @@ fn_1:
   FSQT { $$ = FSQT; } |
   FSGN { $$ = FSGN; } |
   FSIN { $$ = FSIN; } |
+  FOUT { $$ = FOUT; }
 
  /* ultimately all expressions end up here in factor, which is either a
     constant value, a variable value, or a parened expression. in
@@ -629,9 +607,9 @@ factor:
 
  /* variables may contain an array reference or parameter list for functions */
 open_bracket:
- '(' | '[';
+ '(' | '[' | '<';
 close_bracket:
- ')' | ']';
+ ')' | ']' | '>';
 
 variable:
   VARIABLE_NAME
@@ -646,7 +624,7 @@ variable:
     insert_variable(new);
 	}
 	|
-  VARIABLE_NAME open_bracket exprlist close_bracket
+  VARIABLE_NAME open_bracket expression close_bracket
   {
     variable_t *new = malloc(sizeof(*new));
     new->name = $1;
