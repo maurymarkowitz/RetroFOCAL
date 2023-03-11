@@ -11,7 +11,7 @@ This document explains some of the design goals, coding decisions and style sele
 
 ## Impetus
 
-RetroFOCAL was created as a fork of the RetroBASIC program. FOCAL is very similar to BASIC, which makes a port simple. It is also a simpler language and there is only one major version that needs to be supported. It is a low-cost project that might be of some use in the retrocomputing field. 
+RetroFOCAL was created as a fork of the RetroBASIC program. FOCAL is very similar to BASIC, which makes a port simple. It is also a simpler language and there is only two major versions that need to be supported, FOCAL and FOCAL-71, and the later is a strict superset of the former. It is a low-cost project that might be of some use in the retrocomputing field. 
 
 RetroFOCAL aims to run any FOCAL program without modification. There is the important caveat that the program cannot not make use of invoke code using LIBRARY or various input/output functions that rely on OPEN. But such was the case for most FOCAL programs of interest in the retrocomputing field.
 
