@@ -1,0 +1,127 @@
+.\" Copyright 2023 by Maury Markowitz
+.\" 
+.\" You may distribute under the terms of the GNU General Public
+.\" License V.2 as specified in the LICENSE file that comes with
+.\" the RetroFOCAL distribution.
+
+.TH RETROFOCAL 1 "1 January 2023" v1.0.0 "RetroFOCAL"
+.LO 1
+
+.SH NAME
+.B retrofocal
+\- run old FOCAL programs
+
+.SH SYNOPSIS
+.B retrofocal
+.RB [ \-ghnpsuv ]
+.RB [ \-a 1|0]
+.RB [ \-t 
+.IR num ]
+.RB [ \-r 
+.IR num ] 
+.RB [ \-o 
+.IR file ]
+.RB [ \-i 
+.IR file ]
+.RB [ \-w 
+.IR file ]
+.I filename
+
+.SH DESCRIPTION 
+.B RetroFOCAL
+is an interpreter designed to run programs written in the FOCAL language seen on DEC machines like the PDP-8. FOCAL programs must be in text format, not tokenized.
+
+.SH OPTIONS
+.TP
+.B \-h, \--help
+Print a help message and exit.
+.TP
+.B \-v, \--version
+Print version info and exit.
+.TP
+.B \-u, \--upper-case
+Convert all input to upper-case, like using caps lock.
+.TP
+.BR \-a [1|0],
+.BR \--array-base =[1/0]
+Set the base index for arrays, normally 0 but some dialects use 1.
+.TP
+.BI \-t num,
+.BI \--tabs
+Sets the number of spaces for comma-separated items, defaults to 10 based on the Commodore PET.
+.TP
+.B \-g,
+.B \--goto-next
+Branches to a non-existant lines will continue on the next line, instead of raising an error.
+.TP
+.BI -r num
+.BI --random num
+Seed the random number generator, passing 0 causes it to randomize.
+.TP
+.B \-s,
+.B \--slicing
+Enable string slicing like HP, Integer, Atari, etc. Turning this on makes arrays of strings inaccessible.
+.TP
+.BI \-o filename,
+.BI \--output-file filename
+Redirect PRINT statement output to the named file.
+.TP
+.BI \-i filenme,
+.BI \--input-file filenme
+Redirect INPUT statements to read from the named file, one INPUT value per line.
+.TP
+.B \-n,
+.B \--no-run
+Do not run the BASIC program, simply parse it and exit.
+.TP
+.B \-p,
+.B \--print-statistics
+Print a selection of statistics to the console.
+.TP
+.BI \-w filename,
+.BI \--write-statistics filename
+Write the statistics to the named file in an alternative, system-readable format.
+
+.SH GENERAL DESIGN
+.B RetroFOCAL
+is intended to run programs from written in the PDP-8 dialect of the FOCAL language. As FOCAL and BASIC are very similar, RetroFOCAL is based on the RetroBASIC program, greatly simplified. Where possible variations in dialect exist,
+.B RetroFOCAL
+always chooses to implement the instructions such that
+.I The Sumer Game
+and
+.I Lunar Lander
+run properly.
+
+The original purpose of RetroBASIC was to collect statistics on common BASIC programs like
+.I Super Star Trek.
+This has been retained in
+.B RetroFOCAL
+. The statistics are collected during the parsing stage and can be printed out using the
+.B \-p
+option, or written to a named file with
+.B \-w
+.I filename.
+If the statistics are all that is needed, add the
+.B \-n
+option, which parses the program and then immediately exits without running the program.
+
+.B RetroFOCAL
+may also be used for regression testing using the
+.BR -r , -i and -o
+options. The first seeds the random number generator to a given value so that subsequent runs will create the same series of events, the next reads inputs from a file recording previous interactive inputs, and the final one writes all output to another file. Diff'ing the resulting output from different versions of a program can be used to find changes.
+
+.SH EXAMPLES
+
+.B retrofocal -u ll.fc
+\- play a game of Lunar Lander with caps lock turned on.
+
+.B retrobasic -np sumer.fc
+\- parse The Sumer Game, print statistics about the program structure, and exit.
+
+.SH BUGS
+
+ASK statements with multiple variables have to be entered on separate lines; most dialects allow these to be space delimited.
+
+.SH AUTHORS
+
+Maury Markowitz is the original author of RetroFOCAL. It is based on RetroBASIC which is based on gnbasic by James Bowman.
