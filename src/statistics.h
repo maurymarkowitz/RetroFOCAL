@@ -35,11 +35,6 @@ extern clock_t start_ticks, end_ticks;  // start and end ticks, for calculating 
 extern struct timeval start_time, end_time;     // start and end clock, for total run time
 
 extern int variables_total;
-extern int variables_default;
-extern int variables_int;
-extern int variables_float;
-extern int variables_double;
-extern int variables_string;
 extern int numeric_constants_total;
 extern int numeric_constants_float;
 extern int numeric_constants_zero;

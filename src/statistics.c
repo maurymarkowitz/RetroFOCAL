@@ -87,23 +87,11 @@ static void is_string(void *key, void *value, void *user_data)
   int *tot = (int *)user_data;
   if (data->type == STRING) *tot += 1;
 }
-static void is_single(void *key, void *value, void *user_data)
+static void is_number(void *key, void *value, void *user_data)
 {
   variable_storage_t *data = (variable_storage_t *)value;
   int *tot = (int* )user_data;
-  if (data->type == SINGLE) *tot += 1;
-}
-static void is_double(void *key, void *value, void *user_data)
-{
-  variable_storage_t *data = (variable_storage_t *)value;
-  int *tot = (int *)user_data;
-  if (data->type == DOUBLE) *tot += 1;
-}
-static void is_integer(void *key, void *value, void *user_data)
-{
-  variable_storage_t *data = (variable_storage_t *)value;
-  int *tot = (int *)user_data;
-  if (data->type == INTEGER) *tot += 1;
+  if (data->type != STRING) *tot += 1;
 }
 
 /* prints out various statistics from the static code,
@@ -166,10 +154,8 @@ void print_statistics()
   // variables
   int num_total = lst_length(interpreter_state.variable_values);
   
-  int num_int = 0, num_sng = 0, num_dbl = 0, num_str = 0;
-  lst_foreach(interpreter_state.variable_values, is_integer, &num_int);
-  lst_foreach(interpreter_state.variable_values, is_single, &num_int);
-  lst_foreach(interpreter_state.variable_values, is_double, &num_int);
+  int num_num = 0, num_str = 0;
+  lst_foreach(interpreter_state.variable_values, is_number, &num_num);
   lst_foreach(interpreter_state.variable_values, is_string, &num_str);
   
   // output to screen if selected
@@ -190,10 +176,7 @@ void print_statistics()
     printf("\nVARIABLES\n\n");
     printf("  total: %i\n",num_total);
     printf(" string: %i\n",num_str);
-    printf(" (nums): %i\n",num_total-num_str-num_int-num_sng-num_dbl);
-    printf("   ints: %i\n",num_int);
-    printf("singles: %i\n",num_sng);
-    printf("doubles: %i\n",num_dbl);
+    printf("    num: %i\n",num_num);
     
     printf("\nNUMERIC CONSTANTS\n\n");
     printf("  total: %i\n",numeric_constants_total);
@@ -270,10 +253,7 @@ void print_statistics()
     
     fprintf(fp, "VARIABLES,total,%i\n",num_total);
     fprintf(fp, "VARIABLES,string,%i\n",num_str);
-    fprintf(fp, "VARIABLES,default,%i\n",num_total-num_str-num_int-num_sng-num_dbl);
-    fprintf(fp, "VARIABLES,ints,%i\n",num_int);
-    fprintf(fp, "VARIABLES,singles,%i\n",num_sng);
-    fprintf(fp, "VARIABLES,doubles,%i\n",num_dbl);
+    fprintf(fp, "VARIABLES,numbers,%i\n",num_num);
     
     fprintf(fp, "NUMERIC CONSTANTS,total,%i\n",numeric_constants_total);
     fprintf(fp, "NUMERIC CONSTANTS,non-int,%i\n",numeric_constants_float);

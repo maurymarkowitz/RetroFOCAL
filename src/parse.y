@@ -83,8 +83,8 @@ static expression_t *make_operator(int arity, int o)
 }
 
 %type <l> program line statements
-%type <l> printlist exprlist varlist
-%type <i> printsep binary_op comparison_op e2op term unary_op fn_0 fn_1
+%type <l> printlist exprlist
+%type <i> printsep e2op term unary_op fn_0 fn_1
 %type <expression> expression expression0 expression1 expression2 expression3 expression4 function factor
 %type <statement> statement
 %type <variable> variable
@@ -102,7 +102,7 @@ static expression_t *make_operator(int arity, int o)
 %token COMMENT
 %token CONTINUE
 %token DO
-%token ERASE // also used as CLEAR, not just to erase lines
+%token ERASE
 %token FOR
 %token GO
 %token GOTO
@@ -114,17 +114,17 @@ static expression_t *make_operator(int arity, int o)
 %token TYPE
 %token WRITE
 
- // functions, in order found in manual
-%token FSQT
+ // functions from FOCAL-69
 %token FABS
-%token FSGN
-%token FITR
-%token FRAN
-%token FEXP
-%token FSIN
-%token FCOS
 %token FATN
+%token FCOS
+%token FEXP
+%token FITR
 %token FLOG
+%token FRAN
+%token FSGN
+%token FSIN
+%token FSQT
 
 // new functions from FOCAL-71
 %token FIN
@@ -134,6 +134,9 @@ static expression_t *make_operator(int arity, int o)
 %token FADC
 %token FDIS
 %token FDXS
+
+ // used internally
+%token VARLIST
 
 %%
 
@@ -148,15 +151,16 @@ program:
 
 line:
   // keep track of the line number as we parse so we can report offending lines
-	LINENUMBER { errline = $1; } statements
+	NUMBER { errline = $1; } statements
 	{
-    // we'll store the line numbers internally as floats and convert as needed,
-    // but we need some way to convert that to an entry in an array...
-	  interpreter_state.lines[(int)$1] = $3;
+    // there are only 9999 possible lines so we make an array that large
+    // even though it ends up mostly empty. to convert the X.Y format, we
+    // simply multiply by 100 to shift the decimal so that 3.10 is line 310
+	  interpreter_state.lines[(int)($1 * 100)] = $3;
 	}       
 	;
 
-  /* statements can be separated by semicolons */
+  /* statements can be separated by semicolons (not colons, as in BASIC) */
 statements:
 	statement
   {
@@ -190,13 +194,6 @@ statement:
     $$ = new;
   }
   |
-  ERASE /* ERASE can also be followed by a line or group number to erase those lines, which will return a syntax error here */
-  {
-    statement_t *new = make_statement(ERASE);
-    new->parms._do = $2;
-    $$ = new;
-  }
-  |
   DO expression /* PDP-8 manual shows "DO ALL", but it is not explained, same as GO? */
   {
     statement_t *new = make_statement(DO);
@@ -216,8 +213,14 @@ statement:
       }
     }
   }
+  |
+  ERASE /* ERASE can also be followed by a line or group number to erase those lines, which will return a syntax error here. this code only handles clearing out variable values */
+  {
+    statement_t *new = make_statement(ERASE);
+    $$ = new;
+  }
 	|
-	FOR variable '=' expression,expression
+	FOR variable '=' expression ',' expression
 	{
 	  statement_t *new = make_statement(FOR);
 	  new->parms._for.variable = $2;
@@ -231,24 +234,37 @@ statement:
     for_loops_step_1++;
 	}
 	|
-	FOR variable '=' expression,expression,expression /* note the FORTRAN-like syntax with the step in the middle */
+	FOR variable '=' expression ',' expression ',' expression /* note the FORTRAN-like syntax with the step in the middle */
 	{
 	  statement_t *new = make_statement(FOR);
 	  new->parms._for.variable = $2;
 	  new->parms._for.begin = $4;
-	  new->parms._for.end = $8;
 	  new->parms._for.step = $6;
+    new->parms._for.end = $8;
 	  $$ = new;
 	
     /* static analyser - consider anything with a STEP special even if it is a 1 */
     for_loops_total++;
   }
+  |
+  GO /* we will treat GO and GOTO like DO, although maybe they should report an error? */
+  {
+    statement_t *new = make_statement(GO);
+    $$ = new;
+  }
+  |
+  GOTO expression
+  {
+    statement_t *new = make_statement(GOTO);
+    new->parms._do = $2;
+    $$ = new;
+  }
 	|
-	IF ( expression ) LINENUMBER /* IF requires parens, like C */
+	IF '(' expression ')' NUMBER /* IF requires parens, like C */
   {
     statement_t *new = make_statement(IF);
     new->parms._if.condition = $3;
-    new->parms._if.less_line = $4;
+    new->parms._if.less_line = $5;
     $$ = new;
     
     /* static analyzer */
@@ -256,7 +272,7 @@ statement:
     linenum_constants_total++;
 	}
   |
-  IF ( expression ) LINENUMBER,LINENUMBER
+  IF '(' expression ')' NUMBER ',' NUMBER
   {
     statement_t *new = make_statement(IF);
     new->parms._if.condition = $3;
@@ -269,7 +285,7 @@ statement:
     linenum_constants_total++;
   }
   |
-  IF ( expression ) LINENUMBER,LINENUMBER,LINENUMBER
+  IF '(' expression ')' NUMBER ',' NUMBER ',' NUMBER
   {
     statement_t *new = make_statement(IF);
     new->parms._if.condition = $3;
@@ -317,86 +333,59 @@ statement:
     $$ = new;
   }
   |
-  TYPE %expression ',' printlist
+  TYPE '%' expression ',' printlist
   {
     statement_t *new = make_statement(TYPE);
-    new->parms.print.format = $2;
-    new->parms.print.item_list = $4;
+    new->parms.print.format = $3;
+    new->parms.print.item_list = $5;
     $$ = new;
   }
-	|
-	TYPE $ /* lists out all the variables and their values */
-	{
-	  statement_t *new = make_statement(VARLIST);
-	  $$ = new;
-	}
+//	|
+//	TYPE '$' /* lists out all the variables and their values */
+//	{
+//	  statement_t *new = make_statement(VARLIST);
+//	  $$ = new;
+//	}
 	;
 
- /* precedence in RetroFOCAL is handled through this pattern tree,
-    but it is not clear that is the best solution
+ /* expressions in FOCAL are very simple, and there are no comparison
+  or binary operators, so it's basically just a five-function calculator
+  that can be easily implemented in yacc
   */
+ 
+ /* variables may contain an array reference or parameter list for functions */
+open_bracket:
+ '(' | '[' | '<';
+close_bracket:
+ ')' | ']' | '>';
+
+//expression:
+//{
+//   expression_t *new = make_operator(2, $2);
+//   new->parms.op.p[0] = $1;
+//   new->parms.op.p[1] = $3;
+//   $$ = new;
+//}
+//expression:
+//  expression '+' expression {$$ = $1 + $3;} |
+//  expression '-' expression {$$ = $1 - $3;} |
+//  expression '*' expression {$$ = $1 * $3;} |
+//  expression '/' expression {$$ = $1 / $3;} |
+//  '-' term %prec NEG {$$ = -$2; } |
+//  expression '^' expression {$$ = $1 ^ $3;} |
+//  open_bracket expression close_bracket {$$ = $2;} |
+//  FUNCTION {$$ = $2;} |
+//  NUMBER {$$ = $1;}
+//  ;
+
 expression: expression0;
 
 expression0:
 	expression1
-	|
-	expression0 binary_op expression1
-	{
-	  expression_t *new = make_operator(2, $2);
-	  new->parms.op.p[0] = $1;
-	  new->parms.op.p[1] = $3;
-	  $$ = new;
-	}
 	;
-
-binary_op:
-  AND { $$ = AND; } |
-  OR  { $$ = OR;  }
-  ;
 
 expression1:
 	expression2
-	|
-	expression1 comparison_op expression2
-	{
-	  expression_t *new = make_operator(2, $2);
-	  new->parms.op.p[0] = $1;
-	  new->parms.op.p[1] = $3;
-	  $$ = new;
-    
-    /* static analyser - see if this is a comparison to zero */
-    if (new->parms.op.p[1]->type == number) {
-      if ((int)new->parms.op.p[1]->parms.number == 0) {
-        if (new->parms.op.opcode == '=') {
-          compare_equals_zero++;
-        } else {
-          compare_not_equals_zero++;
-        }
-      } else if ((int)new->parms.op.p[1]->parms.number == 1) {
-        if (new->parms.op.opcode == '=') {
-          compare_equals_one++;
-        } else {
-          compare_not_equals_one++;
-        }
-      } else {
-        if (new->parms.op.opcode == '=') {
-          compare_equals_other++;
-        } else {
-          compare_not_equals_other++;
-        }
-      }
-    }
-	}
-	;
-
-comparison_op:
-    '=' { $$ = '='; } |
-    '<' { $$ = '<'; } |
-    '>' { $$ = '>'; } |
-    CMP_LE { $$ = CMP_LE; } |
-    CMP_GE { $$ = CMP_GE; } |
-    CMP_NE { $$ = CMP_NE; } |
-    CMP_HASH { $$ = CMP_HASH; }
 	;
 
 expression2:
@@ -492,7 +481,7 @@ function:
   
  /* arity-0 functions */
 fn_0:
-  FRAN { $$ = FRAN; }
+  FRAN { $$ = FRAN; } |
   FIN  { $$ = FIN; }
   ;
 
@@ -519,7 +508,6 @@ fn_1:
 factor:
   NUMBER
 	{
-    /* actual parsing code */
 	  expression_t *new = make_expression(number);
 	  new->parms.number = $1;
 	  $$ = new;
@@ -606,17 +594,11 @@ factor:
     $$ = new;
   }
   |
-  '(' expression ')'
+  open_bracket expression close_bracket
   {
     $$ = $2;
   }
 	;
-
- /* variables may contain an array reference or parameter list for functions */
-open_bracket:
- '(' | '[' | '<';
-close_bracket:
- ')' | ']' | '>';
 
 variable:
   VARIABLE_NAME
@@ -631,7 +613,7 @@ variable:
     insert_variable(new);
 	}
 	|
-  VARIABLE_NAME open_bracket expression close_bracket
+  VARIABLE_NAME open_bracket exprlist close_bracket
   {
     variable_t *new = malloc(sizeof(*new));
     new->name = $1;
@@ -639,7 +621,6 @@ variable:
     new->slicing = NULL;
     $$ = new;
 
-    /* this may result in errors about array bounds if you OPTION BASE after the DIM */
     insert_variable(new);
   }
 
@@ -684,16 +665,27 @@ printlist:
   }
 	;
 
+  /* FOCAL uses a number of special characters, not just separators */
 printsep:
-	','
+  ','
   {
-	  $$ = ',';
+	  $$ = ','; // this is the main separator, comparable to semicolon in BASIC
 	}
   |
-	';'
+	'!'
   {
-	  $$ = ';';
+	  $$ = '!'; // inserts a cr/lf
 	}
+  |
+  '#'
+  {
+    $$ = '#'; // inserts a cr
+  }
+  |
+  ':'
+  {
+    $$ = ':'; // inserts a tab
+  }
   ;
 	
  /* used in lots of places that take a list of expressions, functions, DATA, defn, etc. */
@@ -704,19 +696,6 @@ exprlist:
 	}
 	|
 	exprlist ',' expression
-	{
-	  $$ = lst_append($1, $3);
-	}
-	;
-
- /* used in READ statements and DEFs */
-varlist:
-	variable
-	{
-	  $$ = lst_prepend(NULL, $1);
-	}
-	|
-	varlist ',' variable
 	{
 	  $$ = lst_append($1, $3);
 	}

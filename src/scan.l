@@ -51,7 +51,7 @@ Boston, MA 02111-1307, USA.  */
     https://stackoverflow.com/questions/59117309/rest-of-line-in-bison/59122569#59122569
   */
 COMMENT.*   { yylval.s = str_new(str_copy(yytext + 3, yyleng - 3)); return COMMENT; }
-CONTINUE.*  { yylval.s = str_new(str_copy(yytext + 3, yyleng - 3)); return REM; } // manual lists this separately, do the same for now
+CONTINUE.*  { yylval.s = str_new(str_copy(yytext + 3, yyleng - 3)); return COMMENT; } // manual lists this separately, but its a comment
 DO      { return DO; }      // combines GOTO and GOSUB
 ERASE   { return ERASE; }   // erases lines of source
 FOR     { return FOR; }     // FOR loops, one-line only
@@ -74,7 +74,7 @@ FITR    { return FITR; }
 FLOG    { return FLOG; }
 FRAN    { return FRAN; }
 FSGN    { return FSGN; }
-FSQR    { return FSQR; }
+FSQT    { return FSQT; }
 
  /* other functions */
 FADC    { return FADC; }
@@ -88,12 +88,6 @@ FOUT    { return FOUT; }
  /* various operators and punctuation */
 [:,;()\^=+\-*/\<\>\&]     { return yytext[0]; }
 
- /* line numbers */
-[0-9]?[0-9.][0-9][0-9] {
-              yylval.d = strtod(yytext, NULL);
-              return LINENUMBER;
-            }
-
  /* other numeric constants */
 [0-9]*[0-9.][0-9]*([Ee][-+]?[0-9]+)? {
               yylval.d = strtod(yytext, NULL);
@@ -102,7 +96,7 @@ FOUT    { return FOUT; }
 
  /* variable references */
  /* currently set to allow only one or two chars */
-[A-Za-z][A-Za-z_]?{
+[A-Za-z][A-Za-z_]? {
               yylval.s = str_new(yytext);
               return VARIABLE_NAME;
             }

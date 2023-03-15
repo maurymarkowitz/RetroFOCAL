@@ -94,26 +94,12 @@ static void basic_error(const char *message)
 either_t *variable_value(const variable_t *variable, int *type)
 {
   variable_storage_t *storage;
-  char *storage_name;
+	char *storage_name;
 	int index;
   
-  // In MS basic, A() and A are two different variables, so here
-  // we mangle the name to include a "(" if it's an array. This is also
-	// true in the original Dartmouth BASIC, according to the DTSS emulator.
-	// also see notes in CHANGE/CONVERT
-	//
-	// NOTE: Dartmouth v4 page 38 states all variables can be used as an
-	//       array of 0..10 without a DIM statement, and DIM is only needed
-	//       if it is larger. Using a PET emulator, I found that this is
-	//       also true for 2D arrays, you can assign to A(5,5) without it
-	//       being DIMed. This code thus makes the minimum size of any
-	//       dimension 11 slots. The only downside to this approach is that
-	//       if a DIM is encountered with smaller limits it has no effect,
-	//       which means that a SUBSCRIPT ERROR will not be raised. Given
-	//       we are running known-good code, this seems fine.
-  storage_name = str_new(variable->name);
-  if (variable->subscripts != NULL)
-    str_append(storage_name, "(");
+	// in contrast to BASIC, in FOCAL all variables can be arrays, and
+	// A and A() refer to the same variable
+	storage_name = str_new(variable->name);
 
 	// see if we can find the entry in the symbol list
 	storage = lst_data_with_key(interpreter_state.variable_values, storage_name);
@@ -124,27 +110,8 @@ either_t *variable_value(const variable_t *variable, int *type)
     
     // malloc a single slot, if it's an array we'll use this as the template
     storage = malloc(sizeof(*storage));
-    
-    // set the type based on the name, which will override any passed type
-		// NOTE: don't use storage_name here, we might have added a (, always use variable->name
-    char trailer = variable->name[strlen(variable->name) - 1];
-    if (trailer == '$')
-      storage->type = STRING;
-    else
-      storage->type = NUMBER; // this works for all of them, int, dbl, etc.
-    
-    // see if we have a type being passed in, which is used in the DEFINT/SNG/DBL/STR
-		// NOTE: use >0 because DIM passes -1
-    if (*type > 0)
-      storage->type = *type;
-    // otherwise see if there's a subtype in the trailer
-    else if (trailer == '%')
-      storage->type = INTEGER;
-    else if (trailer == '!')
-      storage->type = SINGLE;
-    else if (trailer == '#')
-      storage->type = DOUBLE;
-		
+    storage->type = NUMBER;	// this is all we have in FOCAL, but leaving in the type for simplicity
+    		
     // now see if this reference includes subscripts
     if (variable->subscripts != NULL) {
       value_t v;
@@ -337,14 +304,6 @@ expression_t *function_expression(const variable_t *function, expression_t *expr
       storage->type = STRING;
     else
       storage->type = NUMBER; // this works for all of them, int, dbl, etc.
-    
-    // and the subtype, if supplied
-    if (trailer == '%')
-      storage->type = INTEGER;
-    else if (trailer == '!')
-      storage->type = SINGLE;
-    else if (trailer == '#')
-      storage->type = DOUBLE;
     
     // copy over the list of parameters
     storage->parameters = lst_copy(function->subscripts);
@@ -597,9 +556,6 @@ static value_t evaluate_expression(expression_t *expression)
         result.type = NUMBER;
 
         switch (expression->parms.op.opcode) {
-          case FRE:
-            result.number = 0; // always return zero
-            break;
           case RND:
             // TODO: support alternative RNDs that return limited values
             result.number = ((double)rand() / (double)RAND_MAX); // don't forget the cast!
@@ -620,20 +576,6 @@ static value_t evaluate_expression(expression_t *expression)
 						// returns the number of seconds since restart in HMS format
 						// this is the case where TIME$ appears on its own in a function-like call,
 						// the other syntax is TIME=value, which is handled as a statement, not a function
-					case TIME_STR:
-					{
-						result.type = STRING;
-						
-						int elapsed_secs = (int)(elapsed_jiffies() / 60);
-						int h = (elapsed_secs / 3600);
-						int m = (elapsed_secs - (3600 * h)) / 60;
-						int s = (elapsed_secs - (3600 * h) - (m * 60));
-						
-						char buff[7];
-						sprintf(buff, "%02d%02d%02d", h, m, s);
-						result.string = str_new(buff);
-					}
-						break;
 
 					default:
 						basic_error("Unhandled arity-0 function");
@@ -650,80 +592,51 @@ static value_t evaluate_expression(expression_t *expression)
           case '-':
             result.number = -a;
             break;
-          case NOT:
-            result.number = ~(int)a;
-            break;
-          case _ABS:
+          case FABS:
             result.number = fabs(a);
             break;
-          case ATN:
+          case FATN:
             result.number = atan(a);
             break;
-          case CHR:
-          {
-            char c[2];
-            c[0] = (char)a;
-            c[1] = '\0';
-            result.type = STRING;
-            result.string = str_new(c);
-          }
-            break;
-          case CLOG:
-            result.number = log10(a);
-            break;
-          case EXP:
+					case FCOS:
+						result.number = cos(a);
+						break;
+           case FEXP:
             result.number = exp(a);
             break;
-          case LEN: // this is the only arity-1 function that takes a string parameter
-            // the string may never have been assigned, so...
-            if (parameters[0].string == NULL)
-              result.number = 0;
-            else
-              result.number = strlen(parameters[0].string);
-            break;
-          case STR:
+					case FIN:
+					{
+						char c[2];
+						c[0] = (char)a;
+						c[1] = '\0';
+						result.type = STRING;
+						result.string = str_new(c);
+					}
+						break;
+					case FITR:
+						result.number = floor(a);
+						break;
+          case FOUT:
             result.type = STRING;
             result.string = str_new(number_to_string(a));
             break;
-          case LOG:
+          case FLOG:
             result.number = log(a);
             break;
-          case SIN:
+          case FSIN:
             result.number = sin(a);
             break;
-          case COS:
-            result.number = cos(a);
-            break;
-          case INT:
-            result.number = floor(a);
-            break;
-          case FIX:
-            result.number = trunc(a);
-            break;
-					case FRAC:
-						result.number = a - trunc(a);
+					case FSGN:
+						// early MS variants return 1 for 0, this implements the newer version where 0 returns 0
+						if (a < 0)
+							result.number = -1;
+						else if (a == 0)
+							result.number = 0;
+						else
+							result.number = 1;
 						break;
-         case SQR:
+         case FSQT:
             result.number = sqrt(a);
-            break;
-          case VAL:
-            result.number = atof(parameters[0].string);
-            break;
-          case SGN:
-            // early MS variants return 1 for 0, this implements the newer version where 0 returns 0
-            if (a < 0)
-              result.number = -1;
-            else if (a == 0)
-              result.number = 0;
-            else
-              result.number = 1;
-            break;
-          case PEEK:
-            // always return zero
-            result.number = 0;
-            break;
-          case POS:
-            result.number = (double)interpreter_state.cursor_column; //FIXME: should this be +1?
             break;
           case TAB:
             // MS basics do nothing if the current cursor position is past the number being passed in,
@@ -742,42 +655,7 @@ static value_t evaluate_expression(expression_t *expression)
 							// FIXME: anything to do here?
             }
             break;
-          case SPC:
-            // SPC adds the indicated number of spaces to the output
-						// NOTE: this also handles SPACE$, which is a little different in most BASICs because
-						//       SPC would normally not return anything, it simply writes the spaces directly
-						//       to the outuput. Since we're handling all of this with a string, SPC works
-						//       for SPACE$ too
-            result.type = STRING;
-            result.string = str_new("");
-            for (int i = 0; i <= parameters[0].number - 1; i++) {
-              str_append(result.string, " ");
-            }
-            break;
-          case LIN:
-            // from HP, inserts a number of CR's - not like IB's VTAB which can move up as well
-            result.type = STRING;
-            result.string = str_new("");
-            int lines = (int)parameters[0].number;
-            for (int i = 0; i <= lines - 1; i++) {
-              str_append(result.string, "\n");
-            }
-            break;
-            
-						// these are out of order to keep them closer to the string functions below
-					case LCASE:
-					{
-						result.type = STRING;
-						result.string = str_new(str_tolower(parameters[0].string));
-					}
-						break;
-					case UCASE:
-					{
-						result.type = STRING;
-						result.string = str_new(str_toupper(parameters[0].string));
-					}
-						break;
-												
+            												
           default:
             basic_error("Unhandled arity-1 function");
         } //switch
@@ -841,61 +719,7 @@ static value_t evaluate_expression(expression_t *expression)
           case '>':
             result = double_to_value(-(a > b));
             break;
-          case CMP_LE:
-            result = double_to_value(-(a <= b));
-            break;
-          case CMP_GE:
-            result = double_to_value(-(a >= b));
-            break;
-          case CMP_NE:
-          case CMP_HASH:
-            if (parameters[0].type >= NUMBER)
-              result = double_to_value(-(a != b));
-            else
-              result = double_to_value(-!!strcmp(parameters[0].string, parameters[1].string));
-            break;
-          case AND:
-            result = double_to_value((int)a & (int)b);
-            break;
-          case OR:
-            result = double_to_value((int)a | (int)b);
-            break;
 
-            // NOTE: the strings in BASIC start on index 1, so we have to adjust that here for C
-            //   so the starting-point parameters need to be shifted back one
-          case LEFT:
-            result.type = STRING;
-          {
-            size_t len = strlen(parameters[0].string);
-            result.string = str_new(parameters[0].string);
-            str_truncate(result.string, len - b);
-          }
-            break;
-          case RIGHT:
-            result.type = STRING;
-          {
-            size_t len = strlen(parameters[0].string);
-            result.string = str_new(parameters[0].string);
-            str_fruncate(result.string, len - b);
-          }
-            break;
-          case MID: // this is the two-parameter version, three follows
-            // this version returns the right side of the string starting at b-1
-            result.type = STRING;
-          {
-            size_t len = strlen(parameters[0].string);
-            result.string = str_new(parameters[0].string);
-            str_erase(result.string, b - 1, len - b + 1);
-          }
-            break;
-					case STRNG:
-						// makes N copies of the given string
-						result.type = STRING;
-						result.string = str_new("");
-						for (int i = 0; i <= parameters[1].number - 1; i++) {
-							str_append(result.string, parameters[0].string);
-						}
-						break;
 
           default:
             result.number = 0;
@@ -904,32 +728,6 @@ static value_t evaluate_expression(expression_t *expression)
         }
       }
       
-      // and finally, arity=3, which is currently only the MID/SEG/SUBSTR
-      else if (expression->parms.op.arity == 3)  {
-        double b = parameters[1].number;
-        double c = parameters[2].number; // yeah, these could be ints
-        
-        switch (expression->parms.op.opcode) {
-          case MID:
-					case SEG:
-					case SUBSTR:
-          {
-						result.type = STRING;
-            result.string = str_new(parameters[0].string);
-						
-						// SEG is based on positions, not lengths, so adjust parameter c
-						if (expression->parms.op.opcode == SEG)
-							c = c - b + 1;
-						
-            str_erase(result.string, b - 1, c);
-          }
-            break;
-          default:
-            result.number = 0;
-            basic_error("Unhandled arity-3 function");
-            break;
-        }
-      }
       else {
         result.number = 0;
         break;
@@ -1153,9 +951,6 @@ static void perform_statement(list_t *L)
 				}
 			}
 				break;
-
-			case COMMENT:
-				break;
 				
 			case DO:
 			{
@@ -1229,7 +1024,7 @@ static void perform_statement(list_t *L)
 				interpreter_state.next_statement = NULL;
 				break;
 								
-      case SET:
+			case SET:
       {
         either_t *stored_val;
         int type = 0;
@@ -1254,55 +1049,55 @@ static void perform_statement(list_t *L)
       }
         break;
         
-      case NEXT:
-      {
-				// make sure there is a stack
-				if (interpreter_state.forstack  == NULL || lst_length(interpreter_state.forstack) == 0) {
-					basic_error("NEXT without FOR");
-					break;
-				}
-				
-				// get the most-recent FOR, which is the *end* of the list
-				forcontrol_t *pfc = lst_last_node(interpreter_state.forstack)->data;
-				
-				// see if the next has any variable names, that is, NEXT I vs. NEXT,
-				// and if so, ensure the latest FOR on the stack is one of those variables
-				if (lst_length(ps->parms.next) > 0) {
-					bool foundIt = false;
-					list_t *var = lst_first_node(ps->parms.next);
-					for (int i = 0; i < lst_length(ps->parms.next); i++) {
-						if (strcmp(pfc->index_variable->name, ((variable_t *)var->data)->name) == 0) {
-							foundIt = true;
-						}
-						else {
-							var = lst_next(ps->parms.next);
-						}
-					}
-					if (!foundIt) {
-						basic_error("NEXT with mismatched FOR");
-						break;
-					}
-				}
-				
-				// do a STEP
-        int type = 0;
-				either_t *lv = variable_value(pfc->index_variable, &type);
-        lv->number += pfc->step;
-				
-				// and see if we need to go back to the FOR or we're done and we continue on
-        if (((pfc->step < 0) && (lv->number >= pfc->end)) ||
-            ((pfc->step > 0) && (lv->number <= pfc->end))) {
-          // we're not done, go back to the head of the loop
-          interpreter_state.next_statement = lst_next(pfc->head);
-        } else {
-          // we are done, remove this entry from the stack and just keep going
-          interpreter_state.forstack = lst_remove_node_with_data(interpreter_state.forstack, pfc);
-					free(pfc);
-        }
-      }
-        break;
+//      case NEXT:
+//      {
+//				// make sure there is a stack
+//				if (interpreter_state.forstack  == NULL || lst_length(interpreter_state.forstack) == 0) {
+//					basic_error("NEXT without FOR");
+//					break;
+//				}
+//
+//				// get the most-recent FOR, which is the *end* of the list
+//				forcontrol_t *pfc = lst_last_node(interpreter_state.forstack)->data;
+//
+//				// see if the next has any variable names, that is, NEXT I vs. NEXT,
+//				// and if so, ensure the latest FOR on the stack is one of those variables
+//				if (lst_length(ps->parms.next) > 0) {
+//					bool foundIt = false;
+//					list_t *var = lst_first_node(ps->parms.next);
+//					for (int i = 0; i < lst_length(ps->parms.next); i++) {
+//						if (strcmp(pfc->index_variable->name, ((variable_t *)var->data)->name) == 0) {
+//							foundIt = true;
+//						}
+//						else {
+//							var = lst_next(ps->parms.next);
+//						}
+//					}
+//					if (!foundIt) {
+//						basic_error("NEXT with mismatched FOR");
+//						break;
+//					}
+//				}
+//
+//				// do a STEP
+//        int type = 0;
+//				either_t *lv = variable_value(pfc->index_variable, &type);
+//        lv->number += pfc->step;
+//
+//				// and see if we need to go back to the FOR or we're done and we continue on
+//        if (((pfc->step < 0) && (lv->number >= pfc->end)) ||
+//            ((pfc->step > 0) && (lv->number <= pfc->end))) {
+//          // we're not done, go back to the head of the loop
+//          interpreter_state.next_statement = lst_next(pfc->head);
+//        } else {
+//          // we are done, remove this entry from the stack and just keep going
+//          interpreter_state.forstack = lst_remove_node_with_data(interpreter_state.forstack, pfc);
+//					free(pfc);
+//        }
+//      }
+//        break;
                 
-      case TYPE:
+			case TYPE:
       {
         printitem_t *pp;
         // loop over the items in the print list
@@ -1466,6 +1261,9 @@ void interpreter_run(void)
 {
   // the cursor starts in col 0
   interpreter_state.cursor_column = 0;
+	
+	// the normal format is similar
+	interpreter_state.format = calloc(MAXSTRING, sizeof(char));
 
   // start the clock and mark us as running
   start_ticks = clock();

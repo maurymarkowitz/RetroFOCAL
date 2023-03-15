@@ -1,5 +1,5 @@
 RetroFOCAL
-=========
+==========
 
 **Copyright © 2023 Maury Markowitz**
 
@@ -14,7 +14,7 @@ RetroFOCAL
 
 ## Introduction
 
-RetroFOCAL is an interpreter for programms written in the FOCAL language seen on DEC machines like the PDP-8. FOCAL is very similar to early BASIC interpreters. FOCAL was only promoted for a short time from 1968 until the early 1970s, when DEC introduced their own versions of BASIC as the market moved to it en mass. In spite of this short lifetime, a number of historically important programs were intially created in this language, including Lunar Lander and The Sumer Game, better known today as Hamurabi.
+RetroFOCAL is an interpreter for programms written in the FOCAL language seen on DEC machines like the PDP-8. FOCAL is very similar to early BASIC interpreters and anyone familiar with BASIC will feet at home in FOCAL. FOCAL was only promoted for a short time from 1968 until the early 1970s, when DEC introduced their own versions of BASIC as the market moved to it en mass. In spite of this short lifetime, a number of historically important programs were intially created in this language, including Lunar Lander and The Sumer Game, better known today as Hamurabi.
 
 RetroFOCAL can redirect the output from `TYPE` statements and `ASK` prompts to a file, and read the responces to `ASK` statements from a file. This can be used to provide the same input to a program multiple times, and then the output can be `diff`ed to look for changes. This ia aided by a command-line option to set the random seed value. It also includes a simple static analizer that (optionally) prints statistics for the program after it completes. This includes the length of the program and its line number range, the number and types of variables used, and similar details.
 

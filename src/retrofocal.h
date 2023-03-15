@@ -24,13 +24,13 @@ along with RetroFOCAL; see the file COPYING.  If not, write to
 the Free Software Foundation, 59 Temple Place - Suite 330,
 Boston, MA 02111-1307, USA.  */
 
-#ifndef __RETROBASIC_H__
-#define __RETROBASIC_H__
+#ifndef __RETROFOCAL_H__
+#define __RETROFOCAL_H__
 
 #include "stdhdr.h"
 
 /**
- * @file retrobasic.h
+ * @file retrofocal.h
  * @author Maury Markowitz
  * @brief Core interpreter code
  *
@@ -179,6 +179,7 @@ typedef struct {
   list_t *forstack;	              // current stack of FOR statements
   list_t *gosubstack;	            // current stack of gosub statements
   int cursor_column;              // current column of the output cursor
+  char *format;                   // FOCAL uses a single print format
   int running_state;              // is the program running (1), paused/stopped (0), or setting up a function (-1)
 } interpreterstate_t;
 

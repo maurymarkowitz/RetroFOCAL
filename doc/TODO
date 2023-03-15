@@ -1,1 +1,5 @@
 RetroFOCAL TODO/BUGS/ERRATA list
+
+support ? for turning TRACE on and off, allowed in GO and at the front of any other statement
+
+underscore removes one ASK input, but likely not needed
