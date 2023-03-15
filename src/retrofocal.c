@@ -556,8 +556,7 @@ static value_t evaluate_expression(expression_t *expression)
         result.type = NUMBER;
 
         switch (expression->parms.op.opcode) {
-          case RND:
-            // TODO: support alternative RNDs that return limited values
+          case FRAN:
             result.number = ((double)rand() / (double)RAND_MAX); // don't forget the cast!
             break;
 						
@@ -566,12 +565,6 @@ static value_t evaluate_expression(expression_t *expression)
 						// be changed by setting the value of TIME$ (which is really weird if you think
 						// about it, why not set TIME?) so we keep track of that value in reset_ticks
 						// and modify the value if it's not zero
-					case TIME:
-					{
-						result.type = NUMBER;
-						result.number = elapsed_jiffies();
-					}
-						break;
 						
 						// returns the number of seconds since restart in HMS format
 						// this is the case where TIME$ appears on its own in a function-like call,
@@ -638,23 +631,23 @@ static value_t evaluate_expression(expression_t *expression)
          case FSQT:
             result.number = sqrt(a);
             break;
-          case TAB:
-            // MS basics do nothing if the current cursor position is past the number being passed in,
-            // otherwise it adds spaces to move the cursor to that column number. ANSI will insert a
-            // CR and go to that column of the next line. ANSI columns start at 1, MS at 0.
-            // note that in "real" basic this is a psuedo-function that simply moves the cursor
-            //   and doesn't return anything, but here it works by returning a string
-            result.type = STRING;
-            result.string = str_new("");
-            int tabs = (int)parameters[0].number;
-            if (tabs > interpreter_state.cursor_column) {
-              for (int i = interpreter_state.cursor_column; i <= tabs - 1; i++) {
-                str_append(result.string, " ");
-              }
-            } else {
-							// FIXME: anything to do here?
-            }
-            break;
+//          case TAB:
+//            // MS basics do nothing if the current cursor position is past the number being passed in,
+//            // otherwise it adds spaces to move the cursor to that column number. ANSI will insert a
+//            // CR and go to that column of the next line. ANSI columns start at 1, MS at 0.
+//            // note that in "real" basic this is a psuedo-function that simply moves the cursor
+//            //   and doesn't return anything, but here it works by returning a string
+//            result.type = STRING;
+//            result.string = str_new("");
+//            int tabs = (int)parameters[0].number;
+//            if (tabs > interpreter_state.cursor_column) {
+//              for (int i = interpreter_state.cursor_column; i <= tabs - 1; i++) {
+//                str_append(result.string, " ");
+//              }
+//            } else {
+//							// FIXME: anything to do here?
+//            }
+//            break;
             												
           default:
             basic_error("Unhandled arity-1 function");
@@ -1131,10 +1124,10 @@ static void perform_statement(list_t *L)
         else
           pp = NULL;
         
-        // if the last item is SPC or TAB, fake a trailing semi, which is the way PET does it
-        if (pp != NULL && pp->expression->type == op && (pp->expression->parms.op.opcode == SPC || pp->expression->parms.op.opcode == TAB)) {
-          pp->separator = ';';
-        }
+//        // if the last item is SPC or TAB, fake a trailing semi, which is the way PET does it
+//        if (pp != NULL && pp->expression->type == op && (pp->expression->parms.op.opcode == SPC || pp->expression->parms.op.opcode == TAB)) {
+//          pp->separator = ';';
+//        }
         
         // if there are no more items, or it's NOT a separator, do a CR
         if (pp == NULL || pp->separator == 0) {
