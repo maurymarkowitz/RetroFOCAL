@@ -40,17 +40,17 @@ Boston, MA 02111-1307, USA.  */
  */
 
 /* consts used during parsing the source */
-#define MAXLINE 65535
+#define MAXLINE 3199          // 1.01 through 31.99
 
 /* internal state variables used for I/O and other tasks */
-extern bool run_program;                // default to running the program, not just parsing it
-extern bool print_stats;                // when the program finishes running, should we print statistics?
-extern bool write_stats;                // ... or write them to a file?
+extern bool run_program;      // default to running the program, not just parsing it
+extern bool print_stats;      // when the program finishes running, should we print statistics?
+extern bool write_stats;      // ... or write them to a file?
 
-extern int tab_columns;                 // based on PET BASIC, which is a good enough target
+extern int tab_columns;       // based on PET BASIC, which is a good enough target
 extern bool trace_lines;
-extern bool upper_case;                 // force INPUT to upper case
-extern double random_seed;              // reset with RANDOMIZE, if -1 then auto-seeds
+extern bool upper_case;       // force INPUT to upper case
+extern double random_seed;    // reset with RANDOMIZE, if -1 then auto-seeds
 
 extern char *source_file;
 extern char *input_file;

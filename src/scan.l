@@ -50,20 +50,19 @@ Boston, MA 02111-1307, USA.  */
     a separate token, this is the simplest solution. See:
     https://stackoverflow.com/questions/59117309/rest-of-line-in-bison/59122569#59122569
   */
-COMMENT.*   { yylval.s = str_new(str_copy(yytext + 3, yyleng - 3)); return COMMENT; }
-CONTINUE.*  { yylval.s = str_new(str_copy(yytext + 3, yyleng - 3)); return COMMENT; } // manual lists this separately, but its a comment
-DO      { return DO; }      // combines GOTO and GOSUB
-ERASE   { return ERASE; }   // erases lines of source
-FOR     { return FOR; }     // FOR loops, one-line only
+C|COMMENT.* { yylval.s = str_new(str_copy(yytext + 3, yyleng - 3)); return COMMENT; } // manual lists CONTIUE separately, but its a comment
+D|DO      { return DO; }      // combines GOTO and GOSUB
+E|ERASE   { return ERASE; }   // erases lines of source
+F|FOR     { return FOR; }     // FOR loops, one-line only
 GO      { return GO; }      // RUN
-GOTO    { return GOTO; }    // RUN at line number
-IF      { return IF; }      // branches only
+GOTO      { return GOTO; }    // RUN at line number
+I|IF      { return IF; }      // branches only
 MODIFY  { return MODIFY; }  // edits a single line
-QUIT    { return QUIT; }    // END/STOP/BYE
-RETURN  { return RETURN; }
-SET     { return SET; }     // LET
-TYPE    { return TYPE; }    // PRINT
-WRITE   { return WRITE; }   // LIST
+Q|QUIT    { return QUIT; }    // END/STOP/BYE
+R|RETURN  { return RETURN; }
+S|SET     { return SET; }     // LET
+T|TYPE    { return TYPE; }    // PRINT
+W|WRITE   { return WRITE; }   // LIST
 
  /* math functions */
 FABS		{ return FABS; }
@@ -96,7 +95,7 @@ FOUT    { return FOUT; }
 
  /* variable references */
  /* currently set to allow only one or two chars */
-[A-Za-z][A-Za-z_]? {
+[A-Za-z][A-Za-z0-9_]? {
               yylval.s = str_new(yytext);
               return VARIABLE_NAME;
             }

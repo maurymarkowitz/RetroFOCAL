@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# Parse arguments
+program_name="$1"
+test_files_dir="${2:-}"
+output_dir="${3:-}"
+diff_dir="${4:-}"
+
+# Make values for paths that were not passed in
+timestamp=$(date +"%Y%m%d_%H%M%S")
+
+if [ -z "$test_files_dir" ]
+then
+  test_files_dir="./test_programs"
+fi
+if [ -z "$output_dir" ]
+then
+  output_dir="./output_${timestamp}"
+fi
+if [ -z "$diff_dir" ]
+then
+  diff_dir="./originals"
+fi
+
+# Create the output directory if it doesn't exist
+mkdir -p "$output_dir"
+
+# Recursively find files in the test directory and run the program on them
+while IFS= read -r -d '' file; do
+  relative_path="${file#$test_files_dir}"
+  "$program_name" "$file" > "$output_dir$relative_path"
+done < <(find "$test_files_dir" -type f -print0)
+
+# Diff the output in the output directory with the originals
+if [ -n "$diff_dir" ]; then
+  # Create a diff directory to store the diff files
+  diff_directory="$output_dir/diff"
+  mkdir -p "$diff_directory"
+  
+  # and run them...
+  while IFS= read -r -d '' file; do
+    relative_path="${file#$output_dir}"
+    previous_file="$diff_dir$relative_path"
+    if [ -f "$previous_file" ]; then
+      diff_file="$diff_directory$relative_path.diff"
+      diff "$previous_file" "$file" > "$diff_file"
+    fi
+  done < <(find "$output_dir" -type f -print0)
+fi

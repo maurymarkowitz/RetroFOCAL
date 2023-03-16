@@ -14,6 +14,7 @@
 		55A42363287360B00070AF00 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 55A42361287360B00070AF00 /* main.c */; };
 		55A42364287360B00070AF00 /* statistics.c in Sources */ = {isa = PBXBuildFile; fileRef = 55A42362287360B00070AF00 /* statistics.c */; };
 		55B9698C252F44E70021CD8B /* parse.y in Sources */ = {isa = PBXBuildFile; fileRef = 55B9698B252F44E70021CD8B /* parse.y */; };
+		55FB295D29C37F2C00BE2097 /* lunar.fc in CopyFiles */ = {isa = PBXBuildFile; fileRef = 55FB295C29C37F2500BE2097 /* lunar.fc */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXBuildRule section */
@@ -40,6 +41,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 16;
 			files = (
+				55FB295D29C37F2C00BE2097 /* lunar.fc in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -69,6 +71,8 @@
 		55DEE88128A6A6B800270949 /* RetroFOCAL design.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "RetroFOCAL design.md"; sourceTree = "<group>"; };
 		55E12DB82904279A0005D17F /* RetroFOCAL build notes.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "RetroFOCAL build notes.md"; sourceTree = "<group>"; };
 		55EBA451296E3A3F00FCD43A /* parse.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = parse.h; sourceTree = "<group>"; };
+		55FB295929C373F900BE2097 /* test.bsh */ = {isa = PBXFileReference; explicitFileType = text.script.sh; path = test.bsh; sourceTree = "<group>"; };
+		55FB295C29C37F2500BE2097 /* lunar.fc */ = {isa = PBXFileReference; lastKnownFileType = file; name = lunar.fc; path = test/lunar.fc; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -142,6 +146,8 @@
 		55B96987252CC1D30021CD8B /* test */ = {
 			isa = PBXGroup;
 			children = (
+				55FB295B29C37EEE00BE2097 /* test_programs */,
+				55FB295929C373F900BE2097 /* test.bsh */,
 			);
 			path = test;
 			sourceTree = "<group>";
@@ -166,6 +172,14 @@
 				55B96993252F5AB80021CD8B /* .gitignore */,
 			);
 			path = git;
+			sourceTree = "<group>";
+		};
+		55FB295B29C37EEE00BE2097 /* test_programs */ = {
+			isa = PBXGroup;
+			children = (
+				55FB295C29C37F2500BE2097 /* lunar.fc */,
+			);
+			path = test_programs;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
