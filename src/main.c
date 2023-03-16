@@ -167,10 +167,10 @@ int main(int argc, char *argv[])
   yyin = fopen(source_file, "r");
   if (yyin == NULL) {
     if (errno == ENOENT) {
-      fprintf(stderr, "File not found or no filename provided.");
+      fprintf(stderr, "File not found or no filename provided.\n");
       exit(EXIT_FAILURE);
     } else {
-      fprintf(stderr, "Error %i when opening file.", errno);
+      fprintf(stderr, "Error %i when opening file.\n", errno);
       exit(EXIT_FAILURE);
     }
   }
