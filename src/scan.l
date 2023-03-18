@@ -52,16 +52,17 @@ Boston, MA 02111-1307, USA.  */
   */
 C|COMMENT.* { yylval.s = str_new(str_copy(yytext + 3, yyleng - 3)); return COMMENT; } // manual lists CONTIUE separately, but its a comment
 D|DO      { return DO; }      // combines GOTO and GOSUB
-E|ERASE   { return ERASE; }   // erases lines of source
 F|FOR     { return FOR; }     // FOR loops, one-line only
-GO      { return GO; }      // RUN
-GOTO      { return GOTO; }    // RUN at line number
 I|IF      { return IF; }      // branches only
-MODIFY  { return MODIFY; }  // edits a single line
 Q|QUIT    { return QUIT; }    // END/STOP/BYE
 R|RETURN  { return RETURN; }
 S|SET     { return SET; }     // LET
 T|TYPE    { return TYPE; }    // PRINT
+
+ /* non-program statements (mostly) */
+E|ERASE   { return ERASE; }   // erases lines of source, but also double-duty as "CLR" to reset variables
+G|GOTO    { return GOTO; }    // RUN at line number
+M|MODIFY  { return MODIFY; }  // edits a single line
 W|WRITE   { return WRITE; }   // LIST
 
  /* math functions */
@@ -95,7 +96,7 @@ FOUT    { return FOUT; }
 
  /* variable references */
  /* currently set to allow only one or two chars */
-[A-Za-z][A-Za-z0-9_]? {
+[A-EG-Za-eg-z][A-Za-z0-9_]? {
               yylval.s = str_new(yytext);
               return VARIABLE_NAME;
             }
