@@ -34,8 +34,12 @@ Boston, MA 02111-1307, USA.  */
 %option noyywrap
 %option caseless
 
-%%
+ // used to track where we are in the statement so we can have keywords
+ // and variables with the same name
+%s KEYWORD_FOUND
 
+%%
+  
  /* end of file */
 "\032"  {
           yyterminate();
@@ -50,21 +54,26 @@ Boston, MA 02111-1307, USA.  */
     a separate token, this is the simplest solution. See:
     https://stackoverflow.com/questions/59117309/rest-of-line-in-bison/59122569#59122569
   */
+<INITIAL>{
 C|COMMENT.* { yylval.s = str_new(str_copy(yytext + 3, yyleng - 3)); return COMMENT; } // manual lists CONTIUE separately, but its a comment
-D|DO      { return DO; }      // combines GOTO and GOSUB
-F|FOR     { return FOR; }     // FOR loops, one-line only
-I|IF      { return IF; }      // branches only
-Q|QUIT    { return QUIT; }    // END/STOP/BYE
-R|RETURN  { return RETURN; }
-S|SET     { return SET; }     // LET
-T|TYPE    { return TYPE; }    // PRINT
+A|ASK     { BEGIN(KEYWORD_FOUND); return ASK; }     // INPUT
+D|DO      { BEGIN(KEYWORD_FOUND); return DO; }      // combines GOTO and GOSUB
+F|FOR     { BEGIN(KEYWORD_FOUND); return FOR; }     // FOR loops, one-line only
+I|IF      { BEGIN(KEYWORD_FOUND); return IF; }      // branches only
+Q|QUIT    { BEGIN(KEYWORD_FOUND); return QUIT; }    // END/STOP/BYE
+R|RETURN  { BEGIN(KEYWORD_FOUND); return RETURN; }
+S|SET     { BEGIN(KEYWORD_FOUND); return SET; }     // LET
+T|TYPE    { BEGIN(KEYWORD_FOUND); return TYPE; }    // PRINT
 
  /* non-program statements (mostly) */
-E|ERASE   { return ERASE; }   // erases lines of source, but also double-duty as "CLR" to reset variables
-G|GOTO    { return GOTO; }    // RUN at line number
-M|MODIFY  { return MODIFY; }  // edits a single line
-W|WRITE   { return WRITE; }   // LIST
+E|ERASE   { BEGIN(KEYWORD_FOUND); return ERASE; }   // erases lines of source, but also double-duty as "CLR" to reset variables
+G|GOTO    { BEGIN(KEYWORD_FOUND); return GOTO; }    // RUN, optional line number
+M|MODIFY  { BEGIN(KEYWORD_FOUND); return MODIFY; }  // edits a single line
+W|WRITE   { BEGIN(KEYWORD_FOUND); return WRITE; }   // LIST
+}
 
+ /* the following are only valid after one of the keyworda above */
+<KEYWORD_FOUND>{
  /* math functions */
 FABS		{ return FABS; }
 FATN		{ return FATN; }
@@ -86,7 +95,22 @@ FIN     { return FIN; }
 FOUT    { return FOUT; }
 
  /* various operators and punctuation */
-[:,;()\^=+\-*/\<\>\&]     { return yytext[0]; }
+[\%!:,()\^=+\-*/\<\>\&]     { return yytext[0]; }
+
+ /* variable references */
+ /* currently set to allow only one or two chars */
+[A-EG-Za-eg-z][A-Za-z0-9_]? {
+             yylval.s = str_new(yytext);
+             return VARIABLE_NAME;
+           }
+
+ /* string constants */
+\"[^"]*\"   {
+             yytext[strlen(yytext) - 1] = '\0';
+             yylval.s = str_new(yytext + 1);
+             return STRING;
+           }
+} // back out of KEYWORD_FOUND, the following apply to everything
 
  /* other numeric constants */
 [0-9]*[0-9.][0-9]*([Ee][-+]?[0-9]+)? {
@@ -94,22 +118,11 @@ FOUT    { return FOUT; }
               return NUMBER;
             }
 
- /* variable references */
- /* currently set to allow only one or two chars */
-[A-EG-Za-eg-z][A-Za-z0-9_]? {
-              yylval.s = str_new(yytext);
-              return VARIABLE_NAME;
-            }
-
- /* string constants */
-\"[^"]*\"   {
-              yytext[strlen(yytext) - 1] = '\0';
-              yylval.s = str_new(yytext + 1);
-              return STRING;
-            }
+ /* semis outside strings are used to trigger statement-start */
+;         { BEGIN(INITIAL); return ';'; }
 
  /* preserve line ends */
-[\n]        { return '\n'; }
+\n        { BEGIN(INITIAL); return '\n'; }
 
  /* eat other whitespace */
 [ \t\r\l]   {  }
