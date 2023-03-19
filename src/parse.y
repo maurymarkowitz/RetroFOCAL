@@ -100,11 +100,9 @@ static expression_t *make_operator(int arity, int o)
  // statements
 %token ASK
 %token COMMENT
-%token CONTINUE
 %token DO
 %token ERASE
 %token FOR
-%token GO
 %token GOTO
 %token IF
 %token MODIFY
@@ -126,14 +124,14 @@ static expression_t *make_operator(int arity, int o)
 %token FSIN
 %token FSQT
 
-// new functions from FOCAL-71
-%token FIN
-%token FOUT
-
- // unsupported, but incluced for parsing
+// unsupported, but included for parsing
 %token FADC
 %token FDIS
 %token FDXS
+
+// new functions from FOCAL-71
+%token FIN
+%token FOUT
 
  // used internally
 %token VARLIST
@@ -214,7 +212,7 @@ statement:
     }
   }
   |
-  ERASE /* ERASE can also be followed by a line or group number to erase those lines, which will return a syntax error here. this code only handles clearing out variable values */
+  ERASE /* ERASE can also be followed by a line or group number to erase those lines. this code only handles clearing out variable values */
   {
     statement_t *new = make_statement(ERASE);
     $$ = new;
@@ -247,7 +245,7 @@ statement:
     for_loops_total++;
   }
   |
-  GO /* we will treat GO and GOTO like DO, although maybe they should report an error? */
+  GOTO /* we will treat GO and GOTO like DO, although maybe they should report an error? */
   {
     statement_t *new = make_statement(GO);
     $$ = new;
@@ -297,6 +295,12 @@ statement:
     /* static analyzer */
     linenum_then_do_totals++;
     linenum_constants_total++;
+  }
+  |
+  QUIT
+  {
+    statement_t *new = make_statement(QUIT);
+    $$ = new;
   }
 	|
 	RETURN
