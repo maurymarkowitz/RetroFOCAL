@@ -41,84 +41,90 @@
    enum yytokentype {
      STRING = 258,
      NUMBER = 259,
-     VARIABLE_NAME = 260,
-     FUNCTION_NAME = 261,
-     ASK = 262,
-     COMMENT = 263,
-     CONTINUE = 264,
-     DO = 265,
-     ERASE = 266,
-     FOR = 267,
-     GO = 268,
-     GOTO = 269,
-     IF = 270,
-     MODIFY = 271,
-     QUIT = 272,
-     RETURN = 273,
-     SET = 274,
-     TYPE = 275,
-     WRITE = 276,
-     FABS = 277,
-     FATN = 278,
-     FCOS = 279,
-     FEXP = 280,
-     FITR = 281,
-     FLOG = 282,
-     FRAN = 283,
-     FSGN = 284,
-     FSIN = 285,
-     FSQT = 286,
-     FIN = 287,
-     FOUT = 288,
-     FADC = 289,
-     FDIS = 290,
-     FDXS = 291,
-     VARLIST = 292
+     NUMSTR = 260,
+     VARIABLE_NAME = 261,
+     FUNCTION_NAME = 262,
+     ASK = 263,
+     COMMENT = 264,
+     CONTINUE = 265,
+     DO = 266,
+     ERASE = 267,
+     FOR = 268,
+     GO = 269,
+     GOTO = 270,
+     IF = 271,
+     MODIFY = 272,
+     QUIT = 273,
+     RETURN = 274,
+     SET = 275,
+     TYPE = 276,
+     WRITE = 277,
+     FABS = 278,
+     FATN = 279,
+     FCOS = 280,
+     FEXP = 281,
+     FITR = 282,
+     FLOG = 283,
+     FRAN = 284,
+     FSGN = 285,
+     FSIN = 286,
+     FSQT = 287,
+     FADC = 288,
+     FDIS = 289,
+     FDXS = 290,
+     FCOM = 291,
+     FNEW = 292,
+     FIN = 293,
+     FOUT = 294,
+     VARLIST = 295
    };
 #endif
 /* Tokens.  */
 #define STRING 258
 #define NUMBER 259
-#define VARIABLE_NAME 260
-#define FUNCTION_NAME 261
-#define ASK 262
-#define COMMENT 263
-#define CONTINUE 264
-#define DO 265
-#define ERASE 266
-#define FOR 267
-#define GO 268
-#define GOTO 269
-#define IF 270
-#define MODIFY 271
-#define QUIT 272
-#define RETURN 273
-#define SET 274
-#define TYPE 275
-#define WRITE 276
-#define FABS 277
-#define FATN 278
-#define FCOS 279
-#define FEXP 280
-#define FITR 281
-#define FLOG 282
-#define FRAN 283
-#define FSGN 284
-#define FSIN 285
-#define FSQT 286
-#define FIN 287
-#define FOUT 288
-#define FADC 289
-#define FDIS 290
-#define FDXS 291
-#define VARLIST 292
+#define NUMSTR 260
+#define VARIABLE_NAME 261
+#define FUNCTION_NAME 262
+#define ASK 263
+#define COMMENT 264
+#define CONTINUE 265
+#define DO 266
+#define ERASE 267
+#define FOR 268
+#define GO 269
+#define GOTO 270
+#define IF 271
+#define MODIFY 272
+#define QUIT 273
+#define RETURN 274
+#define SET 275
+#define TYPE 276
+#define WRITE 277
+#define FABS 278
+#define FATN 279
+#define FCOS 280
+#define FEXP 281
+#define FITR 282
+#define FLOG 283
+#define FRAN 284
+#define FSGN 285
+#define FSIN 286
+#define FSQT 287
+#define FADC 288
+#define FDIS 289
+#define FDXS 290
+#define FCOM 291
+#define FNEW 292
+#define FIN 293
+#define FOUT 294
+#define VARLIST 295
 
 
 
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE
-#line 75 "src/parse.y"
+#line 75 "/Volumes/Bigger/Users/maury/Desktop/RetroFOCAL/src/parse.y"
 {
   double d;
   int i;
@@ -129,8 +135,8 @@ typedef union YYSTYPE
   variable_t *variable;
 }
 /* Line 1529 of yacc.c.  */
-#line 133 "parse.tab.h"
-	YYSTYPE;
+#line 139 "/Volumes/Bigger/Users/maury/Desktop/RetroFOCAL/obj/Intermediates.noindex/RetroFOCAL.build/Debug/retrofocal.build/DerivedSources/y.tab.h"
+    YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
 # define YYSTYPE_IS_TRIVIAL 1

@@ -39,24 +39,7 @@ int numeric_constants_total = 0;
 int numeric_constants_float = 0;
 int numeric_constants_zero = 0;
 int numeric_constants_one = 0;
-int numeric_constants_minus_one = 0;
-int numeric_constants_one_digit = 0;
-int numeric_constants_two_digit = 0;
-int numeric_constants_three_digit = 0;
-int numeric_constants_four_digit = 0;
-int numeric_constants_five_digit = 0;
-int numeric_constants_one_byte = 0;
-int numeric_constants_two_byte = 0;
-int numeric_constants_four_byte = 0;
-int numeric_constants_big = 0;
-
 int string_constants_total = 0;
-int string_constants_one_byte = 0;
-int string_constants_two_byte = 0;
-int string_constants_four_byte = 0;
-int string_constants_eight_byte = 0;
-int string_constants_sixteen_byte = 0;
-int string_constants_big = 0;
 int string_constants_max = 0;
 int linenum_constants_total = 0;
 int linenum_forwards = 0;
@@ -65,34 +48,13 @@ int linenum_same_line = 0;
 int linenum_do_totals = 0;
 int linenum_then_do_totals = 0;
 int linenum_gosub_totals = 0;
-int linenum_on_totals = 0;
 int for_loops_total = 0;
 int for_loops_step_1 = 0;
-int for_loops_all_constant = 0;
 int increments = 0;
 int decrements = 0;
-int compare_equals_zero = 0;
-int compare_equals_one = 0;
-int compare_equals_other = 0;
-int compare_not_equals_zero = 0;
-int compare_not_equals_one = 0;
-int compare_not_equals_other = 0;
 int assign_zero = 0;
 int assign_one = 0;
 int assign_other = 0;
-
-static void is_string(void *key, void *value, void *user_data)
-{
-  variable_storage_t *data = (variable_storage_t *)value;
-  int *tot = (int *)user_data;
-  if (data->type == STRING) *tot += 1;
-}
-static void is_number(void *key, void *value, void *user_data)
-{
-  variable_storage_t *data = (variable_storage_t *)value;
-  int *tot = (int* )user_data;
-  if (data->type != STRING) *tot += 1;
-}
 
 /* prints out various statistics from the static code,
  or if the write_stats flag is on, writes them to a file */
@@ -102,14 +64,14 @@ void print_statistics()
   
   // start with line number stats
   lines_total = 0;
-  line_max = MAXLINE + 1;
-  line_min = -1;
-  // just look for any entry with a list
+  line_min = MAXLINE + 1;
+  line_max = -1;
+  // just look for any entry in the statement array with a non-null entry1
   for(int i = 0; i < MAXLINE; i++) {
     if (interpreter_state.lines[i] != NULL) {
       lines_total++;
-      if (i < line_max) line_max = i;
-      if (i > line_min) line_min = i;
+      if (i > line_max) line_max = i;
+      if (i < line_min) line_min = i;
     }
   }
   
@@ -151,12 +113,11 @@ void print_statistics()
       stmts_max = diff;
   }
   
-  // variables
-  int num_total = lst_length(interpreter_state.variable_values);
+  // the total number of statements is simply the length of every statement up to the last line
+  int stmts_total = lst_length(interpreter_state.lines[line_max]);
   
-  int num_num = 0, num_str = 0;
-  lst_foreach(interpreter_state.variable_values, is_number, &num_num);
-  lst_foreach(interpreter_state.variable_values, is_string, &num_str);
+  // variables - no string variables so this is easy
+  int num_total = lst_length(interpreter_state.variable_values);
   
   // output to screen if selected
   if (print_stats) {
@@ -165,18 +126,16 @@ void print_statistics()
     
     printf("\nLINE NUMBERS\n\n");
     printf("  total: %i\n", lines_total);
-    printf("  first: %i\n", line_max);
-    printf("   last: %i\n", line_min);
+    printf("  first: %2.2f\n", ((double)line_min / 100.0));
+    printf("   last: %2.2f\n", ((double)line_max / 100.0));
     
     printf("\nSTATEMENTS\n\n");
     printf("  total: %i\n", lst_length(interpreter_state.lines[line_max]));
-    printf("average: %2.2f\n", (double)lst_length(interpreter_state.lines[line_max])/(double)lines_total);
+    printf("average: %2.2f\n", (double)stmts_total/(double)lines_total);
     printf("    max: %i\n", stmts_max);
     
     printf("\nVARIABLES\n\n");
     printf("  total: %i\n",num_total);
-    printf(" string: %i\n",num_str);
-    printf("    num: %i\n",num_num);
     
     printf("\nNUMERIC CONSTANTS\n\n");
     printf("  total: %i\n",numeric_constants_total);
@@ -184,25 +143,9 @@ void print_statistics()
     printf("    int: %i\n",numeric_constants_total - numeric_constants_float);
     printf("  zeros: %i\n",numeric_constants_zero);
     printf("   ones: %i\n",numeric_constants_one);
-    printf("  -ones: %i\n",numeric_constants_minus_one);
-    printf("1 digit: %i\n",numeric_constants_one_digit);
-    printf("2 digit: %i\n",numeric_constants_two_digit);
-    printf("3 digit: %i\n",numeric_constants_three_digit);
-    printf("4 digit: %i\n",numeric_constants_four_digit);
-    printf("5 digit: %i\n",numeric_constants_five_digit);
-    printf(" bigger: %i\n",numeric_constants_big);
-    printf(" 1 byte: %i\n",numeric_constants_one_byte);
-    printf(" 2 byte: %i\n",numeric_constants_two_byte);
-    printf(" 4 byte: %i\n",numeric_constants_four_byte);
-    
+
     printf("\nSTRING CONSTANTS\n\n");
     printf("  total: %i\n",string_constants_total);
-    printf(" 1 char: %i\n",string_constants_one_byte);
-    printf("2 chars: %i\n",string_constants_two_byte);
-    printf("4 chars: %i\n",string_constants_four_byte);
-    printf("8 chars: %i\n",string_constants_eight_byte);
-    printf("16 char: %i\n",string_constants_sixteen_byte);
-    printf(" bigger: %i\n",string_constants_big);
     printf("biggest: %i\n",string_constants_max);
     
     printf("\nBRANCHES\n\n");
@@ -210,7 +153,6 @@ void print_statistics()
     printf(" gosubs: %i\n",linenum_gosub_totals);
     printf("  gotos: %i\n",linenum_do_totals);
     printf("  thens: %i\n",linenum_then_do_totals);
-    printf("    ons: %i\n",linenum_on_totals);
     printf("forward: %i\n",linenum_forwards);
     printf("bckward: %i\n",linenum_backwards);
     printf("same ln: %i\n",linenum_same_line);
@@ -223,14 +165,6 @@ void print_statistics()
     printf(" step 1: %i\n",for_loops_step_1);
     printf("   incs: %i\n",increments);
     printf("   decs: %i\n",decrements);
-    
-    printf("\nLOGICAL\n\n");
-    printf("    = 0: %i\n",compare_equals_zero);
-    printf("   != 0: %i\n",compare_not_equals_zero);
-    printf("    = 1: %i\n",compare_equals_one);
-    printf("   != 1: %i\n",compare_not_equals_one);
-    printf("    = x: %i\n",compare_equals_other);
-    printf("   != x: %i\n",compare_not_equals_other);
   }
   /* and/or the file if selected */
   if (write_stats) {
@@ -244,47 +178,28 @@ void print_statistics()
     fprintf(fp, "CPU TIME,%g\n", ((double) (end_ticks - start_ticks)) / CLOCKS_PER_SEC);
     
     fprintf(fp, "LINE NUMBERS,total,%i\n", lines_total);
-    fprintf(fp, "LINE NUMBERS,first,%i\n", line_max);
-    fprintf(fp, "LINE NUMBERS,last,%i\n", line_min);
+    fprintf(fp, "LINE NUMBERS,first,%2.2f\n", ((double)line_min / 100.0));
+    fprintf(fp, "LINE NUMBERS,last,%2.2f\n", ((double)line_max / 100.0));
     
     fprintf(fp, "STATEMENTS,total,%i\n", lst_length(interpreter_state.lines[line_max]));
-    fprintf(fp, "STATEMENTS,average,%g\n", (double)lst_length(interpreter_state.lines[line_max])/(double)lines_total);
+    fprintf(fp, "STATEMENTS,average,%g\n", (double)stmts_total/(double)lines_total);
     fprintf(fp, "STATEMENTS,max/ln,%i\n", stmts_max);
     
     fprintf(fp, "VARIABLES,total,%i\n",num_total);
-    fprintf(fp, "VARIABLES,string,%i\n",num_str);
-    fprintf(fp, "VARIABLES,numbers,%i\n",num_num);
     
     fprintf(fp, "NUMERIC CONSTANTS,total,%i\n",numeric_constants_total);
     fprintf(fp, "NUMERIC CONSTANTS,non-int,%i\n",numeric_constants_float);
     fprintf(fp, "NUMERIC CONSTANTS,int,%i\n",numeric_constants_total - numeric_constants_float);
     fprintf(fp, "NUMERIC CONSTANTS,zeros,%i\n",numeric_constants_zero);
     fprintf(fp, "NUMERIC CONSTANTS,ones,%i\n",numeric_constants_one);
-    fprintf(fp, "NUMERIC CONSTANTS,-ones,%i\n",numeric_constants_minus_one);
-    fprintf(fp, "NUMERIC CONSTANTS,1 digit,%i\n",numeric_constants_one_digit);
-    fprintf(fp, "NUMERIC CONSTANTS,2 digit,%i\n",numeric_constants_two_digit);
-    fprintf(fp, "NUMERIC CONSTANTS,3 digit,%i\n",numeric_constants_three_digit);
-    fprintf(fp, "NUMERIC CONSTANTS,4 digit,%i\n",numeric_constants_four_digit);
-    fprintf(fp, "NUMERIC CONSTANTS,5 digit,%i\n",numeric_constants_five_digit);
-    fprintf(fp, "NUMERIC CONSTANTS,bigger,%i\n",numeric_constants_big);
-    fprintf(fp, "NUMERIC CONSTANTS,1 byte,%i\n",numeric_constants_one_byte);
-    fprintf(fp, "NUMERIC CONSTANTS,2 byte,%i\n",numeric_constants_two_byte);
-    fprintf(fp, "NUMERIC CONSTANTS,4 byte,%i\n",numeric_constants_four_byte);
     
     fprintf(fp, "STRING CONSTANTS,total,%i\n",string_constants_total);
-    fprintf(fp, "STRING CONSTANTS,1 char,%i\n",string_constants_one_byte);
-    fprintf(fp, "STRING CONSTANTS,2 chars,%i\n",string_constants_two_byte);
-    fprintf(fp, "STRING CONSTANTS,4 chars,%i\n",string_constants_four_byte);
-    fprintf(fp, "STRING CONSTANTS,8 chars,%i\n",string_constants_eight_byte);
-    fprintf(fp, "STRING CONSTANTS,16 chars,%i\n",string_constants_sixteen_byte);
-    fprintf(fp, "STRING CONSTANTS,bigger,%i\n",string_constants_big);
     fprintf(fp, "STRING CONSTANTS,biggest,%i\n",string_constants_max);
     
     fprintf(fp, "BRANCHES,total,%i\n",linenum_constants_total);
     fprintf(fp, "BRANCHES,gosubs,%i\n",linenum_gosub_totals);
     fprintf(fp, "BRANCHES,gotos,%i\n",linenum_do_totals);
     fprintf(fp, "BRANCHES,thens,%i\n",linenum_then_do_totals);
-    fprintf(fp, "BRANCHES,ons,%i\n",linenum_on_totals);
     fprintf(fp, "BRANCHES,forward,%i\n",linenum_forwards);
     fprintf(fp, "BRANCHES,backward,%i\n",linenum_backwards);
     fprintf(fp, "BRANCHES,same line,%i\n",linenum_same_line);
@@ -292,17 +207,10 @@ void print_statistics()
     fprintf(fp, "OTHER,ASSIGN 0: %i\n",assign_zero);
     fprintf(fp, "OTHER,ASSIGN 1: %i\n",assign_one);
     fprintf(fp, "OTHER,ASSIGN OTHER: %i\n",assign_other);
-    fprintf(fp, "OTHER,FORs step 1: %i\n",for_loops_step_1);
     fprintf(fp, "OTHER,FORs: %i\n",for_loops_total);
     fprintf(fp, "OTHER,FORs step 1: %i\n",for_loops_step_1);
     fprintf(fp, "OTHER,incs: %i\n",increments);
     fprintf(fp, "OTHER,decs: %i\n",decrements);
-    fprintf(fp, "OTHER,logical=0: %i\n",compare_equals_zero);
-    fprintf(fp, "OTHER,logical!=0: %i\n",compare_not_equals_zero);
-    fprintf(fp, "OTHER,logical=1: %i\n",compare_equals_one);
-    fprintf(fp, "OTHER,logical!=1: %i\n",compare_not_equals_one);
-    fprintf(fp, "OTHER,logical=x: %i\n",compare_equals_other);
-    fprintf(fp, "OTHER,logical!=x: %i\n",compare_not_equals_other);
     
     fclose(fp);
   }

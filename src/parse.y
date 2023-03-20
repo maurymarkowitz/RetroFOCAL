@@ -92,6 +92,7 @@ static expression_t *make_operator(int arity, int o)
  // make sure STRING is before the numbers, so you can test all numbers as > STRING
 %token <s> STRING
 %token <d> NUMBER
+%token <s> NUMSTR // this is the unique "0YES" format, which is stored as a string but returns a number
 %token <s> VARIABLE_NAME
 %token <s> FUNCTION_NAME
 
@@ -494,17 +495,19 @@ fn_1:
   FABS { $$ = FABS; } |
   FADC { $$ = FADC; } |
   FATN { $$ = FATN; } |
+  FCOM { $$ = FCOM; } |
 	FCOS { $$ = FCOS; } |
   FEXP { $$ = FEXP; } |
   FDIS { $$ = FDIS; } |
   FDXS { $$ = FDXS; } |
   FITR { $$ = FITR; } |
   FLOG { $$ = FLOG; } |
+  FNEW { $$ = FNEW; } |
   FSQT { $$ = FSQT; } |
   FSGN { $$ = FSGN; } |
   FSIN { $$ = FSIN; } |
   FOUT { $$ = FOUT; }
-
+  
  /* ultimately all expressions end up here in factor, which is either a
     constant value, a variable value, or a parened expression. in
     all cases, the result of the expression is a value. most books on
@@ -534,30 +537,6 @@ factor:
         numeric_constants_zero++;
       } else if (num == 1) {
         numeric_constants_one++;
-      } else if (num == -1) {
-        numeric_constants_minus_one++;
-      } else if (num >= -9 && num <= 9) {
-        numeric_constants_one_digit++; // note: not 1 or zero
-      } else if (num >= -99 && num <= 99) {
-        numeric_constants_two_digit++;
-      } else if (num >= -999 && num <= 999) {
-        numeric_constants_three_digit++;
-      } else if (num >= -9999 && num <= 9999) {
-        numeric_constants_four_digit++;
-      } else if (num >= -99999 && num <= 99999) {
-        numeric_constants_five_digit++;
-      } else {
-        numeric_constants_big++;
-      }
-      
-      // count number of bytes separately
-      if (num >= -128 && num <= 256) {
-        numeric_constants_one_byte++;
-      } else if (num >= -32767 && num <= 65536) {
-        numeric_constants_two_byte++;
-      } else if (num >= INT_MIN && num <= INT_MAX) {
-        /* this one is probably redundant! */
-        numeric_constants_four_byte++;
       }
     }
     /* everything else is a float */
@@ -575,19 +554,6 @@ factor:
     /* static analyzer code */
     size_t len = strlen($1);
     string_constants_total++;
-    if (len == 1) {
-      string_constants_one_byte++;
-    } else if (len == 2) {
-      string_constants_two_byte++;
-    } else if (len <= 4) {
-      string_constants_four_byte++;
-    } else if (len <= 8) {
-      string_constants_eight_byte++;
-    } else if (len <= 16) {
-      string_constants_sixteen_byte++;
-    } else {
-        string_constants_big++;
-    }
     if (len > string_constants_max) string_constants_max = (int)len;
   }
   |

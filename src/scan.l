@@ -83,6 +83,7 @@ FITR    { return FITR; }
 FLOG    { return FLOG; }
 FRAN    { return FRAN; }
 FSGN    { return FSGN; }
+FSIN    { return FSIN; }
 FSQT    { return FSQT; }
 
  /* other functions */
@@ -91,8 +92,8 @@ FDIS    { return FDIS; }
 FDXS    { return FDXS; }
 
  /* these are listed in the 1970 programming languages manual, but are not explained */
- /* FNEW    { return FNEW; } */
- /* FCOM    { return FCOM; } */
+FNEW    { return FNEW; }
+FCOM    { return FCOM; }
 
  /* FOCAL-71 additions */
 FIN     { return FIN; }
@@ -127,7 +128,7 @@ FOUT    { return FOUT; }
  [0][A-Za-z][A-Za-z0-9]* {
                yytext[strlen(yytext) - 1] = '\0';
                yylval.s = str_new(yytext + 1);
-               return STRING;
+               return NUMSTR;
              }
 
  /* semis outside strings are used to trigger statement-start */
