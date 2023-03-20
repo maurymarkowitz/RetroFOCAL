@@ -82,7 +82,7 @@ struct timeval reset_time;     					// if the user resets the time with TIME$, t
 
 static void focal_error(const char *message)
 {
-  fprintf(stderr, "%s at line %2.2f\n", message, (double)current_line() / 100.0);
+  fprintf(stderr, "%s at line %2.2f\n", message, current_line());
 }
 
 /* Returns an either_t containing a string or a number for the underlying
@@ -838,24 +838,56 @@ static list_t *find_line(double linenumber)
   
   // negative numbers are not allowed
   if (linenumber < 0) {
-    sprintf(buffer, "Negative target line %2.2f in branch", linenumber);
-    focal_error(buffer);
+		if (linenumber != floor(linenumber)) {
+			sprintf(buffer, "Negative target line %2.2f in branch", linenumber);
+			focal_error(buffer);
+		} else {
+			sprintf(buffer, "Negative target group %i in branch", (int)linenumber);
+			focal_error(buffer);
+		}
     return NULL;
   }
 	
-	// if the number is an integer, like "2", that means it's looking
-	// for a group number, not a line number, which makes things slightly
-	// more complex
-	
-	// neither are missing lines
-	if (interpreter_state.lines[(int)(linenumber * 100)] == NULL) {
-		sprintf(buffer, "Undefined target line %2.2f in branch", linenumber);
-		focal_error(buffer);
-		return NULL;
+	// in focal, the target we're looking for could be either a specific line
+	// or a group number. we will start with the single line, which can never be x.00
+	if (linenumber != floor(linenumber)) {
+		// check it exists
+		if (interpreter_state.lines[(int)(linenumber * 100)] == NULL) {
+			sprintf(buffer, "Undefined target line %2.2f in branch", linenumber);
+			focal_error(buffer);
+			return NULL;
+		}
+		
+		// otherwise we did find a line, so return it
+		return interpreter_state.lines[(int)(linenumber * 100)];
 	}
-  
-  // otherwise we did find a line, so return it
-  return interpreter_state.lines[(int)(linenumber * 100)];
+	else {
+		// for the group lookup, we have to loop through it until we find an item with that value
+		list_t *lv = NULL;
+		for(int i = (int)(linenumber * 100); i < MAXLINE - 1; i++) {
+			if (interpreter_state.lines[i] != NULL) {
+				// we found a non-empty line, is it the right group?
+				if (linenumber == floor(i / 100)) {
+					// we found the first line in the group
+					lv = interpreter_state.lines[i];
+					break;
+				}
+			}
+		}
+		if (lv != NULL) {
+			return lv;
+		}
+		else {
+			sprintf(buffer, "Undefined target group %i in branch", (int)linenumber);
+			focal_error(buffer);
+			return NULL;
+		}
+	}
+	
+	// failsafe
+	sprintf(buffer, "Undefined target line %2.2f in branch", linenumber);
+	focal_error(buffer);
+	return NULL;
 }
 
 /* returns the number of (non-empty) lines between two lines.
