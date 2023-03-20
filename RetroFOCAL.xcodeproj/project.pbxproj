@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		550D54A3288DB6950062DF12 /* strng.c in Sources */ = {isa = PBXBuildFile; fileRef = 550D54A1288DB6950062DF12 /* strng.c */; };
 		550D54A6289BF9670062DF12 /* list.c in Sources */ = {isa = PBXBuildFile; fileRef = 550D54A5289BF9670062DF12 /* list.c */; };
+		552013BE29C7B32900280B32 /* numtest.fc in CopyFiles */ = {isa = PBXBuildFile; fileRef = 552013BD29C7B2E300280B32 /* numtest.fc */; };
 		5599AEFA239C0A6F00490A3A /* retrofocal.c in Sources */ = {isa = PBXBuildFile; fileRef = 5599AEF9239C0A6F00490A3A /* retrofocal.c */; };
 		5599AEFE239C0ABF00490A3A /* scan.l in Sources */ = {isa = PBXBuildFile; fileRef = 5599AEFC239C0ABF00490A3A /* scan.l */; };
 		55A42363287360B00070AF00 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 55A42361287360B00070AF00 /* main.c */; };
@@ -41,6 +42,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 16;
 			files = (
+				552013BE29C7B32900280B32 /* numtest.fc in CopyFiles */,
 				55FB295D29C37F2C00BE2097 /* lunar.fc in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -53,6 +55,7 @@
 		550D54A4289BF9670062DF12 /* list.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = list.h; sourceTree = "<group>"; };
 		550D54A5289BF9670062DF12 /* list.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = list.c; sourceTree = "<group>"; };
 		550EED6E257AC4F300FE6D78 /* VERSIONS */ = {isa = PBXFileReference; lastKnownFileType = text; path = VERSIONS; sourceTree = "<group>"; };
+		552013BD29C7B2E300280B32 /* numtest.fc */ = {isa = PBXFileReference; lastKnownFileType = text; path = numtest.fc; sourceTree = "<group>"; };
 		5599AEF8239C0A6E00490A3A /* retrofocal.h */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 2; lastKnownFileType = sourcecode.c.h; path = retrofocal.h; sourceTree = "<group>"; tabWidth = 2; };
 		5599AEF9239C0A6F00490A3A /* retrofocal.c */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 2; lastKnownFileType = sourcecode.c.c; path = retrofocal.c; sourceTree = "<group>"; tabWidth = 2; usesTabs = 1; };
 		5599AEFB239C0A8800490A3A /* stdhdr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = stdhdr.h; sourceTree = "<group>"; };
@@ -72,7 +75,7 @@
 		55E12DB82904279A0005D17F /* RetroFOCAL build notes.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "RetroFOCAL build notes.md"; sourceTree = "<group>"; };
 		55EBA451296E3A3F00FCD43A /* parse.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = parse.h; sourceTree = "<group>"; };
 		55FB295929C373F900BE2097 /* test.bsh */ = {isa = PBXFileReference; explicitFileType = text.script.sh; path = test.bsh; sourceTree = "<group>"; };
-		55FB295C29C37F2500BE2097 /* lunar.fc */ = {isa = PBXFileReference; lastKnownFileType = file; name = lunar.fc; path = test/lunar.fc; sourceTree = SOURCE_ROOT; };
+		55FB295C29C37F2500BE2097 /* lunar.fc */ = {isa = PBXFileReference; lastKnownFileType = text; name = lunar.fc; path = test/lunar.fc; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -146,8 +149,10 @@
 		55B96987252CC1D30021CD8B /* test */ = {
 			isa = PBXGroup;
 			children = (
+				55FB295C29C37F2500BE2097 /* lunar.fc */,
 				55FB295B29C37EEE00BE2097 /* test_programs */,
 				55FB295929C373F900BE2097 /* test.bsh */,
+				552013BD29C7B2E300280B32 /* numtest.fc */,
 			);
 			path = test;
 			sourceTree = "<group>";
@@ -177,7 +182,6 @@
 		55FB295B29C37EEE00BE2097 /* test_programs */ = {
 			isa = PBXGroup;
 			children = (
-				55FB295C29C37F2500BE2097 /* lunar.fc */,
 			);
 			path = test_programs;
 			sourceTree = "<group>";

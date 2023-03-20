@@ -55,18 +55,18 @@ Boston, MA 02111-1307, USA.  */
     https://stackoverflow.com/questions/59117309/rest-of-line-in-bison/59122569#59122569
   */
 <INITIAL>{
-C|COMMENT.* { yylval.s = str_new(str_copy(yytext + 3, yyleng - 3)); return COMMENT; } // manual lists CONTIUE separately, but its a comment
+C|COMMENT|CONTINUE.* { yylval.s = str_new(str_copy(yytext + 3, yyleng - 3)); return COMMENT; } // manual lists CONTINUE separately, but its a comment
 A|ASK     { BEGIN(KEYWORD_FOUND); return ASK; }     // INPUT
 D|DO      { BEGIN(KEYWORD_FOUND); return DO; }      // combines GOTO and GOSUB
-F|FOR     { BEGIN(KEYWORD_FOUND); return FOR; }     // FOR loops, one-line only
+F|FOR     { BEGIN(KEYWORD_FOUND); return FOR; }     // one-line only, no NEXT
 I|IF      { BEGIN(KEYWORD_FOUND); return IF; }      // branches only
 Q|QUIT    { BEGIN(KEYWORD_FOUND); return QUIT; }    // END/STOP/BYE
-R|RETURN  { BEGIN(KEYWORD_FOUND); return RETURN; }
+R|RETURN  { BEGIN(KEYWORD_FOUND); return RETURN; }  // optional RETURNs at end of group anyway
 S|SET     { BEGIN(KEYWORD_FOUND); return SET; }     // LET
 T|TYPE    { BEGIN(KEYWORD_FOUND); return TYPE; }    // PRINT
 
  /* non-program statements (mostly) */
-E|ERASE   { BEGIN(KEYWORD_FOUND); return ERASE; }   // erases lines of source, but also double-duty as "CLR" to reset variables
+E|ERASE   { BEGIN(KEYWORD_FOUND); return ERASE; }   // erases lines of source, but also double-duty as CLR to reset variables
 G|GOTO    { BEGIN(KEYWORD_FOUND); return GOTO; }    // RUN, optional line number
 M|MODIFY  { BEGIN(KEYWORD_FOUND); return MODIFY; }  // edits a single line
 W|WRITE   { BEGIN(KEYWORD_FOUND); return WRITE; }   // LIST
@@ -90,6 +90,10 @@ FADC    { return FADC; }
 FDIS    { return FDIS; }
 FDXS    { return FDXS; }
 
+ /* these are listed in the 1970 programming languages manual, but are not explained */
+ /* FNEW    { return FNEW; } */
+ /* FCOM    { return FCOM; } */
+
  /* FOCAL-71 additions */
 FIN     { return FIN; }
 FOUT    { return FOUT; }
@@ -97,9 +101,9 @@ FOUT    { return FOUT; }
  /* various operators and punctuation */
 [\%!:,()\^=+\-*/\<\>\&]     { return yytext[0]; }
 
- /* variable references */
- /* currently set to allow only one or two chars */
-[A-EG-Za-eg-z][A-Za-z0-9_]? {
+ /* variable references, only first two characters are used but we save them all. F is not allowed. */
+ /* NOTE: underscore is supported here but unlikely to have been used in actual code. */
+[A-EG-Za-eg-z][A-Za-z0-9_]* {
              yylval.s = str_new(yytext);
              return VARIABLE_NAME;
            }
@@ -110,13 +114,21 @@ FOUT    { return FOUT; }
              yylval.s = str_new(yytext + 1);
              return STRING;
            }
+ 
 } // back out of KEYWORD_FOUND, the following apply to everything
 
- /* other numeric constants */
+ /* other numeric constants and line numbers */
 [0-9]*[0-9.][0-9]*([Ee][-+]?[0-9]+)? {
               yylval.d = strtod(yytext, NULL);
               return NUMBER;
             }
+
+ /* FOCAL has a second number format used for string inputs, it starts with a 0 like 0YES */
+ [0][A-Za-z][A-Za-z0-9]* {
+               yytext[strlen(yytext) - 1] = '\0';
+               yylval.s = str_new(yytext + 1);
+               return STRING;
+             }
 
  /* semis outside strings are used to trigger statement-start */
 ;         { BEGIN(INITIAL); return ';'; }

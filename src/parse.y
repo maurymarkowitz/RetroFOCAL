@@ -100,9 +100,11 @@ static expression_t *make_operator(int arity, int o)
  // statements
 %token ASK
 %token COMMENT
+%token CONTINUE
 %token DO
 %token ERASE
 %token FOR
+%token GO
 %token GOTO
 %token IF
 %token MODIFY
@@ -129,6 +131,10 @@ static expression_t *make_operator(int arity, int o)
 %token FDIS
 %token FDXS
 
+// mentioned in the manual but seen nowhere
+%token FCOM
+%token FNEW
+
 // new functions from FOCAL-71
 %token FIN
 %token FOUT
@@ -141,6 +147,8 @@ static expression_t *make_operator(int arity, int o)
 /* Grammar rules */
 program:
   line
+  |
+  program '\n'
 	|
 	program '\n' line
 	|
@@ -245,9 +253,9 @@ statement:
     for_loops_total++;
   }
   |
-  GOTO /* we will treat GO and GOTO like DO, although maybe they should report an error? */
+  GO /* we will treat GO and GOTO like DO, although maybe they should report an error? */
   {
-    statement_t *new = make_statement(GO);
+    statement_t *new = make_statement(GOTO);
     $$ = new;
   }
   |
