@@ -65,8 +65,8 @@ typedef struct {
 
 /* forward declares */
 static value_t evaluate_expression(expression_t *e);
-static int line_for_statement(const list_t *s);
-static int current_line(void);
+static double line_for_statement(const list_t *s);
+static double current_line(void);
 
 static void print_variables(void);
 static void delete_variables(void);
@@ -80,9 +80,9 @@ struct timeval reset_time;     					// if the user resets the time with TIME$, t
 
 /************************************************************************/
 
-static void basic_error(const char *message)
+static void focal_error(const char *message)
 {
-  fprintf(stderr, "%s at line %d\n", message, current_line());
+  fprintf(stderr, "%s at line %2.2f\n", message, (double)current_line() / 100.0);
 }
 
 /* Returns an either_t containing a string or a number for the underlying
@@ -170,7 +170,7 @@ either_t *variable_value(const variable_t *variable, int *type)
 	
 	// the *number* of dimensions has to match, you can't DIM A(1,1) and then LET B=A(1)
 	if (lst_length(num_dimensions) != lst_length(variable_indexes))
-		basic_error("Array dimension of variable does not match storage"); // should we exit at this point?
+		focal_error("Array dimension of variable does not match storage"); // should we exit at this point?
 	else
 		while (num_dimensions && variable_indexes) {
 			// evaluate the variable reference's index for a given dimension
@@ -183,7 +183,7 @@ either_t *variable_value(const variable_t *variable, int *type)
 			// make sure the index is within the originally DIMed bounds
 			// NOTE: should check against array_base, not 0, but this doesn't work in Dartmouth. see notes
 			if ((this_index.number < 0) || (original_dimension < this_index.number)) {
-				basic_error("Array subscript out of bounds");
+				focal_error("Array subscript out of bounds");
 				this_index.number = 0;//array_base; // the first entry in the C array, so it continues
 			}
 			
@@ -191,7 +191,7 @@ either_t *variable_value(const variable_t *variable, int *type)
 			if (def_dimensions != NULL) {
 				int def_dimension = POINTER_TO_INT(def_dimensions->data);
 				if ((this_index.number < 0) || (def_dimension < this_index.number)) {
-					basic_error("Array subscript out of DIMmed bounds");
+					focal_error("Array subscript out of DIMmed bounds");
 					this_index.number = 0;
 				}
 			}
@@ -219,7 +219,7 @@ either_t *variable_value(const variable_t *variable, int *type)
     if (lst_length(variable->slicing)) {
       // ANSI slices will always have two parameters in the slicing list
       if (lst_length(variable->slicing) != 2)
-        basic_error("Wrong number of parameters in string slice");
+        focal_error("Wrong number of parameters in string slice");
       
       slice_param = variable->slicing;
     }
@@ -244,7 +244,7 @@ either_t *variable_value(const variable_t *variable, int *type)
         slice_end = (int)fmin(slice_end, strlen(storage->value->string));
       } else {
         if (slice_start < 1 || slice_end < 1 || slice_end > strlen(storage->value->string) - 1)
-          basic_error("String slice out of bounds");
+          focal_error("String slice out of bounds");
       }
       
       // again, the numbers above are 1-indexed from BASIC, so we need to...
@@ -444,14 +444,14 @@ static value_t evaluate_expression(expression_t *expression)
       if (original_definition == NULL) {
         char buffer[80];
         sprintf(buffer, "User-defined function '%s' is being called but has not been defined", func_name);
-        basic_error(buffer);
+        focal_error(buffer);
         result.type = NUMBER;
         result.number = 0;
         break;
       }
       // if we found the function, check that it has the same number of parameters as this function call
       if (lst_length(original_definition->parameters) != lst_length(expression->parms.variable->subscripts)) {
-        basic_error("User-defined function '%s' is being called with the wrong number of parameters");
+        focal_error("User-defined function '%s' is being called with the wrong number of parameters");
         break;
       }
 
@@ -496,7 +496,7 @@ static value_t evaluate_expression(expression_t *expression)
             stored_val->number = updated_val.number;
         } else {
           // if the type we stored last time is different than this time...
-          basic_error("Type mismatch in user-defined function call");
+          focal_error("Type mismatch in user-defined function call");
           break;
         }
         
@@ -511,7 +511,7 @@ static value_t evaluate_expression(expression_t *expression)
       if (p == NULL) {
         char buffer[80];
         sprintf(buffer, "User-defined function '%s' is being called but has not been defined", expression->parms.variable->name);
-        basic_error(buffer);
+        focal_error(buffer);
       } else {
         result = evaluate_expression(p);
       }
@@ -571,7 +571,7 @@ static value_t evaluate_expression(expression_t *expression)
 						// the other syntax is TIME=value, which is handled as a statement, not a function
 
 					default:
-						basic_error("Unhandled arity-0 function");
+						focal_error("Unhandled arity-0 function");
         }
       }
       else if (expression->parms.op.arity == 1) {
@@ -650,7 +650,7 @@ static value_t evaluate_expression(expression_t *expression)
 //            break;
             												
           default:
-            basic_error("Unhandled arity-1 function");
+            focal_error("Unhandled arity-1 function");
         } //switch
       } //arity = 1
       
@@ -673,7 +673,7 @@ static value_t evaluate_expression(expression_t *expression)
               result = double_to_value(a + b);
             else {
               result.number = 0;
-              basic_error("Type mismatch, string and number in addition");
+              focal_error("Type mismatch, string and number in addition");
             }
             break;
           case '-':
@@ -686,7 +686,7 @@ static value_t evaluate_expression(expression_t *expression)
               result.string = str_append(result.string, parameters[1].string);
             } else {
               result.string = str_new("");
-              basic_error("Type mismatch, non-string values in concatenation");
+              focal_error("Type mismatch, non-string values in concatenation");
             }
             break;
           case '*':
@@ -694,7 +694,7 @@ static value_t evaluate_expression(expression_t *expression)
             break;
           case '/':
             if (b == 0)
-              basic_error("Division by zero");
+              focal_error("Division by zero");
             result = double_to_value(a / b);
             break;
           case '^':
@@ -716,7 +716,7 @@ static value_t evaluate_expression(expression_t *expression)
 
           default:
             result.number = 0;
-            basic_error("Unhandled arity-2 function");
+            focal_error("Unhandled arity-2 function");
             break;
         }
       }
@@ -795,7 +795,7 @@ static void print_expression(expression_t *e, const char *format)
 /* NOTE: this is likely expensive, because is uses the index lookup
 				methods in list_t, which loop. So only use it when required!
  */
-static int line_for_statement(const list_t *statement)
+static double line_for_statement(const list_t *statement)
 {
   // get a pointer to the program from the first line
   list_t *program = interpreter_state.lines[interpreter_state.first_line];
@@ -815,8 +815,8 @@ static int line_for_statement(const list_t *statement)
     this_index = lst_index_of_data(program, interpreter_state.lines[i]->data);
     
     // now see if we're in this line or the previous one
-    if (this_index == target_index) return i;
-    if (this_index > target_index) return previous_line;
+    if (this_index == target_index) return (double)i / 100.0;
+    if (this_index > target_index) return (double)previous_line / 100.0;
     
     // otherwise keep looking
     previous_line = i;
@@ -826,31 +826,36 @@ static int line_for_statement(const list_t *statement)
 }
 
 /* curries line_for_statement to return the current line */
-static int current_line()
+static double current_line()
 {
   return line_for_statement(interpreter_state.current_statement);
 }
 
 /* returns a pointer to the named line or returns an error if it's not found */
-static list_t *find_line(int linenumber)
+static list_t *find_line(double linenumber)
 {
   char buffer[50];
   
   // negative numbers are not allowed
   if (linenumber < 0) {
-    sprintf(buffer, "Negative target line %i in branch", linenumber);
-    basic_error(buffer);
+    sprintf(buffer, "Negative target line %2.2f in branch", linenumber);
+    focal_error(buffer);
     return NULL;
   }
 	
-	if (interpreter_state.lines[linenumber] == NULL) {
-		sprintf(buffer, "Undefined target line %i in branch", linenumber);
-		basic_error(buffer);
+	// if the number is an integer, like "2", that means it's looking
+	// for a group number, not a line number, which makes things slightly
+	// more complex
+	
+	// neither are missing lines
+	if (interpreter_state.lines[(int)(linenumber * 100)] == NULL) {
+		sprintf(buffer, "Undefined target line %2.2f in branch", linenumber);
+		focal_error(buffer);
 		return NULL;
 	}
   
   // otherwise we did find a line, so return it
-  return interpreter_state.lines[linenumber];
+  return interpreter_state.lines[(int)(linenumber * 100)];
 }
 
 /* returns the number of (non-empty) lines between two lines.
@@ -1037,7 +1042,7 @@ static void perform_statement(list_t *L)
             stored_val->number = exp_val.number;
         } else {
           // if the type we stored last time is different than this time...
-          basic_error("Type mismatch in assignment");
+          focal_error("Type mismatch in assignment");
         }
       }
         break;
@@ -1141,7 +1146,7 @@ static void perform_statement(list_t *L)
       {
 				gosubcontrol_t *pgc;
 				if (interpreter_state.gosubstack == NULL || lst_length(interpreter_state.gosubstack) == 0) {
-					basic_error("RETURN without GOSUB");
+					focal_error("RETURN without GOSUB");
 					break;
 				}
 
