@@ -38,7 +38,9 @@ bool print_stats = false;               // do not print or write stats by defaul
 bool write_stats = false;
 int tab_columns = 10;                   // based on PET BASIC, which is a good enough target
 bool trace_lines = false;								// turned on or off with a ?
-bool ask_colon = false;          				// should ASK print a colon?
+bool ask_colon = true;          				// should ASK print a colon?
+bool type_equals = false;								// don't print the = in TYPEs, that's FOCAL-69
+bool type_space = true;								  // print a leading space in TYPE
 bool upper_case = true;          				// force ASK input to upper case, which is generally the case for DEC
 double random_seed = -1;                // reset with RANDOMIZE, if -1 then auto-seeds
 
@@ -543,23 +545,6 @@ static value_t evaluate_expression(expression_t *expression)
          case FSQT:
             result.number = sqrt(a);
             break;
-//          case TAB:
-//            // MS basics do nothing if the current cursor position is past the number being passed in,
-//            // otherwise it adds spaces to move the cursor to that column number. ANSI will insert a
-//            // CR and go to that column of the next line. ANSI columns start at 1, MS at 0.
-//            // note that in "real" basic this is a psuedo-function that simply moves the cursor
-//            //   and doesn't return anything, but here it works by returning a string
-//            result.type = STRING;
-//            result.string = str_new("");
-//            int tabs = (int)parameters[0].number;
-//            if (tabs > interpreter_state.cursor_column) {
-//              for (int i = interpreter_state.cursor_column; i <= tabs - 1; i++) {
-//                str_append(result.string, " ");
-//              }
-//            } else {
-//							// FIXME: anything to do here?
-//            }
-//            break;
             												
           default:
             focal_error("Unhandled arity-1 function");
@@ -621,12 +606,6 @@ static value_t evaluate_expression(expression_t *expression)
 /* handles the TYPE statements, which can get complex */
 static void print_expression(expression_t *e, const char *format)
 {
-	// in contrast to BASIC, FOCAL has valid TYPE statements that
-	// consist solely of separators, like !!! which prints three
-	// crlfs. so we can't rely on the expression existing
-	
-	
-	
   // get the value of the expression for this item
   value_t v = evaluate_expression(e);
   
@@ -785,38 +764,18 @@ static list_t *find_line(double linenumber)
 	return NULL;
 }
 
-/* returns the number of (non-empty) lines between two lines.
- used in the statistics to calculate how far a jump is */
-// NOTE: not currently used
-//static int lines_between(int first_line, int second_line)
-//{
-//    // may as well try this just in case...
-//    if (first_line == second_line)
-//        return 0;
-//    // otherwise, simply count the non-empty lines between the two
-//    int distance = 0;
-//    int first = (first_line < second_line) ? first_line : second_line;
-//    int last = (first_line >= second_line) ? second_line : first_line;
-//    for(int i = first; i <= last; i++) {
-//        if (interpreter_state.lines[i]) distance++;
-//    }
-//    return distance;
-//}
-
 /* performs a single statement */
 static void perform_statement(list_t *L)
 {
-  // now process this statement
   statement_t *ps = L->data;
   if (ps) {
     switch (ps->type) {
 				
 			case ASK:
 			{
-				// ASK is similar to BASIC's INPUT, and allows mixing
-				// prompts and inputs. It also has the option of printing
-				// a colon, like BASIC's question mark, although it is not
-				// clear if this defaults on or off
+				// ASK is similar to BASIC's INPUT, and allows mixing prompts and inputs.
+				// It also has the option of printing a colon, like BASIC's question mark,
+				// but does so for every input, not just the first
 				
 				// loop over the items in the variable/prompt list
 				for (list_t *I = ps->parms.input; I != NULL; I = lst_next(I)) {
@@ -828,7 +787,7 @@ static void perform_statement(list_t *L)
 						char line[80];
 						
 						// print the colon if that option is turned on
-						if (I->prev == NULL && ask_colon)
+						if (ask_colon)
 							printf(":");
 						
 						// see if we can get some data, we should at least get a return
@@ -918,24 +877,19 @@ static void perform_statement(list_t *L)
 				   -ve, 0 or +ve. The 0 and +ve branches are optional. If either is missing, that case
 				   is accomplished by running any remaining statements on the line (like BASIC in that
 				   respect). This leads to some complexity... */
-        if (cond.number != 0) {
-					
-					
-					
-//          /* THEN might be an expression including a GOTO or an implicit GOTO */
-//          if (ps->parms._if.then_expression) {
-//            // in gnbasic this was next = perform_statement, which meant it could only
-//            // perform a single statement after the IF, which is not the case in
-//						// MS. for this to work properly, the then_expression has to be a list
-//						// that is not connected to the next line, it has to end on a NULL.
-//            for (list_t *I = ps->parms._if.then_expression; I != NULL; I = lst_next(I)) {
-//              perform_statement(I);
-//            }
-//          } else {
-//            // if the THEN is not an expression, jump to that line
-//            interpreter_state.next_statement = find_line(ps->parms._if.then_linenumber);
-//          }
-        }
+				if (cond.number < 0 && ps->parms._if.less_line > 0) {
+					interpreter_state.next_statement = find_line(ps->parms._if.less_line);
+				}
+				else if (cond.number == 0 && ps->parms._if.zero_line > 0) {
+					interpreter_state.next_statement = find_line(ps->parms._if.zero_line);
+				}
+				else if (cond.number > 0 && ps->parms._if.more_line > 0) {
+					interpreter_state.next_statement = find_line(ps->parms._if.more_line);
+				}
+				else {
+					// if none of those fired, it means we didn't have a line number for the
+					// correct case, which means we just continue onto the next statement
+				}
       }
         break;
 				
@@ -1054,9 +1008,11 @@ static void perform_statement(list_t *L)
 					// check to see if the expression is null, if so, that's because
 					// this particular item consists of a separator or format string
 					if (pp->expression == NULL) {
+						continue;
+					}
+					else {
 						
 					}
-          
           // if there's a USING, evaluate the format string it and print using it
           if (ps->parms.print.format) {
             value_t format_string;

@@ -11,3 +11,8 @@ RetroFOCAL TODO/BUGS/ERRATA list
 - properly space out ASK and TYPE, add colon to ASK output
 
 - support ? for turning TRACE on and off, allowed in GO and at the front of any other statement
+
+- support the psuedo-variable # which prints system flags
+
+- flesh out options for spaces, colons and equals in TYPE and ASK
+

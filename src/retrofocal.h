@@ -51,6 +51,7 @@ extern bool write_stats;      // ... or write them to a file?
 extern int tab_columns;       // based on PET BASIC, which is a good enough target
 extern bool trace_lines;
 extern bool ask_colon;        // print a colon before each ASK input (like BASIC's ?)
+extern bool type_equals;      // print an equals before each TYPE output?
 extern bool upper_case;       // force ASK inputs to upper case
 extern double random_seed;    // reset with RANDOMIZE, if -1 then auto-seeds
 
@@ -128,9 +129,9 @@ typedef struct statement_struct {
     expression_t *_do;
     struct {
       expression_t *condition;
-      int less_line;
-      int zero_line;
-      int more_line;
+      double less_line;
+      double zero_line;
+      double more_line;
     } _if;
     list_t *input;
     struct {

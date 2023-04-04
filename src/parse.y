@@ -564,7 +564,17 @@ factor:
     $$ = new;
   }
   |
-  open_bracket expression close_bracket
+  '(' expression ')'
+  {
+    $$ = $2;
+  }
+  |
+  '[' expression ']'
+  {
+    $$ = $2;
+  }
+  |
+  '<' expression '>'
   {
     $$ = $2;
   }
@@ -582,7 +592,7 @@ variable:
     insert_variable(new);
 	}
 	|
-  VARIABLE_NAME open_bracket exprlist close_bracket
+  VARIABLE_NAME '(' exprlist ')' // note, this assumes only () is allowed for subscripts
   {
     variable_t *new = malloc(sizeof(*new));
     new->name = $1;
