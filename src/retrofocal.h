@@ -27,6 +27,7 @@ Boston, MA 02111-1307, USA.  */
 #ifndef __RETROFOCAL_H__
 #define __RETROFOCAL_H__
 
+#include "version.h"
 #include "stdhdr.h"
 
 /**
@@ -49,7 +50,8 @@ extern bool write_stats;      // ... or write them to a file?
 
 extern int tab_columns;       // based on PET BASIC, which is a good enough target
 extern bool trace_lines;
-extern bool upper_case;       // force INPUT to upper case
+extern bool ask_colon;        // print a colon before each ASK input (like BASIC's ?)
+extern bool upper_case;       // force ASK inputs to upper case
 extern double random_seed;    // reset with RANDOMIZE, if -1 then auto-seeds
 
 extern char *source_file;
@@ -66,7 +68,6 @@ extern char *stats_file;
 typedef struct {
   char *name;
   list_t *subscripts;      // subscripts, list of expressions
-  list_t *slicing;         // up to two expressions holding string slicing limits
 } variable_t;
 
 /* either_t is used within variable_value_t for the actual data */
@@ -79,7 +80,6 @@ typedef union {
 typedef struct {
   int type;             /* NUMBER, STRING */
   list_t *actual_dimensions;    // actual dimensions, even if auto-DIMmed
-  list_t *defed_dimensions;     // subscript definitions, if any (from a DIM)
   either_t *value;      // actual value(s), malloced
 } variable_storage_t;
 
@@ -108,7 +108,8 @@ typedef struct expression_struct {
  */
 typedef struct {
   expression_t *expression;
-  int separator;			/* ';' ',' or 0 */
+  int separator;      /* ';' ',' or 0 */
+  double format;      /* %x.y */
 } printitem_t;
 
 /* every statement in the program gets a statement entry. the most
@@ -172,10 +173,8 @@ typedef struct {
   int first_line;		              // index of the first line in the lines array
   list_t *current_statement;      // currently executing statement
   list_t *next_statement;         // next statement to run, might change for GOTO and such
-  list_t *current_data_statement;	// current 'DATA' statement
-  list_t *current_data_element;	  // current 'DATA' expression within current_data_statement
   list_t *variable_values;		    // name/value pairs used to store variable values
-  list_t *functions;              // name/expression pairs for user-defined functions
+  list_t *functions;              // name/expression pairs for user-defined functions IS THIS NEEDED FOR FNEW?
   list_t *forstack;	              // current stack of FOR statements
   list_t *gosubstack;	            // current stack of gosub statements
   int cursor_column;              // current column of the output cursor

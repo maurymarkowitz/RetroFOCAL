@@ -50,6 +50,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		5507A04F29D5D30700898FD4 /* version.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = version.h; sourceTree = "<group>"; };
 		550D54A1288DB6950062DF12 /* strng.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = strng.c; sourceTree = "<group>"; };
 		550D54A2288DB6950062DF12 /* strng.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = strng.h; sourceTree = "<group>"; };
 		550D54A4289BF9670062DF12 /* list.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = list.h; sourceTree = "<group>"; };
@@ -61,8 +62,8 @@
 		5599AEFB239C0A8800490A3A /* stdhdr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = stdhdr.h; sourceTree = "<group>"; };
 		5599AEFC239C0ABF00490A3A /* scan.l */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 2; lastKnownFileType = sourcecode.lex; path = scan.l; sourceTree = "<group>"; tabWidth = 2; };
 		55A42360287360B00070AF00 /* statistics.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = statistics.h; sourceTree = "<group>"; };
-		55A42361287360B00070AF00 /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
-		55A42362287360B00070AF00 /* statistics.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = statistics.c; sourceTree = "<group>"; };
+		55A42361287360B00070AF00 /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 2; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; tabWidth = 2; };
+		55A42362287360B00070AF00 /* statistics.c */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 2; lastKnownFileType = sourcecode.c.c; path = statistics.c; sourceTree = "<group>"; tabWidth = 2; };
 		55B3D40C238E051D00E6054E /* retrofocal */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = retrofocal; sourceTree = BUILT_PRODUCTS_DIR; };
 		55B3D428238EB43100E6054E /* TODO */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = TODO; sourceTree = "<group>"; };
 		55B3D429238EB43100E6054E /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
@@ -117,6 +118,7 @@
 		55B3D40E238E051D00E6054E /* src */ = {
 			isa = PBXGroup;
 			children = (
+				5507A04F29D5D30700898FD4 /* version.h */,
 				5599AEFB239C0A8800490A3A /* stdhdr.h */,
 				550D54A2288DB6950062DF12 /* strng.h */,
 				550D54A1288DB6950062DF12 /* strng.c */,

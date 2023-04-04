@@ -33,7 +33,9 @@ Boston, MA 02111-1307, USA.  */
 /* simple version info for --version command line option */
 static void print_version()
 {
-  puts("RetroFOCAL 1.0");
+  char verstr[40];
+  getVersionString(verstr);
+  puts(verstr);
 }
 
 /* usage short form, just a list of the switches */
@@ -45,18 +47,18 @@ static void print_usage(char *argv[])
 /* full usage notes, both for the user and for documenting the code below */
 static void print_help(char *argv[])
 {
-  printf("Usage: retrofocal [-hvnu] [-a number] [-t spaces] [-r seed] [-p | -w stats_file] [-o output_file] [-i input_file] source_file\n");
+  printf("Usage: retrofocal [-hvnua] [-t spaces] [-r seed] [-p | -w stats_file] [-o output_file] [-i input_file] source_file\n");
   puts("\nOptions:");
   puts("  -h, --help: print this description");
   puts("  -v, --version: print version info");
   puts("  -u, --upper-case: convert all input to upper case");
-  puts("  -a, --array-base: minimum array index, normally 1");
+  puts("  -a, --ask-colon: ASK will print a colon for each input");
   puts("  -n, --no-run: don't run the program after parsing");
   puts("  -r, --random: seed the random number generator");
   puts("  -p, --print-stats: when the program exits, print statistics");
   puts("  -w, --write-stats: on exit, write statistics to a file");
-  puts("  -o, --output-file: redirect PRINT and PUT to the named file");
-  puts("  -i, --input-file: redirect INPUT and GET from the named file");
+  puts("  -o, --output-file: redirect TYPE to the named file");
+  puts("  -i, --input-file: redirect ASK from the named file");
 }
 
 static struct option program_options[] =
@@ -64,7 +66,7 @@ static struct option program_options[] =
   {"help", no_argument, NULL, 'h'},
   {"version", no_argument, NULL, 'v'},
   {"upper-case", no_argument, NULL, 'u'},
-  {"array-base", required_argument, NULL, 'a'},
+  {"ask-colon", required_argument, NULL, 'a'},
   {"random", required_argument, NULL, 'r'},
   {"input-file", required_argument, NULL, 'i'},
   {"output-file", required_argument,  NULL, 'o'},
@@ -100,6 +102,10 @@ void parse_options(int argc, char *argv[])
         printed_help = true;
         break;
         
+      case 'a':
+        ask_colon = true;
+        break;
+
       case 'u':
         upper_case = true;
         break;

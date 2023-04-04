@@ -14,7 +14,6 @@
 .SH SYNOPSIS
 .B retrofocal
 .RB [ \-ghnpsuv ]
-.RB [ \-a 1|0]
 .RB [ \-t 
 .IR num ]
 .RB [ \-r 
@@ -42,37 +41,25 @@ Print version info and exit.
 .B \-u, \--upper-case
 Convert all input to upper-case, like using caps lock.
 .TP
-.BR \-a [1|0],
-.BR \--array-base =[1/0]
-Set the base index for arrays, normally 0 but some dialects use 1.
-.TP
 .BI \-t num,
 .BI \--tabs
-Sets the number of spaces for comma-separated items, defaults to 10 based on the Commodore PET.
-.TP
-.B \-g,
-.B \--goto-next
-Branches to a non-existant lines will continue on the next line, instead of raising an error.
+Sets the number of spaces for comma-separated items, defaults to 10.
 .TP
 .BI -r num
 .BI --random num
 Seed the random number generator, passing 0 causes it to randomize.
 .TP
-.B \-s,
-.B \--slicing
-Enable string slicing like HP, Integer, Atari, etc. Turning this on makes arrays of strings inaccessible.
-.TP
 .BI \-o filename,
 .BI \--output-file filename
-Redirect PRINT statement output to the named file.
+Redirect TYPE statement output to the named file.
 .TP
 .BI \-i filenme,
 .BI \--input-file filenme
-Redirect INPUT statements to read from the named file, one INPUT value per line.
+Redirect ASK statements to read from the named file, one INPUT value per line.
 .TP
 .B \-n,
 .B \--no-run
-Do not run the BASIC program, simply parse it and exit.
+Do not run the FOCAL program, simply parse it and exit.
 .TP
 .B \-p,
 .B \--print-statistics

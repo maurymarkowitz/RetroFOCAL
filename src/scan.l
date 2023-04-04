@@ -92,15 +92,15 @@ FDIS    { return FDIS; }
 FDXS    { return FDXS; }
 
  /* these are listed in the 1970 programming languages manual, but are not explained */
-FNEW    { return FNEW; }
-FCOM    { return FCOM; }
+FNEW    { return FNEW; } // apparently used in a fashion similar to DEF FN, but zero example so far
+FCOM    { return FCOM; } // UW-FOCAL explains that this is used to access core, to share data between programs
 
  /* FOCAL-71 additions */
 FIN     { return FIN; }
 FOUT    { return FOUT; }
 
  /* various operators and punctuation */
-[\%!:,()\^=+\-*/\<\>\&]     { return yytext[0]; }
+[\?\%!:,()\^=+\-*/\<\>\&]     { return yytext[0]; }
 
  /* variable references, only first two characters are used but we save them all. F is not allowed. */
  /* NOTE: underscore is supported here but unlikely to have been used in actual code. */
@@ -118,18 +118,19 @@ FOUT    { return FOUT; }
  
 } // back out of KEYWORD_FOUND, the following apply to everything
 
+ /* FOCAL has a second number format used for string inputs, it starts with a 0 like 0YES */
+[0][A-Za-z][A-Za-z0-9]* {
+    // DEC's character codes are +128, so A is 161
+              yytext[strlen(yytext) - 1] = '\0';
+              yylval.s = str_new(yytext + 1);
+              return NUMSTR;
+            }
+
  /* other numeric constants and line numbers */
 [0-9]*[0-9.][0-9]*([Ee][-+]?[0-9]+)? {
               yylval.d = strtod(yytext, NULL);
               return NUMBER;
             }
-
- /* FOCAL has a second number format used for string inputs, it starts with a 0 like 0YES */
- [0][A-Za-z][A-Za-z0-9]* {
-               yytext[strlen(yytext) - 1] = '\0';
-               yylval.s = str_new(yytext + 1);
-               return NUMSTR;
-             }
 
  /* semis outside strings are used to trigger statement-start */
 ;         { BEGIN(INITIAL); return ';'; }

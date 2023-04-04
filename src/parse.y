@@ -576,7 +576,6 @@ variable:
 	  variable_t *new = malloc(sizeof(*new));
 	  new->name = $1;
 	  new->subscripts = NULL;
-    new->slicing = NULL;
     $$ = new;
     
     /* add it to the interpreter's variable list for the analyizer*/
@@ -588,14 +587,13 @@ variable:
     variable_t *new = malloc(sizeof(*new));
     new->name = $1;
     new->subscripts = $3;
-    new->slicing = NULL;
     $$ = new;
 
     insert_variable(new);
   }
 
- /* a null printlist is valid, it means "new line" */
 printlist:
+  /* a null printlist is valid, it means "new line" */
   {
 	  $$ = NULL;
   }
@@ -608,7 +606,6 @@ printlist:
 	  $$ = lst_prepend(NULL, new);
 	}
   |
-  // this handles MS semi-is-the-same as nothing, PRINT"I="I
   expression printlist
   {
     printitem_t *new = malloc(sizeof(*new));
@@ -625,7 +622,7 @@ printlist:
 	  $$ = lst_prepend($3, new);
 	}
   |
-	// this is found in the BCG "bug.bas", it's a print with a *leading* semi
+	// this is common in FOCAL, you might see TYPE !!! to add some vertical space
   printsep printlist
   {
     printitem_t *new = malloc(sizeof(*new));
@@ -657,7 +654,7 @@ printsep:
     $$ = ':'; // inserts a tab
   }
   |
-  '%' NUMBER
+  '%'
   {
     $$ = '%'; // sets or resets the format
   }

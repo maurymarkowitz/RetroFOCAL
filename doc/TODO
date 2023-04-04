@@ -1,7 +1,13 @@
 RetroFOCAL TODO/BUGS/ERRATA list
 
-convert ASCII to DEC everywhere
+- order of operations!
 
-support ? for turning TRACE on and off, allowed in GO and at the front of any other statement
+- fix line-number handling
 
-underscore removes one ASK input, but likely not needed
+- fix statistics for GOTO and GOSUB etc.
+
+- convert ASCII to DEC in FIN and FOUT and similar places
+
+- properly space out ASK and TYPE, add colon to ASK output
+
+- support ? for turning TRACE on and off, allowed in GO and at the front of any other statement

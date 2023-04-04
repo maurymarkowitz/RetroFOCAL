@@ -37,8 +37,9 @@ bool run_program = true;                // default to running the program, not j
 bool print_stats = false;               // do not print or write stats by default
 bool write_stats = false;
 int tab_columns = 10;                   // based on PET BASIC, which is a good enough target
-bool trace_lines = false;
-bool upper_case = false;          			// force INPUT to upper case
+bool trace_lines = false;								// turned on or off with a ?
+bool ask_colon = false;          				// should ASK print a colon?
+bool upper_case = true;          				// force ASK input to upper case, which is generally the case for DEC
 double random_seed = -1;                // reset with RANDOMIZE, if -1 then auto-seeds
 
 char *source_file = "";
@@ -88,17 +89,15 @@ static void focal_error(const char *message)
 /* Returns an either_t containing a string or a number for the underlying
    variable, along with its type in the out-parameter 'type'. If the
    variable has not been encountered before it will be created here. */
-/* NOTE: this code also handles string slicing. it would be much preferrable
-   to do that as a function call so it could overload the MID$-style functions
-   but I could not figure out how to do that at runtime in the yacc code. */
 either_t *variable_value(const variable_t *variable, int *type)
 {
   variable_storage_t *storage;
 	char *storage_name;
 	int index;
   
-	// in contrast to BASIC, in FOCAL all variables can be arrays, and
-	// A and A() refer to the same variable
+	// in contrast to BASIC, in FOCAL all variables can be arrays, and A and A()
+	// refer to the same variable, so we don't have to munge on the "(" to make
+	// it into a separate variable
 	storage_name = str_new(variable->name);
 
 	// see if we can find the entry in the symbol list
@@ -108,40 +107,25 @@ either_t *variable_value(const variable_t *variable, int *type)
   if (storage == NULL) {
     int slots;
     
-    // malloc a single slot, if it's an array we'll use this as the template
+    // malloc a single slot, if it's an array we'll use this slot as the template
     storage = malloc(sizeof(*storage));
     storage->type = NUMBER;	// this is all we have in FOCAL, but leaving in the type for simplicity
     		
-    // now see if this reference includes subscripts
+    // see if this reference includes subscripts
     if (variable->subscripts != NULL) {
-      value_t v;
-      
-      // now clear out any existing list of subscripts in storage, eval each of the
-      // values in the variable ref, and store that value in our ->subs list_t
-      // (as the value, not a pointer), and then calculate the total size we need
-			storage->actual_dimensions = NULL;
-			storage->defed_dimensions = NULL;
-      slots = 1;
-      for (list_t *L = variable->subscripts; L != NULL; L = lst_next(L)) {
-        v = evaluate_expression(L->data);
-				int actual = (int)v.number + 1; 			// we need to add one more slot for index 0
-				
-				// if the line that's calling us is DIM A(5), we need to make it 5+1 slots, but if
-				// we're being called by an "invisible DIM" we need to set it to 10+1, no matter
-				// what the actual parameter is. Otherwise if you have A(1)=10:A(2)=11 it will fail
-				// because the first instance would dim it to 1+1.
-				// NOTE: if there is a real DIM, it should return a BAD SUBSCRIPT if the index is
-				//   larger, so DIM A(5) should return an error on PRINT A(6). In this code, the
-				//   minimum dimension is always 10, so this will not return an error
-				if (actual < 10)
-					actual = 11;
-				
-        storage->actual_dimensions = lst_append(storage->actual_dimensions, INT_TO_POINTER(actual));
-        slots *= actual;
-      }
+			// in FOCAL, there is no equivalent of a DIM, and all arrays are -2048 to +2047.
+			// I suspect that they used the subscripts as pseudo-names, so A(100) becomes
+			// a separate variable A100. That would make it only create entries for those
+			// indexes that are acually stored.
+			//
+			// given the small amount of memory this represents on a modern machine, we'll
+			// just go ahead and dim all 4k slots for any variable we see with ()
+			slots = 4096;
+			storage->actual_dimensions = lst_append(NULL, INT_TO_POINTER(slots));;
     }
     // if it doesn't include subscripts, null them out and set the number of slots to 1
     else {
+			// BUG: is it possible that we get a non-subscript ref after we set up the refs above?
       storage->actual_dimensions = NULL;
       slots = 1;
     }
@@ -160,109 +144,38 @@ either_t *variable_value(const variable_t *variable, int *type)
   
   // compute array index, or leave it at zero if there is none
 	index = 0;
-	list_t *num_dimensions;         // list of actual dimensions in storage, maybe the default 10
-	list_t *def_dimensions;					// list of DIMmed dimensions, if a DIM was encountered
-	list_t *variable_indexes;       // list of indices in this variable reference, each is an expression, likely a constant
 	
-	num_dimensions = lst_first_node(storage->actual_dimensions);
-	def_dimensions = lst_first_node(storage->defed_dimensions);
-	variable_indexes = lst_first_node(variable->subscripts);
+	// there is only ever one dimension in FOCAL, so this is pretty simple,
+	// the only crazy bit is that we have to map the input to negative values
+	list_t *variable_index;       	// list of indices in this variable reference, each is an expression, likely a constant
+	variable_index = lst_first_node(variable->subscripts);
 	
-	// the *number* of dimensions has to match, you can't DIM A(1,1) and then LET B=A(1)
-	if (lst_length(num_dimensions) != lst_length(variable_indexes))
-		focal_error("Array dimension of variable does not match storage"); // should we exit at this point?
+	// if there are no subscripts, get the value at 0
+	if (lst_length(variable_index) == 0) {
+		index = 0;
+	}
+	else if (lst_length(variable_index) > 1)
+		focal_error("Array access has more than one subscript"); // should we exit at this point?
 	else
-		while (num_dimensions && variable_indexes) {
+		if (variable_index != NULL) {
 			// evaluate the variable reference's index for a given dimension
-			value_t this_index = evaluate_expression(variable_indexes->data);
-			
-			// and get the originally defined size for that same dimension
-			// NOTE: this may or may not be the same as the DIM, see notes above
-			int original_dimension = POINTER_TO_INT(num_dimensions->data);
+			value_t this_index = evaluate_expression(variable_index->data);
 			
 			// make sure the index is within the originally DIMed bounds
 			// NOTE: should check against array_base, not 0, but this doesn't work in Dartmouth. see notes
-			if ((this_index.number < 0) || (original_dimension < this_index.number)) {
+			if ((this_index.number < -2048) || (this_index.number > 2047)) {
 				focal_error("Array subscript out of bounds");
-				this_index.number = 0;//array_base; // the first entry in the C array, so it continues
+				this_index.number = 0;
 			}
-			
-			// now check to see if there are dimed_dimensions, and check against them
-			if (def_dimensions != NULL) {
-				int def_dimension = POINTER_TO_INT(def_dimensions->data);
-				if ((this_index.number < 0) || (def_dimension < this_index.number)) {
-					focal_error("Array subscript out of DIMmed bounds");
-					this_index.number = 0;
-				}
-			}
-			
-			index = (index * original_dimension) + this_index.number;
-			
-			// then move on to the next index in the list
-			num_dimensions = lst_next(num_dimensions);
-			variable_indexes = lst_next(variable_indexes);
+		
+			index = this_index.number;
+		} else {
+			focal_error("Array subscript is empty");
+			index = 0;
 		}
   
-  // done with this temp name, but don't pass TRUE or it will kill the original too
-  //free(storage_name);
-  
-  // returning the type
-	// NOTE: if this is part of a DIM, it's been correctly set above
-  *type = storage->type;
-  
-  // if we are using string slicing OR there is a ANSI-style slice, return that part of the string
-  if (*type == STRING) {
-    value_t startPoint, endPoint;
-    list_t *slice_param = NULL;
-    
-    // see if there is an ANSI slice defined, if so, use that
-    if (lst_length(variable->slicing)) {
-      // ANSI slices will always have two parameters in the slicing list
-      if (lst_length(variable->slicing) != 2)
-        focal_error("Wrong number of parameters in string slice");
-      
-      slice_param = variable->slicing;
-    }
-    
-    // if either of those got us something, pull out both parameters
-    if (slice_param != NULL) {
-      long slice_start, slice_end;
-      
-      startPoint = evaluate_expression(slice_param->data);
-      slice_start = (long)startPoint.number;
-      slice_param = lst_next(slice_param);
-			if (slice_param && slice_param->data)
-				endPoint = evaluate_expression(slice_param->data);
-			else
-				endPoint = startPoint;
-      slice_end = (long)endPoint.number;
-
-      // according to ANSI, numbers outside the string should be forced to the string's bounds
-      // for non-ANSI, we'll error on odd numbers?
-      if (variable->slicing != NULL) {
-        slice_start = (int)fmax(slice_start, 1);
-        slice_end = (int)fmin(slice_end, strlen(storage->value->string));
-      } else {
-        if (slice_start < 1 || slice_end < 1 || slice_end > strlen(storage->value->string) - 1)
-          focal_error("String slice out of bounds");
-      }
-      
-      // again, the numbers above are 1-indexed from BASIC, so we need to...
-      slice_start--;
-      slice_end--;
-
-      // the source string is at the selected array index, which is zero for non-ANSI
-      either_t orig_string = storage->value[index];
-      
-      // build a new string (this is leaking!)
-      either_t *result = malloc(sizeof(*result));
-      result->string = str_new(orig_string.string);
-      str_erase(result->string, slice_start, slice_end - slice_start + 1);
-      
-      return result; // this is being leaked?
-      // otherwise just continue...
-    }
-  }
+  // returning the type, always a number in this case
+  *type = NUMBER;
 
   // all done, return the value at that index
   return &storage->value[index];
@@ -434,7 +347,6 @@ static value_t evaluate_expression(expression_t *expression)
       // values back off the stack.
     case fn:
     {
-      // assume this is numeric for the moment
       result.type = NUMBER;
       result.number = 0;
       // get the original definition or error out if we can't find it
@@ -662,14 +574,7 @@ static value_t evaluate_expression(expression_t *expression)
         
         switch (expression->parms.op.opcode) {
           case '+':
-            if (parameters[0].type == STRING && parameters[1].type == STRING) {
-              result.type = STRING;
-              result.string = str_new(parameters[0].string);
-              result.string = strcat(result.string, parameters[1].string);
-
-              //result.string = str_new(str_append(parameters[0].string, parameters[1].string));
-            }
-            else if (parameters[0].type >= NUMBER && parameters[1].type >= NUMBER)
+            if (parameters[0].type >= NUMBER && parameters[1].type >= NUMBER)
               result = double_to_value(a + b);
             else {
               result.number = 0;
@@ -678,16 +583,6 @@ static value_t evaluate_expression(expression_t *expression)
             break;
           case '-':
             result = double_to_value(a - b);
-            break;
-          case '&': // ANSI concat
-            if (parameters[0].type == STRING && parameters[1].type == STRING) {
-              result.type = STRING;
-              result.string = str_new(parameters[0].string);
-              result.string = str_append(result.string, parameters[1].string);
-            } else {
-              result.string = str_new("");
-              focal_error("Type mismatch, non-string values in concatenation");
-            }
             break;
           case '*':
             result = double_to_value(a * b);
@@ -704,15 +599,9 @@ static value_t evaluate_expression(expression_t *expression)
             if (parameters[0].type >= NUMBER)
               result = double_to_value(-(a == b));
             else
-              result = double_to_value(-!strcmp(parameters[0].string, parameters[1].string));
+							result.number = 0;
+							focal_error("Type mismatch, string and number in comparison"); // it should not be possible for this to happen
             break;
-          case '<':
-            result = double_to_value(-(a < b));
-            break;
-          case '>':
-            result = double_to_value(-(a > b));
-            break;
-
 
           default:
             result.number = 0;
@@ -729,9 +618,15 @@ static value_t evaluate_expression(expression_t *expression)
   return result;
 }
 
-/* handles the PRINT and PRINT USING statements, which can get complex */
+/* handles the TYPE statements, which can get complex */
 static void print_expression(expression_t *e, const char *format)
 {
+	// in contrast to BASIC, FOCAL has valid TYPE statements that
+	// consist solely of separators, like !!! which prints three
+	// crlfs. so we can't rely on the expression existing
+	
+	
+	
   // get the value of the expression for this item
   value_t v = evaluate_expression(e);
   
@@ -918,17 +813,10 @@ static void perform_statement(list_t *L)
 				
 			case ASK:
 			{
-				// INPUT can mix together prompts and variables, it doesn't
-				// *have* to be a single prompt at the start, although that is
-				// the typical convention. this code handles this possibility
-				// by rolling over the expression list, doing a print if it's
-				// not a variable, and a scan if it is
-				//
-				// NOTE: in C64 an empty input will exit without setting the
-				//    value of the associated variable, leaving it what it
-				//    was. you can see this in SST - for instance, if you
-				//    simply press return on the computer command input it
-				//    will run the last command again.
+				// ASK is similar to BASIC's INPUT, and allows mixing
+				// prompts and inputs. It also has the option of printing
+				// a colon, like BASIC's question mark, although it is not
+				// clear if this defaults on or off
 				
 				// loop over the items in the variable/prompt list
 				for (list_t *I = ps->parms.input; I != NULL; I = lst_next(I)) {
@@ -939,15 +827,9 @@ static void perform_statement(list_t *L)
 					if (ppi->expression->type == variable) {
 						char line[80];
 						
-						// if there is a previous item in the printlist, look at the separator
-						// and suppress question mark prompt if it is a comma
-						if (I->prev == NULL)
-							printf("?");
-						else {
-							printitem_t *prev_item = I->prev->data;
-							if (prev_item->separator != ',')
-								printf("?");
-						}
+						// print the colon if that option is turned on
+						if (I->prev == NULL && ask_colon)
+							printf(":");
 						
 						// see if we can get some data, we should at least get a return
 						fflush(stdout);
@@ -965,6 +847,11 @@ static void perform_statement(list_t *L)
 								c++;
 							}
 						}
+						
+						// FOCAL only has numeric variables, but it does have the ability
+						// to type in strings at prompts, which it converts to a numeric
+						// value. we do that here. note that FOCAL uses an odd version
+						// of ASCII, with the high bit set.
 						
 						// find the storage for this variable, and assign the value
 						value = variable_value(ppi->expression->parms.variable, &type);
@@ -984,6 +871,9 @@ static void perform_statement(list_t *L)
 				
 			case DO:
 			{
+				// DO is a little different than GOTO because it *might* be a gosub if the
+				// line number is an integer. I am also not clear what happens when you GOTO
+				// out of a gosub-like DO.
 				gosubcontrol_t *new = malloc(sizeof(*new));
 				
 				new->returnpoint = lst_next(L);
@@ -1133,6 +1023,39 @@ static void perform_statement(list_t *L)
         // loop over the items in the print list
         for (list_t *I = ps->parms.print.item_list; I != NULL; I = lst_next(I)) {
           pp = I->data;
+					
+					// first off, see if this item is a lone separator
+					//
+					// unlike BASIC, separators "do things" even if there is no expression,
+					// so TYPE !!! will have three items in the printlist and all three
+					// with have a separator but no expression
+					switch (pp->separator) {
+						case '!':
+							printf("\n");
+							interpreter_state.cursor_column = 0; // and reset this!
+							break;
+						case '#':
+							printf("\r");
+							interpreter_state.cursor_column = 0;
+							break;
+						case ':':
+							while (interpreter_state.cursor_column % tab_columns != 0) {
+								printf(" ");
+								interpreter_state.cursor_column++;
+							}
+							break;
+					}
+					
+					// now look to see if this item is a formatter
+					if (pp->format > 0) {
+						
+					}
+
+					// check to see if the expression is null, if so, that's because
+					// this particular item consists of a separator or format string
+					if (pp->expression == NULL) {
+						
+					}
           
           // if there's a USING, evaluate the format string it and print using it
           if (ps->parms.print.format) {
@@ -1161,16 +1084,6 @@ static void perform_statement(list_t *L)
         else
           pp = NULL;
         
-//        // if the last item is SPC or TAB, fake a trailing semi, which is the way PET does it
-//        if (pp != NULL && pp->expression->type == op && (pp->expression->parms.op.opcode == SPC || pp->expression->parms.op.opcode == TAB)) {
-//          pp->separator = ';';
-//        }
-        
-        // if there are no more items, or it's NOT a separator, do a CR
-        if (pp == NULL || pp->separator == 0) {
-          printf("\n");
-          interpreter_state.cursor_column = 0; // and reset this!
-        }
       }
         break;
                 
@@ -1282,8 +1195,6 @@ void interpreter_post_parse(void)
   
   // a program runs from the first line, so...
   interpreter_state.current_statement = first_statement;          // the first statement
-  interpreter_state.current_data_statement = first_statement;     // the DATA can point anywhere
-  interpreter_state.current_data_element = NULL;                  // the element within the DATA is nothing
 }
 
 /* the main loop for the program */

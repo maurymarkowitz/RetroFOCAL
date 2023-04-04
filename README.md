@@ -14,17 +14,17 @@ RetroFOCAL
 
 ## Introduction
 
-RetroFOCAL is an interpreter for programms written in the FOCAL language seen on DEC machines like the PDP-8. FOCAL is very similar to early BASIC interpreters and anyone familiar with BASIC will feet at home in FOCAL. FOCAL was only promoted for a short time from 1968 until the early 1970s, when DEC introduced their own versions of BASIC as the market moved to it en mass. In spite of this short lifetime, a number of historically important programs were intially created in this language, including Lunar Lander and The Sumer Game, better known today as Hamurabi.
+RetroFOCAL is an interpreter for programms written in the FOCAL language seen on DEC machines like the PDP-8. FOCAL is very similar to early BASIC interpreters and anyone familiar with BASIC will feet at home in FOCAL. FOCAL was only promoted for a short time from 1968 until the early 1970s, when DEC started promoting their own versions of BASIC as the market moved to that language *en mass*. In spite of this short lifetime, a number of historically important programs were intially created in this language, including Lunar Lander and The Sumer Game, better known today as Hamurabi.
 
 RetroFOCAL can redirect the output from `TYPE` statements and `ASK` prompts to a file, and read the responces to `ASK` statements from a file. This can be used to provide the same input to a program multiple times, and then the output can be `diff`ed to look for changes. This ia aided by a command-line option to set the random seed value. It also includes a simple static analizer that (optionally) prints statistics for the program after it completes. This includes the length of the program and its line number range, the number and types of variables used, and similar details.
 
-RetroFOCAL is based on RetroBASIC, which is based on gnbasic by James Bowman.
+RetroFOCAL is based on RetroBASIC by Maury Markowitz, which is based on gnbasic by James Bowman.
  
 ## Running RetroFOCAL
 
 RetroFOCAL is meant to be used with an existing program source file, not interactively. To run it, use:
 
-```./retrofocal program.bas```
+```./retrofocal program.fc```
 
 It will accept any text file as input and report (cryptic) errors if it cannot properly parse it. If parsing succeeds, the program (normally) begins running immediately.
 
@@ -54,9 +54,9 @@ If anyone would like to contribute a VS.net project, it would be greatly appecia
 
 ## Missing features and Erata
 
-A complete list is maintained in the TODO file, but here are some important limitations:
+A complete list of ongoing changes is maintained in the TODO file, but here are some important limitations:
 
 * ASK statements with multiple values currently have to be entered with return/enter between each value, spaces do not work.
 * The system does not support "immediate mode" (command line) input. It is not supposed to, but could potentially do so.
-* WRITE, LIBRARY, MODIFY and ERASE are currently not implemented, in keeping with the use-case.
+* WRITE, LIBRARY, MODIFY and ERASE (lines) are currently not implemented, in keeping with the use-case.
 * File I/O is not supported, commands like OPEN will be parsed but have no effect.
