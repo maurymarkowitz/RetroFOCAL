@@ -116,15 +116,15 @@ FOUT    { return FOUT; }
              return STRING;
            }
  
-} // back out of KEYWORD_FOUND, the following apply to everything
-
  /* FOCAL has a second number format used for string inputs, it starts with a 0 like 0YES */
-[0][A-Za-z][A-Za-z0-9]* {
+0[A-Za-z][A-Za-z0-9]* {
     // DEC's character codes are +128, so A is 161
               yytext[strlen(yytext) - 1] = '\0';
               yylval.s = str_new(yytext + 1);
               return NUMSTR;
             }
+
+} // back out of KEYWORD_FOUND, the following apply to everything
 
  /* other numeric constants and line numbers */
 [0-9]*[0-9.][0-9]*([Ee][-+]?[0-9]+)? {

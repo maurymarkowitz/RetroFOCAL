@@ -83,14 +83,24 @@ struct timeval reset_time;     					// if the user resets the time with TIME$, t
 
 /************************************************************************/
 
+/**
+ * Prints a formatted error message along with the offending line number.
+ *
+ * @param message The error message.
+ */
 static void focal_error(const char *message)
 {
   fprintf(stderr, "%s at line %2.2f\n", message, current_line());
 }
 
-/* Returns an either_t containing a string or a number for the underlying
-   variable, along with its type in the out-parameter 'type'. If the
-   variable has not been encountered before it will be created here. */
+/** Returns an either_t containing a string or a number for the underlying
+ * variable, along with its type in the out-parameter 'type'. If the
+ * variable has not been encountered before it will be created here.
+ *
+ * @param variable The variable reference to look up.
+ * @paramout type The variable type as found in storage.
+ * @returns An either_t containing a numeric result.
+ * */
 either_t *variable_value(const variable_t *variable, int *type)
 {
   variable_storage_t *storage;
@@ -181,7 +191,7 @@ either_t *variable_value(const variable_t *variable, int *type)
 
   // all done, return the value at that index
   return &storage->value[index];
-}
+} /* variable_value */
 
 /* cover method for variable_value, allows it to be exported to the parser
  without it having to know about either_t, which is private.
@@ -202,6 +212,7 @@ void insert_typed_variable(const variable_t *variable, int type)
  user-defined functions to find a matching name and/or inserts it if it's new.
  the difference is that this returns an expression which we then evaluate.
  */
+// NOTE: this is being left in for now in case we need to support FNEW
 expression_t *function_expression(const variable_t *function, expression_t *expression)
 {
   // see if we can find the entry in the symbol list
@@ -232,7 +243,7 @@ expression_t *function_expression(const variable_t *function, expression_t *expr
   
   // at this point we have either found or created the formula, so...
   return storage->formula;
-}
+} /* function_expression */
 
 /* converts a number to a new value_t */
 static value_t double_to_value(const double v)
@@ -241,22 +252,24 @@ static value_t double_to_value(const double v)
   r.type = NUMBER;
   r.number = v;
   return r;
-}
+} /* double_to_value */
 
-/* converts a number to a string */
-/* this system follows the rules found in MS BASICs like the PET
- that is, generally:
- 1) if the number is zero, return 0
- 2) otherwise, move the decimal until the mantissa is 1e8 <= FAC < 1e9
- 3) **round** the resulting 9-digit value
- 4) if the number of decimal places moved is -10 < TMPEXP > 1 then just print the result with the decimal moved back
- 5) otherwise, use E format
- in all cases, add a leading space for 0 or +ve values, - for -ve
- 
- Item (3) means that 9,999,999,999 is printed as 1E+10, which is precisely the G format in C.
- So the code below it needlessly complex as anything other than 0 uses G. However, we'll leave
- in the IFs so that if we find new versions in the future that follow other rules its easy to
- add them.
+/** Returns a number encoding a string using DEC's 6-bit codes
+ *
+ * This system follows the rules found in MS BASICs like the PET
+ * that is, generally:
+ * 1) if the number is zero, return 0
+ * 2) otherwise, move the decimal until the mantissa is 1e8 <= FAC < 1e9
+ * 3) **round** the resulting 9-digit value
+ * 4) if the number of decimal places moved is -10 < TMPEXP > 1 then just print the result with the decimal moved back
+ * 5) otherwise, use E format
+ *
+ * in all cases, add a leading space for 0 or +ve values, - for -ve
+ *
+ * Item (3) means that 9,999,999,999 is printed as 1E+10, which is precisely the G format in C.
+ * So the code below it needlessly complex as anything other than 0 uses G. However, we'll leave
+ * in the IFs so that if we find new versions in the future that follow other rules its easy to
+ * add them.
  */
 static char *number_to_string(const double d)
 {
@@ -271,9 +284,56 @@ static char *number_to_string(const double d)
     sprintf(str, "% -.9G", d);
   }
   return str;
-}
+} /* number_to_string */
 
-/* number of jiffies since program start (or reset) 1/60th in Commodore/Atari format */
+/** Returns a number encoding a string using DEC's 6-bit codes
+ *
+ * FOCAL was built on a machine with no inherant string support, and the
+ * language does not have any internal string handling. However, the need
+ * to input short strings for things like "yes or no" remained, so the
+ * solution was to use the 6-bit teletype codes and stuff them two-to-a-word
+ * into a numeric variable reference. This is used to parse ASK results,
+ * which may have letters at any point, as well as in the 0YES format for
+ * "string constants", which we represent internally as NUMSTRs. The codes
+ * bear no relationship to ASCII, so the conversion is one big switch.
+ *
+ * See: https://homepage.divms.uiowa.edu/~jones/pdp8/refcard/74.html
+ *
+ * @param string The string to convert to a numeric representation.
+ * @return A numeric representation of the string.
+ */
+static int string_to_number(const char *string)
+{
+	// FOCAL numbers are stored in three 12-bit words, with the exponent
+	// in the first word, led by the sign, and the mantissa in the next
+	// two words, also with a sign at the front. Only 20 bits of the
+	// mantissa are used for storage, the three bits after the sign bit
+	// are unused.
+	
+	
+	return 0;
+} /* string_to_number */
+
+/** Returns the DEC 6-bit character code for any given character.
+ *
+ * @param one_char The character to convert.
+ * @return The DEC character code number.
+ */
+static int char_code_for_character(const char one_char)
+{
+	switch (one_char) {
+		case '@' ... 'Z' : return ((int)one_char - 64); break;
+		case '0' ... '9' : return ((int)one_char + 12); break;
+		case ':' ... '?' : return ((int)one_char + 22); break;
+		case '[' ... '_' : return ((int)one_char - 58); break;
+		case ' ' ... '/' : return ((int)one_char + 8); break;
+		default: return 0;
+	}
+} /* char_code_for_character */
+
+/** Number of jiffies since program start (or reset) 1/60th in Commodore/Atari format.
+ *
+ */
 static int elapsed_jiffies() {
 	struct timeval current_time, elapsed_time, reset_delta;
 	
@@ -298,8 +358,11 @@ static int elapsed_jiffies() {
 	
 	return (int)jiffies;
 }
-
-/* recursively evaluates an expression and returns a value_t with the result */
+/** Recursively evaluates an expression and returns a value_t with the result.
+ *
+ * @param expression The expression to evaluate.
+ * @return The result, either a number or string.
+ */
 static value_t evaluate_expression(expression_t *expression)
 {
   value_t result;
@@ -783,6 +846,13 @@ static void perform_statement(list_t *L)
 					int type = 0;
 					
 					printitem_t *ppi = I->data;
+					// check for separator-only entries, like newlines
+					if (ppi->expression == NULL && ppi->separator > 0) {
+						// separator-only entry, something like !!
+						print_expression(ppi->expression, NULL);
+
+					}
+					
 					if (ppi->expression->type == variable) {
 						char line[80];
 						

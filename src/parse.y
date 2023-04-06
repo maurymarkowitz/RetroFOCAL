@@ -409,7 +409,7 @@ expression2:
         && (int)new->parms.op.p[1]->parms.number == new->parms.op.p[1]->parms.number) {
       if (new->parms.op.opcode == '+') {
         increments++;
-      } else {
+      } else if (new->parms.op.opcode == '-') {
         decrements++;
       }
     }
@@ -544,6 +544,13 @@ factor:
         numeric_constants_float++;
     }
 	}
+  |
+  NUMSTR
+  {
+    expression_t *new = make_expression(string);
+    new->parms.string = $1;
+    $$ = new;
+  }
 	|
 	STRING
 	{
