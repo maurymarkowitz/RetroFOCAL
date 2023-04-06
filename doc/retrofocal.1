@@ -71,7 +71,7 @@ Write the statistics to the named file in an alternative, system-readable format
 
 .SH GENERAL DESIGN
 .B RetroFOCAL
-is intended to run programs from written in the PDP-8 dialect of the FOCAL language. As FOCAL and BASIC are very similar, RetroFOCAL is based on the RetroBASIC program, greatly simplified. Where possible variations in dialect exist,
+is intended to run programs from written in the PDP-8 dialect of the FOCAL language. Where possible variations in dialect exist,
 .B RetroFOCAL
 always chooses to implement the instructions such that
 .I The Sumer Game
@@ -79,11 +79,8 @@ and
 .I Lunar Lander
 run properly.
 
-The original purpose of RetroBASIC was to collect statistics on common BASIC programs like
-.I Super Star Trek.
-This has been retained in
 .B RetroFOCAL
-. The statistics are collected during the parsing stage and can be printed out using the
+includes features to collect statistics on program structure. These are collected during the parsing stage and can be printed out using the
 .B \-p
 option, or written to a named file with
 .B \-w
@@ -102,7 +99,7 @@ options. The first seeds the random number generator to a given value so that su
 .B retrofocal -u ll.fc
 \- play a game of Lunar Lander with caps lock turned on.
 
-.B retrobasic -np sumer.fc
+.B retrofocal -np sumer.fc
 \- parse The Sumer Game, print statistics about the program structure, and exit.
 
 .SH BUGS
@@ -111,4 +108,4 @@ ASK statements with multiple variables have to be entered on separate lines; mos
 
 .SH AUTHORS
 
-Maury Markowitz is the original author of RetroFOCAL. It is based on RetroBASIC which is based on gnbasic by James Bowman.
+Maury Markowitz is the original author of RetroFOCAL. It is based on RetroBASIC, also by Maury Markowitz. RetroBASIC is based on gnbasic by James Bowman.
