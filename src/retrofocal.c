@@ -73,7 +73,6 @@ static double current_line(void);
 
 static void print_variables(void);
 static void delete_variables(void);
-static void delete_functions(void);
 static void delete_lines(void);
 
 /* defitions of variables used by the static analyzer */
@@ -207,43 +206,6 @@ void insert_typed_variable(const variable_t *variable, int type)
 {
   variable_value(variable, &type);
 }
-
-/* Similar to variable_value in concept, this code looks through the list of
- user-defined functions to find a matching name and/or inserts it if it's new.
- the difference is that this returns an expression which we then evaluate.
- */
-// NOTE: this is being left in for now in case we need to support FNEW
-expression_t *function_expression(const variable_t *function, expression_t *expression)
-{
-  // see if we can find the entry in the symbol list
-  function_storage_t *storage;
-	storage = lst_data_with_key(interpreter_state.functions, function->name);
-  
-  // if not, make a new slot in functions and set it up
-  if (!storage) {
-    // malloc an entry
-    storage = malloc(sizeof(*storage));
-    
-    // set the return type based on the name
-    char trailer = function->name[strlen(function->name) - 1];
-    if (trailer == '$')
-      storage->type = STRING;
-    else
-      storage->type = NUMBER; // this works for all of them, int, dbl, etc.
-    
-    // copy over the list of parameters
-    storage->parameters = lst_copy(function->subscripts);
-    
-    // now store the expression/formula
-    storage->formula = expression;
-    
-    // and insert it into storage
-		interpreter_state.functions = lst_insert_with_key_sorted(interpreter_state.functions, storage, function->name);
-  }
-  
-  // at this point we have either found or created the formula, so...
-  return storage->formula;
-} /* function_expression */
 
 /* converts a number to a new value_t */
 static value_t double_to_value(const double v)
@@ -493,123 +455,6 @@ static value_t evaluate_expression(expression_t *expression)
     }
       break;
       
-      // user functions are not so simple, because the variable references
-      // in the original definition have to be mapped onto the parameters
-      // being passed in here. So this code looks at the original definition
-      // to get the list of variable names, caches those values on a stack,
-      // recalculates those variables based on the inputs to the function call,
-      // runs the calculation using those variables, and then pops the original
-      // values back off the stack.
-    case fn:
-    {
-      result.type = NUMBER;
-      result.number = 0;
-      // get the original definition or error out if we can't find it
-      char *func_name = expression->parms.variable->name;
-			function_storage_t *original_definition;
-			original_definition = lst_data_with_key(interpreter_state.functions, func_name);
-      if (original_definition == NULL) {
-        char buffer[80];
-        sprintf(buffer, "User-defined function '%s' is being called but has not been defined", func_name);
-        focal_error(buffer);
-        result.type = NUMBER;
-        result.number = 0;
-        break;
-      }
-      // if we found the function, check that it has the same number of parameters as this function call
-      if (lst_length(original_definition->parameters) != lst_length(expression->parms.variable->subscripts)) {
-        focal_error("User-defined function '%s' is being called with the wrong number of parameters");
-        break;
-      }
-
-      // for each parameter name in the original function call, copy the current value
-      // of any global version of that variable's value onto a temporary stack...
-			list_t *stack = NULL;
-      variable_storage_t *storage;
-      either_t *stored_val;
-      expression_t *original_parameter = original_definition->parameters->data; // pre-flight for the first time through
-      int type = 0;
-      for (list_t *param = expression->parms.variable->subscripts; param != NULL; param = lst_next(param)) {
-        // retrieve the original value
-        stored_val = variable_value(original_parameter->parms.variable, &type);
-
-        // make a slot and push the value onto the stack
-        storage = malloc(sizeof(*storage));
-        storage->type = type;
-        storage->value = malloc(sizeof(either_t));
-          if (type == STRING)
-            storage->value->string = stored_val->string;
-          else
-            storage->value->number = stored_val->number;
-				stack = lst_insert_with_key_sorted(stack, storage, original_parameter->parms.variable->name);
-        
-        // move to the next item in the original parameter list, if there's any left
-        if (original_definition->parameters->next != NULL)
-          original_parameter = lst_next(original_definition->parameters)->data;
-      }
-      
-      // now loop over the list of inputs, calculate them, and update the global variable
-      value_t updated_val;
-      for (list_t *param = expression->parms.variable->subscripts; param != NULL; param = lst_next(param)) {
-        // calculate the value for the parameter expression
-        updated_val = evaluate_expression(param->data);
-        
-        // find and update the global value
-        stored_val = variable_value(original_parameter->parms.variable, &type);
-        if (updated_val.type == type) {
-          if (type == STRING)
-            stored_val->string = updated_val.string;
-          else
-            stored_val->number = updated_val.number;
-        } else {
-          // if the type we stored last time is different than this time...
-          focal_error("Type mismatch in user-defined function call");
-          break;
-        }
-        
-        // move to the next parameter
-        if (original_definition->parameters->next != NULL)
-          original_parameter = lst_next(original_definition->parameters)->data;
-      }
-      
-      // with the global values updated, we can calculate our expression
-      expression_t *p = NULL;
-      p = function_expression(expression->parms.variable, p);
-      if (p == NULL) {
-        char buffer[80];
-        sprintf(buffer, "User-defined function '%s' is being called but has not been defined", expression->parms.variable->name);
-        focal_error(buffer);
-      } else {
-        result = evaluate_expression(p);
-      }
-      
-      // and then pop the values back off the stack into the globals
-      variable_storage_t *temp_val;
-      original_parameter = original_definition->parameters->data; // pre-flight for the first time through
-      for (list_t *param = expression->parms.variable->subscripts; param != NULL; param = lst_next(param)) {
-        // retrieve the original name and value
-        either_t *global_val = variable_value(original_parameter->parms.variable, &type);
-        
-        // find the original value in the stack
-				temp_val = lst_data_with_key(stack, original_parameter->parms.variable->name);
-        
-        // copy the value back
-        if (type == STRING)
-          global_val->string = temp_val->value->string;
-        else
-          global_val->number = temp_val->value->number;
-        
-        // kill the stack entry
-				stack = lst_remove_node_with_key(stack, original_parameter->parms.variable->name);
-        free(temp_val);
-        
-        // move to the next parameter
-        if (original_definition->parameters->next != NULL)
-          original_parameter = lst_next(original_definition->parameters)->data;
-      }
-    }
-      break;
-      
       // and now for the fun bit, the operators list...
     case op:
       // build a list of values for each of the parameters by recursing
@@ -681,11 +526,11 @@ static value_t evaluate_expression(expression_t *expression)
             result.string = str_new(number_to_string(a));
             break;
           case FLOG:
-            result.number = log(a);
-            break;
-          case FSIN:
-            result.number = sin(a);
-            break;
+						result.number = log(a);
+						break;
+					case FSIN:
+						result.number = sin(a);
+						break;
 					case FSGN:
 						// early MS variants return 1 for 0, this implements the newer version where 0 returns 0
 						if (a < 0)
@@ -695,10 +540,17 @@ static value_t evaluate_expression(expression_t *expression)
 						else
 							result.number = 1;
 						break;
-         case FSQT:
-            result.number = sqrt(a);
-            break;
-            												
+					case FSQT:
+						result.number = sqrt(a);
+						break;
+						
+					case FNEW: // these are both unhandled and return 0
+						result.number = 0.0;
+						break;
+					case FCOM:
+						result.number = 0.0;
+						 break;
+
           default:
             focal_error("Unhandled arity-1 function");
         } //switch
@@ -1210,23 +1062,12 @@ static void delete_variables() {
 	lst_free_everything(interpreter_state.variable_values);
 	interpreter_state.variable_values = NULL;
 }
-static void delete_functions() {
-	lst_free_everything(interpreter_state.functions);
-	interpreter_state.functions = NULL;
-}
 static void delete_lines() {
   for(int i = MAXLINE - 1; i >= 0; i--) {
     if (interpreter_state.lines[i] != NULL) {
       lst_free(interpreter_state.lines[i]);
     }
   }
-}
-
-/* set up empty trees to store variables and user functions as we find them */
-void interpreter_setup()
-{
-	interpreter_state.variable_values = NULL;
-	interpreter_state.functions = NULL;
 }
 
 /* after yacc has done it's magic, we form a program by pointing

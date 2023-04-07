@@ -86,7 +86,7 @@ typedef struct {
 
 /* expressions */
 typedef enum {
-  number, string, variable, op, fn
+  number, string, variable, op
 } expression_type_t;
 
 typedef struct expression_struct {
@@ -175,7 +175,6 @@ typedef struct {
   list_t *current_statement;      // currently executing statement
   list_t *next_statement;         // next statement to run, might change for GOTO and such
   list_t *variable_values;		    // name/value pairs used to store variable values
-  list_t *functions;              // name/expression pairs for user-defined functions IS THIS NEEDED FOR FNEW?
   list_t *forstack;	              // current stack of FOR statements
   list_t *dostack;	              // current stack of gosub statements
   int cursor_column;              // current column of the output cursor
@@ -188,9 +187,6 @@ extern interpreterstate_t interpreter_state;
 
 /* the only piece of the interpreter the parser needs to know about is the variable table */
 void insert_variable(const variable_t *variable);
-
-/* called by main to set up the interpreter state */
-void interpreter_setup(void);
 
 /* perform post-parse setup */
 void interpreter_post_parse(void);

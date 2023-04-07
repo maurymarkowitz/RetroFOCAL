@@ -92,7 +92,7 @@ FDIS    { return FDIS; }
 FDXS    { return FDXS; }
 
  /* these are listed in the 1970 programming languages manual, but are not explained */
-FNEW    { return FNEW; } // apparently used in a fashion similar to DEF FN, but zero example so far
+FNEW    { return FNEW; } // like a BASIC SYS or CALL, calls a machine-code routine
 FCOM    { return FCOM; } // UW-FOCAL explains that this is used to access core, to share data between programs
 
  /* FOCAL-71 additions */

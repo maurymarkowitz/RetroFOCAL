@@ -166,9 +166,9 @@ int main(int argc, char *argv[])
   // parse the options and make sure we got a filename somewhere
   parse_options(argc, argv);
   
-  // call the interpreter's setup to create the state needed to parse the file
-  interpreter_setup();
-  
+  // reset any variable values
+  interpreter_state.variable_values = NULL;
+
   // open the file and see if it exists
   yyin = fopen(source_file, "r");
   if (yyin == NULL) {
