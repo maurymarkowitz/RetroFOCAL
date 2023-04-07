@@ -1,6 +1,6 @@
 RetroFOCAL TODO/BUGS/ERRATA list
 
-- order of operations!
+- order of operations! = ^, *, /, +- (* and / are not the same level!)
 
 - fix line-number handling
 
@@ -8,11 +8,10 @@ RetroFOCAL TODO/BUGS/ERRATA list
 
 - convert ASCII to DEC in FIN and FOUT and similar places
 
-- properly space out ASK and TYPE, add colon to ASK output
+- properly space out ASK and TYPE
 
 - support ? for turning TRACE on and off, allowed in GO and at the front of any other statement
 
 - support the psuedo-variable # which prints system flags
 
 - flesh out options for spaces, colons and equals in TYPE and ASK
-
