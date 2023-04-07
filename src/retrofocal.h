@@ -113,14 +113,14 @@ typedef struct {
   double format;      /* %x.y */
 } printitem_t;
 
-/* every statement in the program gets a statement entry. the most
- basic forms are simply a type, which contains the token value. Other
- statements can store additional parameters in the params union.
+/* Every statement in the program gets a statement entry. the most
+ basic forms are simply a type, which contains the token value. These
+ are used for things like QUIT, which doesn't have any paramters.
+ Other statements can store additional parameters in the params union.
  */
 typedef struct statement_struct {
   int type;
   union {
-    expression_t *generic_parameter, *generic_parameter2, *generic_parameter3;
     struct {
       variable_t *variable;
       expression_t *begin, *end, *step;
@@ -138,15 +138,11 @@ typedef struct statement_struct {
       variable_t *variable;
       expression_t *expression;
     } set;
-    list_t *next;
     struct {
       expression_t *format;
       list_t *item_list;
     } print;
     char *rem;
-    //        struct {
-    //            list_t *numbers;
-    //        } _sys;
   } parms;
 } statement_t;
 

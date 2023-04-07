@@ -786,12 +786,15 @@ static list_t *find_line(double linenumber)
 	return NULL;
 }
 
-/* performs a single statement */
-static void perform_statement(list_t *L)
+/** Runs a single statement, like ASK or TYPE
+ *
+ * @param L A pointer to the list item in the program to perform.
+ */
+static void perform_statement(list_t *list_item)
 {
-  statement_t *ps = L->data;
-  if (ps) {
-    switch (ps->type) {
+	statement_t *statement = list_item->data;
+	if (statement) {
+		switch (statement->type) {
 				
 			case ASK:
 			{
@@ -800,7 +803,7 @@ static void perform_statement(list_t *L)
 				// but does so for every input, not just the first
 				
 				// loop over the items in the variable/prompt list
-				for (list_t *I = ps->parms.input; I != NULL; I = lst_next(I)) {
+				for (list_t *I = statement->parms.input; I != NULL; I = lst_next(I)) {
 					// get the item itself
 					printitem_t *ppi = I->data;
 					
@@ -838,7 +841,7 @@ static void perform_statement(list_t *L)
 						
 						// find the storage for this variable
 						value = variable_value(ppi->expression->parms.variable, &type);
-
+						
 						// FOCAL only has numeric variables, but it does have the ability to
 						// type in strings at prompts, so we have to hand-convert the string
 						// into a value, we can't simply sscanf it
@@ -853,180 +856,191 @@ static void perform_statement(list_t *L)
 				// DO is a GOSUB which may call a line or a group
 				gosubcontrol_t *new = malloc(sizeof(*new));
 				
-				new->returnpoint = lst_next(L);
+				new->returnpoint = lst_next(list_item);
 				interpreter_state.dostack = lst_append(interpreter_state.dostack, new);
-				interpreter_state.next_statement = find_line(evaluate_expression(ps->parms._do).number);
+				interpreter_state.next_statement = find_line(evaluate_expression(statement->parms._do).number);
 			}
 				break;
-
+				
 			case ERASE:
 				// clears out variable values
 				delete_variables();
 				break;
-
-      case FOR:
-      {
-        forcontrol_t *new_for = malloc(sizeof(*new_for));
-        either_t *loop_value;
-        int type = 0;
-        
-        new_for->index_variable = ps->parms._for.variable;
-        new_for->begin = evaluate_expression(ps->parms._for.begin).number;
-        new_for->end = evaluate_expression(ps->parms._for.end).number;
-        if (ps->parms._for.step)
-          new_for->step = evaluate_expression(ps->parms._for.step).number;
-        else {
-          new_for->step = 1;
-        }
-        new_for->head = L;
-        loop_value = variable_value(new_for->index_variable, &type);
-        loop_value->number = new_for->begin;
-        
-        interpreter_state.forstack = lst_append(interpreter_state.forstack, new_for);
-      }
-        break;
-        
-      case GOTO:
-      {
-        interpreter_state.next_statement = find_line(evaluate_expression(ps->parms.go).number);
-      }
-        break;
-        
-      case IF:
-      {
-        value_t cond = evaluate_expression(ps->parms._if.condition);
+				
+			case FOR:
+			{
+				forcontrol_t *new_for = malloc(sizeof(*new_for));
+				either_t *loop_value;
+				int type = 0;
+				
+				new_for->index_variable = statement->parms._for.variable;
+				new_for->begin = evaluate_expression(statement->parms._for.begin).number;
+				new_for->end = evaluate_expression(statement->parms._for.end).number;
+				if (statement->parms._for.step)
+					new_for->step = evaluate_expression(statement->parms._for.step).number;
+				else {
+					new_for->step = 1;
+				}
+				new_for->head = list_item;
+				loop_value = variable_value(new_for->index_variable, &type);
+				loop_value->number = new_for->begin;
+				
+				interpreter_state.forstack = lst_append(interpreter_state.forstack, new_for);
+			}
+				break;
+				
+			case GOTO:
+			{
+				interpreter_state.next_statement = find_line(evaluate_expression(statement->parms.go).number);
+			}
+				break;
+				
+			case IF:
+			{
+				value_t cond = evaluate_expression(statement->parms._if.condition);
 				/* in contrast to BASIC, FOCAL uses the FORTRAN-like model where all comparisons are
-				   mathematical and the branch is based on whether the result of the comparison is
-				   -ve, 0 or +ve. The 0 and +ve branches are optional. If either is missing, that case
-				   is accomplished by running any remaining statements on the line (like BASIC in that
-				   respect). This leads to some complexity... */
-				if (cond.number < 0 && ps->parms._if.less_line > 0) {
-					interpreter_state.next_statement = find_line(ps->parms._if.less_line);
+				 mathematical and the branch is based on whether the result of the comparison is
+				 -ve, 0 or +ve. The 0 and +ve branches are optional. If either is missing, that case
+				 is accomplished by running any remaining statements on the line (like BASIC in that
+				 respect). This leads to some complexity... */
+				if (cond.number < 0 && statement->parms._if.less_line > 0) {
+					interpreter_state.next_statement = find_line(statement->parms._if.less_line);
 				}
-				else if (cond.number == 0 && ps->parms._if.zero_line > 0) {
-					interpreter_state.next_statement = find_line(ps->parms._if.zero_line);
+				else if (cond.number == 0 && statement->parms._if.zero_line > 0) {
+					interpreter_state.next_statement = find_line(statement->parms._if.zero_line);
 				}
-				else if (cond.number > 0 && ps->parms._if.more_line > 0) {
-					interpreter_state.next_statement = find_line(ps->parms._if.more_line);
+				else if (cond.number > 0 && statement->parms._if.more_line > 0) {
+					interpreter_state.next_statement = find_line(statement->parms._if.more_line);
 				}
 				else {
 					// if none of those fired, it means we didn't have a line number for the
 					// correct case, which means we just continue onto the next statement
 				}
-      }
-        break;
+			}
+				break;
 				
 			case QUIT:
 				// set the instruction pointer to null so it exits below
 				interpreter_state.next_statement = NULL;
 				break;
-								
+				
 			case SET:
-      {
-        either_t *stored_val;
-        int type = 0;
-        value_t exp_val;
-        
-        // get/make the storage entry for this variable
-        stored_val = variable_value(ps->parms.set.variable, &type);
-        
-        // evaluate the expression
-        exp_val = evaluate_expression(ps->parms.set.expression);
-        
-        // make sure we got the right type, and assign it if we did
-        if (exp_val.type == type) {
-          if (type == STRING)
-            stored_val->string = exp_val.string;
-          else
-            stored_val->number = exp_val.number;
-        } else {
-          // if the type we stored last time is different than this time...
-          focal_error("Type mismatch in assignment");
-        }
-      }
-        break;
-        
-//      case NEXT:
-//      {
-//				// make sure there is a stack
-//				if (interpreter_state.forstack  == NULL || lst_length(interpreter_state.forstack) == 0) {
-//					basic_error("NEXT without FOR");
-//					break;
-//				}
-//
-//				// get the most-recent FOR, which is the *end* of the list
-//				forcontrol_t *pfc = lst_last_node(interpreter_state.forstack)->data;
-//
-//				// see if the next has any variable names, that is, NEXT I vs. NEXT,
-//				// and if so, ensure the latest FOR on the stack is one of those variables
-//				if (lst_length(ps->parms.next) > 0) {
-//					bool foundIt = false;
-//					list_t *var = lst_first_node(ps->parms.next);
-//					for (int i = 0; i < lst_length(ps->parms.next); i++) {
-//						if (strcmp(pfc->index_variable->name, ((variable_t *)var->data)->name) == 0) {
-//							foundIt = true;
-//						}
-//						else {
-//							var = lst_next(ps->parms.next);
-//						}
-//					}
-//					if (!foundIt) {
-//						basic_error("NEXT with mismatched FOR");
-//						break;
-//					}
-//				}
-//
-//				// do a STEP
-//        int type = 0;
-//				either_t *lv = variable_value(pfc->index_variable, &type);
-//        lv->number += pfc->step;
-//
-//				// and see if we need to go back to the FOR or we're done and we continue on
-//        if (((pfc->step < 0) && (lv->number >= pfc->end)) ||
-//            ((pfc->step > 0) && (lv->number <= pfc->end))) {
-//          // we're not done, go back to the head of the loop
-//          interpreter_state.next_statement = lst_next(pfc->head);
-//        } else {
-//          // we are done, remove this entry from the stack and just keep going
-//          interpreter_state.forstack = lst_remove_node_with_data(interpreter_state.forstack, pfc);
-//					free(pfc);
-//        }
-//      }
-//        break;
-                
+			{
+				either_t *stored_val;
+				int type = 0;
+				value_t exp_val;
+				
+				// get/make the storage entry for this variable
+				stored_val = variable_value(statement->parms.set.variable, &type);
+				
+				// evaluate the expression
+				exp_val = evaluate_expression(statement->parms.set.expression);
+				
+				// make sure we got the right type, and assign it if we did
+				if (exp_val.type == type) {
+					if (type == STRING)
+						stored_val->string = exp_val.string;
+					else
+						stored_val->number = exp_val.number;
+				} else {
+					// if the type we stored last time is different than this time...
+					focal_error("Type mismatch in assignment");
+				}
+			}
+				break;
+				
+				//      case NEXT:
+				//      {
+				//				// make sure there is a stack
+				//				if (interpreter_state.forstack  == NULL || lst_length(interpreter_state.forstack) == 0) {
+				//					basic_error("NEXT without FOR");
+				//					break;
+				//				}
+				//
+				//				// get the most-recent FOR, which is the *end* of the list
+				//				forcontrol_t *pfc = lst_last_node(interpreter_state.forstack)->data;
+				//
+				//				// see if the next has any variable names, that is, NEXT I vs. NEXT,
+				//				// and if so, ensure the latest FOR on the stack is one of those variables
+				//				if (lst_length(ps->parms.next) > 0) {
+				//					bool foundIt = false;
+				//					list_t *var = lst_first_node(ps->parms.next);
+				//					for (int i = 0; i < lst_length(ps->parms.next); i++) {
+				//						if (strcmp(pfc->index_variable->name, ((variable_t *)var->data)->name) == 0) {
+				//							foundIt = true;
+				//						}
+				//						else {
+				//							var = lst_next(ps->parms.next);
+				//						}
+				//					}
+				//					if (!foundIt) {
+				//						basic_error("NEXT with mismatched FOR");
+				//						break;
+				//					}
+				//				}
+				//
+				//				// do a STEP
+				//        int type = 0;
+				//				either_t *lv = variable_value(pfc->index_variable, &type);
+				//        lv->number += pfc->step;
+				//
+				//				// and see if we need to go back to the FOR or we're done and we continue on
+				//        if (((pfc->step < 0) && (lv->number >= pfc->end)) ||
+				//            ((pfc->step > 0) && (lv->number <= pfc->end))) {
+				//          // we're not done, go back to the head of the loop
+				//          interpreter_state.next_statement = lst_next(pfc->head);
+				//        } else {
+				//          // we are done, remove this entry from the stack and just keep going
+				//          interpreter_state.forstack = lst_remove_node_with_data(interpreter_state.forstack, pfc);
+				//					free(pfc);
+				//        }
+				//      }
+				//        break;
+				
 			case TYPE:
-      {
-        // loop over the items in the print list and print them out
-				for (list_t *I = ps->parms.print.item_list; I != NULL; I = lst_next(I)) {
+			{
+				// loop over the items in the print list and print them out
+				for (list_t *I = statement->parms.print.item_list; I != NULL; I = lst_next(I)) {
 					print_item(I->data);
 				}
-      }
-        break;
-                
-      case RETURN:
-      {
+			}
+				break;
+				
+			case RETURN:
+			{
 				gosubcontrol_t *pgc;
 				if (interpreter_state.dostack == NULL || lst_length(interpreter_state.dostack) == 0) {
 					focal_error("RETURN without DO");
 					break;
 				}
-
-        pgc = lst_last_node(interpreter_state.dostack)->data;
-        interpreter_state.next_statement = pgc->returnpoint;
-        interpreter_state.dostack = lst_remove_node_with_data(interpreter_state.dostack, pgc);
-      }
-        break;
 				
-      case VARLIST:
-        print_variables();
-        break;
-        
-      default:
-        printf("Unimplemented statement %d\n", ps->type);
+				pgc = lst_last_node(interpreter_state.dostack)->data;
+				interpreter_state.next_statement = pgc->returnpoint;
+				interpreter_state.dostack = lst_remove_node_with_data(interpreter_state.dostack, pgc);
+			}
+				break;
+				
+			case VARLIST:
+				print_variables();
+				break;
+				
+			default:
+				printf("Unimplemented statement %d\n", statement->type);
 				exit(0);
-    } //end switch
-  }
-}
+		} //end switch
+		
+		// because of the way that FOCAL handles FOR loops and some DO calls,
+		// we have to test whether or not we are the last statement on the line,
+		// or at the last statement of a group. if so, we need to determine where
+		// to go next, which might be back to the start of a FOR, or doing the
+		// equivalent of a RETURN
+		
+		
+		
+		
+		
+	} // statement is not null
+} /* perform_statement */
 
 /* variable tree walking methods */
 
@@ -1116,7 +1130,7 @@ void interpreter_run(void)
 	gettimeofday(&start_time, NULL);
   interpreter_state.running_state = 1;
 	
-	// and set the reset to now as well
+	// and set the reset time to now as well
 	gettimeofday(&reset_time, NULL);
   
   // last line number we ran, used for tracing/stepping
@@ -1124,9 +1138,8 @@ void interpreter_run(void)
   if (trace_lines)
     printf("[%i]\n", last_line);
   
-  // very simple - perform_statement returns the next statement and the
-  // main below set us up to point to the first one, so just call
-  // that one function until you get a NULL
+  // very simple - perform_statement returns the next statement so we just keep
+	// looping over perform_statement until it returns a NULL
   while (interpreter_state.current_statement) {
     // get the next statement from the one we're about to run
     interpreter_state.next_statement = lst_next(interpreter_state.current_statement);
