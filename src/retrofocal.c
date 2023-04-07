@@ -819,7 +819,7 @@ static void perform_statement(list_t *list_item)
 						int type = 0;
 						
 						// print the colon if that option is turned on
-						if (ask_colon)
+						if (ask_colon)	
 							printf(":");
 						
 						// see if we can get some data, we should at least get a return
@@ -1000,8 +1000,8 @@ static void perform_statement(list_t *list_item)
 			case TYPE:
 			{
 				// loop over the items in the print list and print them out
-				for (list_t *I = statement->parms.print.item_list; I != NULL; I = lst_next(I)) {
-					print_item(I->data);
+				for (list_t *item = statement->parms.print; item != NULL; item = lst_next(item)) {
+					print_item(item->data);
 				}
 			}
 				break;
@@ -1029,13 +1029,19 @@ static void perform_statement(list_t *list_item)
 				exit(0);
 		} //end switch
 		
-		// because of the way that FOCAL handles FOR loops and some DO calls,
+		// because of the way that FOCAL handles FOR loops and DO calls,
 		// we have to test whether or not we are the last statement on the line,
 		// or at the last statement of a group. if so, we need to determine where
 		// to go next, which might be back to the start of a FOR, or doing the
 		// equivalent of a RETURN
+		double this_line = current_line();
+		double next_line = line_for_statement(lst_next(list_item));
+		int this_group = trunc(this_line);
+		int this_statement = round(this_line - this_group);
+		int next_group = trunc(next_line);
+		int next_statement = round(next_line - next_group);
 		
-		
+
 		
 		
 		

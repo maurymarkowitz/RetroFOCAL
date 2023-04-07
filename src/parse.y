@@ -396,8 +396,7 @@ statement:
   TYPE printlist /* unlike BASIC, the formatter can be anywhere in the line, and there can be more than one */
   {
     statement_t *new = make_statement(TYPE);
-    new->parms.print.format = NULL;
-    new->parms.print.item_list = $2;
+    new->parms.print = $2;
     $$ = new;
   }
 	|

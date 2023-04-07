@@ -115,7 +115,7 @@ typedef struct {
 
 /* Every statement in the program gets a statement entry. the most
  basic forms are simply a type, which contains the token value. These
- are used for things like QUIT, which doesn't have any paramters.
+ are used for things like QUIT, which doesn't have any paramaters.
  Other statements can store additional parameters in the params union.
  */
 typedef struct statement_struct {
@@ -134,14 +134,11 @@ typedef struct statement_struct {
       double more_line;
     } _if;
     list_t *input;
+    list_t *print;
     struct {
       variable_t *variable;
       expression_t *expression;
     } set;
-    struct {
-      expression_t *format;
-      list_t *item_list;
-    } print;
     char *rem;
   } parms;
 } statement_t;
