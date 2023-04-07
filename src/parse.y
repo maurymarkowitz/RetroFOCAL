@@ -85,14 +85,14 @@ static expression_t *make_operator(int arity, int o)
 %type <l> program line statements
 %type <l> printlist exprlist
 %type <i> printsep e2op term unary_op fn_0 fn_1
-%type <expression> expression expression0 expression1 expression2 expression3 expression4 function factor
+%type <expression> expression expression2 expression3 expression4 function factor
 %type <statement> statement
 %type <variable> variable
 
  // make sure STRING is before the numbers, so you can test all numbers as > STRING
-%token <s> STRING
-%token <d> NUMBER
-%token <s> NUMSTR // this is the unique "0YES" format, which is stored as a string but returns a number
+%token <s> STRING // only used in constants
+%token <d> NUMBER // in FOCAL, even line numbers are doubles
+%token <s> NUMSTR // this is the unique "0YES" format, which is stored here as a string for debugging purposes
 %token <s> VARIABLE_NAME
 %token <s> FUNCTION_NAME
 
@@ -127,18 +127,18 @@ static expression_t *make_operator(int arity, int o)
 %token FSIN
 %token FSQT
 
-// unsupported, but included for parsing
+// unsupported functions, included for parsing
 %token FADC
 %token FDIS
 %token FDXS
 
 // mentioned in the manual but seen nowhere
-%token FCOM
-%token FNEW
+%token FCOM // used to share memory between programs
+%token FNEW // user-defined function
 
 // new functions from FOCAL-71
-%token FIN
-%token FOUT
+%token FIN  // similar to INKEY
+%token FOUT // "outkey"
 
  // used internally
 %token VARLIST
@@ -254,17 +254,30 @@ statement:
     for_loops_total++;
   }
   |
-  GO /* we will treat GO and GOTO like DO, although maybe they should report an error? */
+  GO /* same as BASIC's RUN */
   {
     statement_t *new = make_statement(GOTO);
     $$ = new;
   }
   |
-  GOTO expression
+  GOTO expression /* essentially identical to above, but in the documentation they never put line numbers on a GO */
   {
     statement_t *new = make_statement(GOTO);
     new->parms._do = $2;
     $$ = new;
+    
+    /* static analyzer */
+    linenum_go_totals++;
+    linenum_constants_total++;
+    if ($2->parms.number) {
+      if ($2->parms.number == errline) {
+        linenum_same_line++;
+      } else if ($2->parms.number > errline) {
+          linenum_forwards++;
+      } else {
+          linenum_backwards++;
+      }
+    }
   }
 	|
 	IF '(' expression ')' NUMBER /* IF requires parens, like C */
@@ -275,7 +288,7 @@ statement:
     $$ = new;
     
     /* static analyzer */
-    linenum_then_do_totals++;
+    linenum_then_go_totals++;
     linenum_constants_total++;
 	}
   |
@@ -288,7 +301,7 @@ statement:
     $$ = new;
     
     /* static analyzer */
-    linenum_then_do_totals++;
+    linenum_then_go_totals++;
     linenum_constants_total++;
   }
   |
@@ -302,7 +315,7 @@ statement:
     $$ = new;
     
     /* static analyzer */
-    linenum_then_do_totals++;
+    linenum_then_go_totals++;
     linenum_constants_total++;
   }
   |
@@ -321,16 +334,16 @@ statement:
   SET variable '=' expression /* explicit SET, no implicit version like in BASIC */
   {
     statement_t *new = make_statement(SET);
-    new->parms.let.variable = $2;
-    new->parms.let.expression = $4;
+    new->parms.set.variable = $2;
+    new->parms.set.expression = $4;
     $$ = new;
     
     /* static analyser - see if we are setting a value to 0 or 1 */
-    if (new->parms.let.expression->type == number) {
-      if ((int)new->parms.let.expression->parms.number == 0) {
+    if (new->parms.set.expression->type == number) {
+      if ((int)new->parms.set.expression->parms.number == 0) {
           assign_zero++;
-      } else if ((int)new->parms.let.expression->parms.number == 1
-                 && (int)new->parms.let.expression->parms.number == new->parms.let.expression->parms.number) {
+      } else if ((int)new->parms.set.expression->parms.number == 1
+                 && (int)new->parms.set.expression->parms.number == new->parms.set.expression->parms.number) {
         assign_one++;
       } else {
         assign_other++;
@@ -345,12 +358,12 @@ statement:
     new->parms.print.item_list = $2;
     $$ = new;
   }
-//	|
-//	TYPE '$' /* lists out all the variables and their values */
-//	{
-//	  statement_t *new = make_statement(VARLIST);
-//	  $$ = new;
-//	}
+	|
+	TYPE '$' /* lists out all the variables and their values */
+	{
+	  statement_t *new = make_statement(VARLIST);
+	  $$ = new;
+	}
 	;
 
  /* expressions in FOCAL are very simple, and there are no comparison
@@ -358,20 +371,7 @@ statement:
   that can be easily implemented in yacc
   */
  
- /* variables may contain an array reference or parameter list for functions */
-open_bracket:
- '(' | '[' | '<';
-close_bracket:
- ')' | ']' | '>';
-
-//expression:
-//{
-//   expression_t *new = make_operator(2, $2);
-//   new->parms.op.p[0] = $1;
-//   new->parms.op.p[1] = $3;
-//   $$ = new;
-//}
-//expression:
+ //expression:
 //  expression '+' expression {$$ = $1 + $3;} |
 //  expression '-' expression {$$ = $1 - $3;} |
 //  expression '*' expression {$$ = $1 * $3;} |
@@ -383,15 +383,7 @@ close_bracket:
 //  NUMBER {$$ = $1;}
 //  ;
 
-expression: expression0;
-
-expression0:
-	expression1
-	;
-
-expression1:
-	expression2
-	;
+expression: expression2;
 
 expression2:
 	expression3
@@ -599,7 +591,7 @@ variable:
     insert_variable(new);
 	}
 	|
-  VARIABLE_NAME '(' exprlist ')' // note, this assumes only () is allowed for subscripts
+  VARIABLE_NAME '(' exprlist ')' // this assumes only () is allowed for subscripts
   {
     variable_t *new = malloc(sizeof(*new));
     new->name = $1;
@@ -610,7 +602,7 @@ variable:
   }
 
 printlist:
-  /* a null printlist is valid, it means "new line" */
+  // a null printlist is valid, it means "new line"
   {
 	  $$ = NULL;
   }
@@ -638,14 +630,32 @@ printlist:
 	  new->separator = $2;
 	  $$ = lst_prepend($3, new);
 	}
+  // this is common in FOCAL, you might see TYPE !!! to add some vertical space
   |
-	// this is common in FOCAL, you might see TYPE !!! to add some vertical space
   printsep printlist
   {
     printitem_t *new = malloc(sizeof(*new));
     new->expression = NULL;
     new->separator = $1;
     $$ = lst_prepend($2, new);
+  }
+  |
+  // switches format to E
+  '%' printlist
+  {
+    printitem_t *new = malloc(sizeof(*new));
+    new->expression = NULL;
+    new->format = -1;
+    $$ = lst_prepend($2, new);
+  }
+  |
+  // handle the formats, which can be anywhere on the line
+  '%' NUMBER printlist
+  {
+    printitem_t *new = malloc(sizeof(*new));
+    new->expression = NULL;
+    new->format = $2;
+    $$ = lst_prepend($3, new);
   }
 	;
 
@@ -670,14 +680,9 @@ printsep:
   {
     $$ = ':'; // inserts a tab
   }
-  |
-  '%'
-  {
-    $$ = '%'; // sets or resets the format
-  }
   ;
 	
- /* used in lots of places that take a list of expressions, functions, DATA, defn, etc. */
+ /* used in places that take a list of expressions, like function call parameters */
 exprlist:
 	expression
 	{

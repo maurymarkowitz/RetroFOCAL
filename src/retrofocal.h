@@ -125,8 +125,8 @@ typedef struct statement_struct {
       variable_t *variable;
       expression_t *begin, *end, *step;
     } _for;
-    expression_t *gosub;
     expression_t *_do;
+    expression_t *go;
     struct {
       expression_t *condition;
       double less_line;
@@ -137,7 +137,7 @@ typedef struct statement_struct {
     struct {
       variable_t *variable;
       expression_t *expression;
-    } let;
+    } set;
     list_t *next;
     struct {
       expression_t *format;
@@ -177,9 +177,9 @@ typedef struct {
   list_t *variable_values;		    // name/value pairs used to store variable values
   list_t *functions;              // name/expression pairs for user-defined functions IS THIS NEEDED FOR FNEW?
   list_t *forstack;	              // current stack of FOR statements
-  list_t *gosubstack;	            // current stack of gosub statements
+  list_t *dostack;	              // current stack of gosub statements
   int cursor_column;              // current column of the output cursor
-  char *format;                   // FOCAL uses a single print format
+  double format;                  // FOCAL uses a single print format
   int running_state;              // is the program running (1), paused/stopped (0), or setting up a function (-1)
 } interpreterstate_t;
 

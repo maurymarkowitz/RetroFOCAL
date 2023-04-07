@@ -46,8 +46,8 @@ int linenum_forwards = 0;
 int linenum_backwards = 0;
 int linenum_same_line = 0;
 int linenum_do_totals = 0;
-int linenum_then_do_totals = 0;
-int linenum_gosub_totals = 0;
+int linenum_then_go_totals = 0;
+int linenum_go_totals = 0;
 int for_loops_total = 0;
 int for_loops_step_1 = 0;
 int increments = 0;
@@ -150,9 +150,9 @@ void print_statistics()
     
     printf("\nBRANCHES\n\n");
     printf("  total: %i\n",linenum_constants_total);
-    printf(" gosubs: %i\n",linenum_gosub_totals);
-    printf("  gotos: %i\n",linenum_do_totals);
-    printf("  thens: %i\n",linenum_then_do_totals);
+    printf("    dos: %i\n",linenum_do_totals);
+    printf("  gotos: %i\n",linenum_go_totals);
+    printf("  thens: %i\n",linenum_then_go_totals);
     printf("forward: %i\n",linenum_forwards);
     printf("bckward: %i\n",linenum_backwards);
     printf("same ln: %i\n",linenum_same_line);
@@ -197,9 +197,9 @@ void print_statistics()
     fprintf(fp, "STRING CONSTANTS,biggest,%i\n",string_constants_max);
     
     fprintf(fp, "BRANCHES,total,%i\n",linenum_constants_total);
-    fprintf(fp, "BRANCHES,gosubs,%i\n",linenum_gosub_totals);
-    fprintf(fp, "BRANCHES,gotos,%i\n",linenum_do_totals);
-    fprintf(fp, "BRANCHES,thens,%i\n",linenum_then_do_totals);
+    fprintf(fp, "BRANCHES,dos,%i\n",linenum_do_totals);
+    fprintf(fp, "BRANCHES,gotos,%i\n",linenum_go_totals);
+    fprintf(fp, "BRANCHES,thens,%i\n",linenum_then_go_totals);
     fprintf(fp, "BRANCHES,forward,%i\n",linenum_forwards);
     fprintf(fp, "BRANCHES,backward,%i\n",linenum_backwards);
     fprintf(fp, "BRANCHES,same line,%i\n",linenum_same_line);

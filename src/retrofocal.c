@@ -100,7 +100,7 @@ static void focal_error(const char *message)
  * @param variable The variable reference to look up.
  * @paramout type The variable type as found in storage.
  * @returns An either_t containing a numeric result.
- * */
+ */
 either_t *variable_value(const variable_t *variable, int *type)
 {
   variable_storage_t *storage;
@@ -286,34 +286,6 @@ static char *number_to_string(const double d)
   return str;
 } /* number_to_string */
 
-/** Returns a number encoding a string using DEC's 6-bit codes
- *
- * FOCAL was built on a machine with no inherant string support, and the
- * language does not have any internal string handling. However, the need
- * to input short strings for things like "yes or no" remained, so the
- * solution was to use the 6-bit teletype codes and stuff them two-to-a-word
- * into a numeric variable reference. This is used to parse ASK results,
- * which may have letters at any point, as well as in the 0YES format for
- * "string constants", which we represent internally as NUMSTRs. The codes
- * bear no relationship to ASCII, so the conversion is one big switch.
- *
- * See: https://homepage.divms.uiowa.edu/~jones/pdp8/refcard/74.html
- *
- * @param string The string to convert to a numeric representation.
- * @return A numeric representation of the string.
- */
-static int string_to_number(const char *string)
-{
-	// FOCAL numbers are stored in three 12-bit words, with the exponent
-	// in the first word, led by the sign, and the mantissa in the next
-	// two words, also with a sign at the front. Only 20 bits of the
-	// mantissa are used for storage, the three bits after the sign bit
-	// are unused.
-	
-	
-	return 0;
-} /* string_to_number */
-
 /** Returns the DEC 6-bit character code for any given character.
  *
  * @param one_char The character to convert.
@@ -322,14 +294,113 @@ static int string_to_number(const char *string)
 static int char_code_for_character(const char one_char)
 {
 	switch (one_char) {
-		case '@' ... 'Z' : return ((int)one_char - 64); break;
-		case '0' ... '9' : return ((int)one_char + 12); break;
+		case '@' ... 'Z' : return ((int)one_char - '@'); break;
+		case '0' ... '9' : return ((int)one_char - '0'); break;
 		case ':' ... '?' : return ((int)one_char + 22); break;
 		case '[' ... '_' : return ((int)one_char - 58); break;
 		case ' ' ... '/' : return ((int)one_char + 8); break;
 		default: return 0;
 	}
 } /* char_code_for_character */
+
+/** Returns a number encoding a string using DEC's 6-bit codes. The value
+ * is always an integer, but may have an exponent if the string has an E.
+ *
+ * FOCAL was built on a machine with no inherant string support, and the
+ * language does not have any internal string handling. However, the need
+ * to input short strings for things like "yes or no" remained, so the
+ * solution was to use the 6-bit teletype codes where A=1 and Z=26 and then
+ * just string them together so that "A" produces 1, "A1" produces 11 and
+ * "Z1" produces 261. The weird part is that if the number is two digits,
+ * the digits will overlap, so "AZ" produces 126, but "ZZ" produces 286.
+ *
+ * To emulate this behaviour, this code loops backward through the string,
+ * multiplying each character by its position*10.
+ *
+ * See section 3.4.8: http://bitsavers.trailing-edge.com/pdf/dec/pdp8/focal/DEC-08-AJBB-DL_Advanced_FOCAL_Technical_Specification_Apr69.pdf
+ *
+ * @param string The string to convert to a numeric representation.
+ * @return A numeric representation of the string.
+ */
+static double string_to_number(const char *string)
+{
+	int len = (int)strlen(string);
+
+	// empty/useless string?
+	if (len == 0)
+		return 0.0;
+
+	int e_location = -1;
+	int mantissa = 0;
+	int mantissa_sign = 1;
+	int exponent = 0;
+	int exponent_sign = 1;
+	
+	// see if there is an E in the string
+	for (int i = 0; i < (int)len; i++) {
+		char c = string[i];
+		if (c == 'E' || c == 'e') {
+			if (e_location != -1) {
+				focal_error("More than one E in string value");
+				return 0;
+			}
+			e_location = i;
+		}
+	}
+	// if there wasn't an E, move it to the end
+	if (e_location == -1)
+		e_location = len;
+	
+	// process the mantissa, everything to the left of the e
+	for (int i = 0; i < e_location; i++) {
+		char c = string[i];
+		int val = 0;
+		if (isalpha(c)) {
+			val = char_code_for_character(c);
+		}
+		else if (isdigit(c)) {
+			val = (c - '0');
+		}
+		else if (c == '-') {
+			mantissa_sign = !mantissa_sign;
+		}
+		else if (c == '+') {
+			mantissa_sign = 1;
+		}
+		else {
+			focal_error("Invalid character in string value");
+			return 0;
+		}
+		mantissa = mantissa + (val * pow(10, (e_location - i - 1)));
+	}
+	
+	// and then for the exponent, if there is any
+	for (int i = e_location; i < len; i++) {
+		char c = string[i];
+		int val = 0;
+		if (isalpha(c)) {
+			val = char_code_for_character(c);
+		}
+		else if (isdigit(c)) {
+			val = (c - '0');
+		}
+		else if (c == '-') {
+			exponent_sign = !exponent_sign;
+		}
+		else if (c == '+') {
+			exponent_sign = 1;
+		}
+		else {
+			focal_error("Invalid character in string value");
+			return 0;
+		}
+		exponent = exponent + (val * pow(10, (e_location + i - 1)));
+	}
+	
+	// and construct the final number
+	double val = (mantissa * mantissa_sign) * pow(10, (exponent * exponent_sign));
+	return val;
+} /* string_to_number */
 
 /** Number of jiffies since program start (or reset) 1/60th in Commodore/Atari format.
  *
@@ -666,7 +737,83 @@ static value_t evaluate_expression(expression_t *expression)
   return result;
 }
 
-/* handles the TYPE statements, which can get complex */
+/** Prints a single printitem_t, which may be an expression, a field
+ * separator which includes ! for newlines, or a formatter.
+ *
+ * @param item The printitem to interpret.
+ */
+static void print_item(printitem_t *item)
+{
+	// first, see if there is an expression associated with this item,
+	// which would imply its something that can actually be printed
+	expression_t *e = item->expression;
+	
+	// if the expression is empty, then its some sort of control, which
+	// will either be in the format or the sepatator
+	if (e == NULL) {
+		// is it a separator?
+		if (item->separator > 0) {
+			switch (item->separator) {
+				case '!':
+					printf("\n");
+					interpreter_state.cursor_column = 0;
+					break;
+				case '#':
+					printf("\r");
+					interpreter_state.cursor_column = 0;
+					break;
+				case ':':
+					while (interpreter_state.cursor_column % tab_columns != 0) {
+						printf(" ");
+						interpreter_state.cursor_column++;
+					}
+					break;
+				default: { } 					// do nothing, consider this a non-error?
+			}
+		}
+		// is it a formatter?
+		else if (item->format != 0) {
+			interpreter_state.format = item->format;
+		}
+		// is it totally empty?
+		else {
+			focal_error("Print item has no expression, format or separator");
+		}
+		
+	}
+	// if e is not null, then its an expression we want to evaluate and print
+	else {
+		// get the value of the expression for this item
+		value_t v = evaluate_expression(e);
+		
+		switch (v.type) {
+			case NUMBER:
+			{
+				// if it's a number, make a c-style formatter for the output
+				char fmtstr[MAXSTRING];
+				int width = trunc(interpreter_state.format);
+				int prec = interpreter_state.format - trunc(interpreter_state.format);
+				sprintf(fmtstr, "%%%d.%df", width,prec);
+				
+				interpreter_state.cursor_column += printf(fmtstr, width, prec, v.number);
+			}
+				break;
+				
+			case STRING:
+				// if it's a string, just print it out
+				interpreter_state.cursor_column += printf("%-s", v.string);
+				break;
+		}
+	} // e != NULL
+}
+
+
+/** Prints out a series of expressions in TYPE and ASK statements.
+ *
+ * @param e The expreassion to print.
+ * @format format Optional formatter string.
+ */
+
 static void print_expression(expression_t *e, const char *format)
 {
   // get the value of the expression for this item
@@ -772,40 +919,45 @@ static double current_line()
 static list_t *find_line(double linenumber)
 {
   char buffer[50];
+	int group = round(trunc(linenumber));
+	int line = round((linenumber - group) * 100);
   
   // negative numbers are not allowed
   if (linenumber < 0) {
 		if (linenumber != floor(linenumber)) {
-			sprintf(buffer, "Negative target line %2.2f in branch", linenumber);
+			sprintf(buffer, "Negative target line %i.%i in branch", group, line);
 			focal_error(buffer);
 		} else {
-			sprintf(buffer, "Negative target group %i in branch", (int)linenumber);
+			sprintf(buffer, "Negative target group %i.%i in branch", group, line);
 			focal_error(buffer);
 		}
     return NULL;
   }
 	
 	// in focal, the target we're looking for could be either a specific line
-	// or a group number. we will start with the single line, which can never be x.00
-	if (linenumber != floor(linenumber)) {
+	// or a group number
+	//
+	// start with the line, which can never be x.00
+	if (line != 0) {
 		// check it exists
-		if (interpreter_state.lines[(int)(linenumber * 100)] == NULL) {
-			sprintf(buffer, "Undefined target line %2.2f in branch", linenumber);
+		if (interpreter_state.lines[group * 100 + line] == NULL) {
+			sprintf(buffer, "Undefined target line %i.%i in branch", group, line);
 			focal_error(buffer);
 			return NULL;
 		}
 		
 		// otherwise we did find a line, so return it
-		return interpreter_state.lines[(int)(linenumber * 100)];
+		return interpreter_state.lines[group * 100 + line];
 	}
+	// and here we look for the group
 	else {
 		// for the group lookup, we have to loop through it until we find an item with that value
 		list_t *lv = NULL;
-		for(int i = (int)(linenumber * 100); i < MAXLINE - 1; i++) {
+		for(int i = (group * 100); i < MAXLINE - 1; i++) {
 			if (interpreter_state.lines[i] != NULL) {
 				// we found a non-empty line, is it the right group?
-				if (linenumber == floor(i / 100)) {
-					// we found the first line in the group
+				if (linenumber == trunc(i / 100)) {
+					// we found the first line in the group, so we can exit
 					lv = interpreter_state.lines[i];
 					break;
 				}
@@ -815,14 +967,14 @@ static list_t *find_line(double linenumber)
 			return lv;
 		}
 		else {
-			sprintf(buffer, "Undefined target group %i in branch", (int)linenumber);
+			sprintf(buffer, "Undefined target line %i in branch", group);
 			focal_error(buffer);
 			return NULL;
 		}
 	}
 	
 	// failsafe
-	sprintf(buffer, "Undefined target line %2.2f in branch", linenumber);
+	sprintf(buffer, "Undefined target line %i.%i in branch", group, line);
 	focal_error(buffer);
 	return NULL;
 }
@@ -842,19 +994,19 @@ static void perform_statement(list_t *L)
 				
 				// loop over the items in the variable/prompt list
 				for (list_t *I = ps->parms.input; I != NULL; I = lst_next(I)) {
-					either_t *value;
-					int type = 0;
-					
+					// get the item itself
 					printitem_t *ppi = I->data;
-					// check for separator-only entries, like newlines
-					if (ppi->expression == NULL && ppi->separator > 0) {
-						// separator-only entry, something like !!
-						print_expression(ppi->expression, NULL);
-
-					}
 					
-					if (ppi->expression->type == variable) {
+					// if there is no expression, or there is an expression but it's not
+					// a variable, then this is part of the prompt and we just want to "print" it
+					if (ppi->expression == NULL || ppi->expression->type != variable) {
+						print_item(ppi);
+					}
+					// if it is a variable, get the input
+					else {
 						char line[80];
+						either_t *value;
+						int type = 0;
 						
 						// print the colon if that option is turned on
 						if (ask_colon)
@@ -868,7 +1020,7 @@ static void perform_statement(list_t *L)
 						// we got something, so null-terminate the string
 						line[strlen(line) - 1] = '\0';
 						
-						// optionally convert to upper case
+						// optionally (almost always) convert to upper case
 						if (upper_case) {
 							char *c = line;
 							while (*c) {
@@ -877,38 +1029,38 @@ static void perform_statement(list_t *L)
 							}
 						}
 						
-						// FOCAL only has numeric variables, but it does have the ability
-						// to type in strings at prompts, which it converts to a numeric
-						// value. we do that here. note that FOCAL uses an odd version
-						// of ASCII, with the high bit set.
-						
-						// find the storage for this variable, and assign the value
+						// find the storage for this variable
 						value = variable_value(ppi->expression->parms.variable, &type);
-						if (type >= NUMBER) {
+
+						// FOCAL only has numeric variables, but it does have the ability
+						// to type in strings at prompts, which is then converted into a number
+						// so here we check for alphas and then run that conversion
+						if (isalpha(line[0]) || (line[0] == '0' && isalpha(line[1]))) {
+							value->number = string_to_number(line);
+						}
+						// otherwise, it's just a number
+						else {
 							sscanf(line, "%lg", &value->number);
-						} else {
-							value->string = str_new(line);
 						}
 					}
-					// if it's not a variable, it's some sort of prompt, so print it
-					else {
-						print_expression(ppi->expression, NULL);
-					}
-				}
-			}
+				} // loop over list of items
+			} // ASK
 				break;
 				
 			case DO:
 			{
-				// DO is a little different than GOTO because it *might* be a gosub if the
-				// line number is an integer. I am also not clear what happens when you GOTO
-				// out of a gosub-like DO.
+				// DO is a GOSUB which may call a line or a group
 				gosubcontrol_t *new = malloc(sizeof(*new));
 				
 				new->returnpoint = lst_next(L);
-				interpreter_state.gosubstack = lst_append(interpreter_state.gosubstack, new);
-				interpreter_state.next_statement = find_line(evaluate_expression(ps->parms.gosub).number);
+				interpreter_state.dostack = lst_append(interpreter_state.dostack, new);
+				interpreter_state.next_statement = find_line(evaluate_expression(ps->parms._do).number);
 			}
+				break;
+
+			case ERASE:
+				// clears out variable values
+				delete_variables();
 				break;
 
       case FOR:
@@ -935,7 +1087,7 @@ static void perform_statement(list_t *L)
         
       case GOTO:
       {
-        interpreter_state.next_statement = find_line(evaluate_expression(ps->parms._do).number);
+        interpreter_state.next_statement = find_line(evaluate_expression(ps->parms.go).number);
       }
         break;
         
@@ -975,10 +1127,10 @@ static void perform_statement(list_t *L)
         value_t exp_val;
         
         // get/make the storage entry for this variable
-        stored_val = variable_value(ps->parms.let.variable, &type);
+        stored_val = variable_value(ps->parms.set.variable, &type);
         
         // evaluate the expression
-        exp_val = evaluate_expression(ps->parms.let.expression);
+        exp_val = evaluate_expression(ps->parms.set.expression);
         
         // make sure we got the right type, and assign it if we did
         if (exp_val.type == type) {
@@ -1116,14 +1268,14 @@ static void perform_statement(list_t *L)
       case RETURN:
       {
 				gosubcontrol_t *pgc;
-				if (interpreter_state.gosubstack == NULL || lst_length(interpreter_state.gosubstack) == 0) {
-					focal_error("RETURN without GOSUB");
+				if (interpreter_state.dostack == NULL || lst_length(interpreter_state.dostack) == 0) {
+					focal_error("RETURN without DO");
 					break;
 				}
 
-        pgc = lst_last_node(interpreter_state.gosubstack)->data;
+        pgc = lst_last_node(interpreter_state.dostack)->data;
         interpreter_state.next_statement = pgc->returnpoint;
-        interpreter_state.gosubstack = lst_remove_node_with_data(interpreter_state.gosubstack, pgc);
+        interpreter_state.dostack = lst_remove_node_with_data(interpreter_state.dostack, pgc);
       }
         break;
 				
@@ -1230,7 +1382,7 @@ void interpreter_run(void)
   interpreter_state.cursor_column = 0;
 	
 	// the normal format is similar
-	interpreter_state.format = calloc(MAXSTRING, sizeof(char));
+	interpreter_state.format = 0.0;
 
   // start the clock and mark us as running
   start_ticks = clock();
