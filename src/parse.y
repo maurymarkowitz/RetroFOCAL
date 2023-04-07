@@ -290,7 +290,14 @@ statement:
     /* static analyzer */
     linenum_then_go_totals++;
     linenum_constants_total++;
-	}
+    if ($5 == errline) {
+      linenum_same_line++;
+    } else if ($5 > errline) {
+      linenum_forwards++;
+    } else {
+      linenum_backwards++;
+    }
+  }
   |
   IF '(' expression ')' NUMBER ',' NUMBER
   {
@@ -303,6 +310,20 @@ statement:
     /* static analyzer */
     linenum_then_go_totals++;
     linenum_constants_total++;
+    if ($5 == errline) {
+      linenum_same_line++;
+    } else if ($5 > errline) {
+      linenum_forwards++;
+    } else {
+      linenum_backwards++;
+    }
+    if ($7 == errline) {
+      linenum_same_line++;
+    } else if ($7 > errline) {
+      linenum_forwards++;
+    } else {
+      linenum_backwards++;
+    }
   }
   |
   IF '(' expression ')' NUMBER ',' NUMBER ',' NUMBER
@@ -317,6 +338,27 @@ statement:
     /* static analyzer */
     linenum_then_go_totals++;
     linenum_constants_total++;
+    if ($5 == errline) {
+      linenum_same_line++;
+    } else if ($5 > errline) {
+      linenum_forwards++;
+    } else {
+      linenum_backwards++;
+    }
+    if ($7 == errline) {
+      linenum_same_line++;
+    } else if ($7 > errline) {
+      linenum_forwards++;
+    } else {
+      linenum_backwards++;
+    }
+    if ($9 == errline) {
+      linenum_same_line++;
+    } else if ($9 > errline) {
+      linenum_forwards++;
+    } else {
+      linenum_backwards++;
+    }
   }
   |
   QUIT

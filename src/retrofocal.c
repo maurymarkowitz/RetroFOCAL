@@ -38,7 +38,7 @@ bool print_stats = false;               // do not print or write stats by defaul
 bool write_stats = false;
 int tab_columns = 10;                   // based on PET BASIC, which is a good enough target
 bool trace_lines = false;								// turned on or off with a ?
-bool ask_colon = true;          				// should ASK print a colon?
+bool ask_colon = false;          				// should ASK print a colon? was only added in FOCAL-71
 bool type_equals = false;								// don't print the = in TYPEs, that's FOCAL-69
 bool type_space = true;								  // print a leading space in TYPE
 bool upper_case = true;          				// force ASK input to upper case, which is generally the case for DEC
