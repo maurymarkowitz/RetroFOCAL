@@ -607,14 +607,6 @@ printlist:
 	  $$ = NULL;
   }
   |
-	expression
-	{
-	  printitem_t *new = malloc(sizeof(*new));
-	  new->expression = $1;
-	  new->separator = 0;
-	  $$ = lst_prepend(NULL, new);
-	}
-  |
   expression printlist
   {
     printitem_t *new = malloc(sizeof(*new));
@@ -622,14 +614,6 @@ printlist:
     new->separator = 0;
     $$ = lst_prepend($2, new);
   }
-  |
-	expression printsep printlist
-	{
-	  printitem_t *new = malloc(sizeof(*new));
-	  new->expression = $1;
-	  new->separator = $2;
-	  $$ = lst_prepend($3, new);
-	}
   // this is common in FOCAL, you might see TYPE !!! to add some vertical space
   |
   printsep printlist

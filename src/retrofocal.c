@@ -331,12 +331,14 @@ static double string_to_number(const char *string)
 		return 0.0;
 
 	int e_location = -1;
-	int mantissa = 0;
-	int mantissa_sign = 1;
+	int p_location = -1;
+	int integer = 0;
+	int fraction = 0;
 	int exponent = 0;
+	int mantissa_sign = 1;
 	int exponent_sign = 1;
 	
-	// see if there is an E in the string
+	// look for Es and .s in the string
 	for (int i = 0; i < (int)len; i++) {
 		char c = string[i];
 		if (c == 'E' || c == 'e') {
@@ -346,59 +348,75 @@ static double string_to_number(const char *string)
 			}
 			e_location = i;
 		}
+		else if (c == '.') {
+			if (p_location != -1) {
+				focal_error("More than one decimal/period in string value");
+				return 0;
+			}
+			p_location = i;
+		}
 	}
-	// if there wasn't an E, move it to the end
+	// if there wasn't an E or period, move it to the end
 	if (e_location == -1)
 		e_location = len;
+	if (p_location == -1)
+		p_location = e_location;
 	
-	// process the mantissa, everything to the left of the e
-	for (int i = 0; i < e_location; i++) {
+	// process the integer part, everything to the left of the period and/or E
+	for (int i = 0; i < p_location; i++) {
 		char c = string[i];
 		int val = 0;
-		if (isalpha(c)) {
-			val = char_code_for_character(c);
-		}
-		else if (isdigit(c)) {
-			val = (c - '0');
-		}
-		else if (c == '-') {
+		if (c == '-')
 			mantissa_sign = !mantissa_sign;
-		}
-		else if (c == '+') {
+		else if (c == '+')
 			mantissa_sign = 1;
-		}
+		else if (isalpha(c))
+			val = char_code_for_character(c);
+		else if (isdigit(c))
+			val = (c - '0');
 		else {
 			focal_error("Invalid character in string value");
 			return 0;
 		}
-		mantissa = mantissa + (val * pow(10, (e_location - i - 1)));
+		integer = integer * 10 + val;
+	}
+	
+	// and the fraction, if there is one
+	for (int i = p_location + 1; i < e_location; i++) {
+		char c = string[i];
+		int val = 0;
+		if (isalpha(c))
+			val = char_code_for_character(c);
+		else if (isdigit(c))
+			val = (c - '0');
+		else {
+			focal_error("Invalid character in string value");
+			return 0;
+		}
+		fraction = fraction * 10 + val;
 	}
 	
 	// and then for the exponent, if there is any
-	for (int i = e_location; i < len; i++) {
+	for (int i = e_location + 1; i < len; i++) {
 		char c = string[i];
 		int val = 0;
-		if (isalpha(c)) {
+		if (isalpha(c))
 			val = char_code_for_character(c);
-		}
-		else if (isdigit(c)) {
+		else if (isdigit(c))
 			val = (c - '0');
-		}
-		else if (c == '-') {
+		else if (c == '-')
 			exponent_sign = !exponent_sign;
-		}
-		else if (c == '+') {
+		else if (c == '+')
 			exponent_sign = 1;
-		}
 		else {
 			focal_error("Invalid character in string value");
 			return 0;
 		}
-		exponent = exponent + (val * pow(10, (e_location + i - 1)));
+		exponent = exponent * 10 + val;
 	}
 	
 	// and construct the final number
-	double val = (mantissa * mantissa_sign) * pow(10, (exponent * exponent_sign));
+	double val = ((integer * mantissa_sign) + (fraction / pow(10, e_location - p_location - 1))) * pow(10, (exponent * exponent_sign));
 	return val;
 } /* string_to_number */
 
@@ -428,7 +446,8 @@ static int elapsed_jiffies() {
 	jiffies %= 5183999;
 	
 	return (int)jiffies;
-}
+} /* elapsed_jiffies */
+
 /** Recursively evaluates an expression and returns a value_t with the result.
  *
  * @param expression The expression to evaluate.
@@ -735,7 +754,7 @@ static value_t evaluate_expression(expression_t *expression)
       }
   }
   return result;
-}
+} /* evaluate_expression */
 
 /** Prints a single printitem_t, which may be an expression, a field
  * separator which includes ! for newlines, or a formatter.
@@ -805,79 +824,15 @@ static void print_item(printitem_t *item)
 				break;
 		}
 	} // e != NULL
-}
+} /* print_item */
 
-
-/** Prints out a series of expressions in TYPE and ASK statements.
+/** Returns the line number for given a statement.
  *
- * @param e The expreassion to print.
- * @format format Optional formatter string.
- */
-
-static void print_expression(expression_t *e, const char *format)
-{
-  // get the value of the expression for this item
-  value_t v = evaluate_expression(e);
-  
-  // if there is a USING string, build a c-style format string from it
-  if (format) {
-    char copy[MAXSTRING];
-    char *hash;
-    int width = 0, prec = 0;
-    
-    // TODO: this doesn't handle string formatters, see GW-BASIC manual
-    strcpy(copy, format);
-    // look for any hash characters in front and behind a period
-    hash = strchr(copy, '#');
-    if (hash) {
-      char *pc = hash;
-      while (*pc == '#') {
-        width++;
-        pc++;
-      }
-      while (*pc == '.') {
-        width++;
-        pc++;
-      }
-      while (*pc == '#') {
-        prec++;
-        width++;
-        pc++;
-      }
-      sprintf(hash, "%%*.*f");  // replace ##.## with % spec
-      strcat(hash, pc);         // append the rest of string
-    }
-    // and now print it out using that format
-    switch (v.type) {
-      case NUMBER:
-        interpreter_state.cursor_column += printf(copy, width, prec, v.number);
-        break;
-      case STRING:
-        interpreter_state.cursor_column += printf(copy, width, prec, str_escape(v.string));
-        break;
-    }
-  }
-  // there was no USING format, so use a default formatter instead,
-  // potentially limited to the fieldwidth if its tabular
-  else {
-    switch (v.type) {
-      case NUMBER:
-      {
-        // for some reason, PRINT adds a space at the end of numbers
-        char* a = number_to_string(v.number);
-        interpreter_state.cursor_column += printf("%s ", a); // note the trailing space
-      }
-        break;
-      case STRING:
-        interpreter_state.cursor_column += printf("%-s", v.string);
-        break;
-    }
-  }
-}
-
-/* given a statement, this returns the line number it's part of */
-/* NOTE: this is likely expensive, because is uses the index lookup
-				methods in list_t, which loop. So only use it when required!
+ * NOTE: this is likely expensive, because is uses the index lookup
+ *				methods in list_t, which loop. So only use it when required!
+ *
+ * @param statement The statement you are looking for.
+ * @return The line number as a double.
  */
 static double line_for_statement(const list_t *statement)
 {
@@ -1032,16 +987,10 @@ static void perform_statement(list_t *L)
 						// find the storage for this variable
 						value = variable_value(ppi->expression->parms.variable, &type);
 
-						// FOCAL only has numeric variables, but it does have the ability
-						// to type in strings at prompts, which is then converted into a number
-						// so here we check for alphas and then run that conversion
-						if (isalpha(line[0]) || (line[0] == '0' && isalpha(line[1]))) {
-							value->number = string_to_number(line);
-						}
-						// otherwise, it's just a number
-						else {
-							sscanf(line, "%lg", &value->number);
-						}
+						// FOCAL only has numeric variables, but it does have the ability to
+						// type in strings at prompts, so we have to hand-convert the string
+						// into a value, we can't simply sscanf it
+						value->number = string_to_number(line);
 					}
 				} // loop over list of items
 			} // ASK
@@ -1195,73 +1144,10 @@ static void perform_statement(list_t *L)
                 
 			case TYPE:
       {
-        printitem_t *pp;
-        // loop over the items in the print list
-        for (list_t *I = ps->parms.print.item_list; I != NULL; I = lst_next(I)) {
-          pp = I->data;
-					
-					// first off, see if this item is a lone separator
-					//
-					// unlike BASIC, separators "do things" even if there is no expression,
-					// so TYPE !!! will have three items in the printlist and all three
-					// with have a separator but no expression
-					switch (pp->separator) {
-						case '!':
-							printf("\n");
-							interpreter_state.cursor_column = 0; // and reset this!
-							break;
-						case '#':
-							printf("\r");
-							interpreter_state.cursor_column = 0;
-							break;
-						case ':':
-							while (interpreter_state.cursor_column % tab_columns != 0) {
-								printf(" ");
-								interpreter_state.cursor_column++;
-							}
-							break;
-					}
-					
-					// now look to see if this item is a formatter
-					if (pp->format > 0) {
-						
-					}
-
-					// check to see if the expression is null, if so, that's because
-					// this particular item consists of a separator or format string
-					if (pp->expression == NULL) {
-						continue;
-					}
-					else {
-						
-					}
-          // if there's a USING, evaluate the format string it and print using it
-          if (ps->parms.print.format) {
-            value_t format_string;
-            format_string = evaluate_expression(ps->parms.print.format);
-            print_expression(pp->expression, format_string.string);
-          }
-          // otherwise, see if there's a separator and print using the width
-          else {
-            print_expression(pp->expression, NULL);
-          }
-          
-          // for each item in the list, look at the separator, if there is one
-          // and it's a comma, advance the cursor to the next tab column
-          if (pp->separator == ',')
-            //FIXME: this should wrap at 80 columns
-            while (interpreter_state.cursor_column % tab_columns != 0) {
-              printf(" ");
-              interpreter_state.cursor_column++;
-            }
-        }
-        
-        // now get the last item in the list so we can see if it's a ; or ,
-        if (lst_last_node(ps->parms.print.item_list))
-          pp = (printitem_t *)(lst_last_node(ps->parms.print.item_list)->data);
-        else
-          pp = NULL;
-        
+        // loop over the items in the print list and print them out
+				for (list_t *I = ps->parms.print.item_list; I != NULL; I = lst_next(I)) {
+					print_item(I->data);
+				}
       }
         break;
                 
