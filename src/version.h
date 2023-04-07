@@ -49,15 +49,19 @@ struct VERSION {
 /**
  * Returns the version information structure.
  */
-static struct VERSION getVersion() {
+static struct VERSION getVersion() \
+{
     struct VERSION v = {0, 1, 0};
     return v;
 }
 
 /**
  * Returns the version information as a dot-formatted string.
+ *
+ * @paramout vers The version in string format.
  */
-static void getVersionString(char * vers) {
+static void getVersionString(char *vers)
+{
     struct VERSION v = getVersion();
     char major[10];
     char minor[10];
