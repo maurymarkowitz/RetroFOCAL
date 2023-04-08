@@ -727,15 +727,15 @@ static list_t *find_line(double linenumber)
 {
   char buffer[50];
 	int group = trunc(linenumber);
-	int line = round((linenumber - group) * 100);
+	int step = round((linenumber - group) * 100);
   
   // negative numbers are not allowed
   if (linenumber < 0) {
 		if (linenumber != floor(linenumber)) {
-			sprintf(buffer, "Negative target line %i.%i in branch", group, line);
+			sprintf(buffer, "Negative target line %i.%i in branch", group, step);
 			focal_error(buffer);
 		} else {
-			sprintf(buffer, "Negative target group %i.%i in branch", group, line);
+			sprintf(buffer, "Negative target group %i.%i in branch", group, step);
 			focal_error(buffer);
 		}
     return NULL;
@@ -745,16 +745,16 @@ static list_t *find_line(double linenumber)
 	// or a group number
 	//
 	// start with the line, which can never be x.00
-	if (line != 0) {
+	if (step != 0) {
 		// check it exists
-		if (interpreter_state.lines[group * 100 + line] == NULL) {
-			sprintf(buffer, "Undefined target line %i.%i in branch", group, line);
+		if (interpreter_state.lines[group * 100 + step] == NULL) {
+			sprintf(buffer, "Undefined target line %i.%i in branch", group, step);
 			focal_error(buffer);
 			return NULL;
 		}
 		
 		// otherwise we did find a line, so return it
-		return interpreter_state.lines[group * 100 + line];
+		return interpreter_state.lines[group * 100 + step];
 	}
 	// and here we look for the group
 	else {
@@ -781,7 +781,7 @@ static list_t *find_line(double linenumber)
 	}
 	
 	// failsafe
-	sprintf(buffer, "Undefined target line %i.%i in branch", group, line);
+	sprintf(buffer, "Undefined target line %i.%i in branch", group, step);
 	focal_error(buffer);
 	return NULL;
 }
@@ -1007,18 +1007,18 @@ static void perform_statement(list_t *list_item)
 			next_line = -1.0;
 
 		int this_group = trunc(this_line);
-		int this_statement = (this_line - this_group) * 100;
+		int this_step = (this_line - this_group) * 100;
 		int next_group = trunc(next_line);
-		int next_statement = (next_line - next_group) * 100;
+		int next_step = (next_line - next_group) * 100;
 		
 		// are we at the end of a group or a line?
-		if (this_group != next_group || this_statement != next_statement) {
+		if (this_group != next_group || this_step != next_step) {
 			if (lst_length(interpreter_state.stack) > 0) {
 				// pull the top item
 				stackentry_t *se = lst_last_node(interpreter_state.stack)->data;
 				
 				// if it's a FOR, we perform a next if we are at the end of any line
-				if (se->type == FOR && (this_group != next_group || this_statement != next_statement)) {
+				if (se->type == FOR && (this_group != next_group || this_step != next_step)) {
 					int type = 0;
 					either_t *lv = variable_value(se->index_variable, &type);
 					lv->number += se->step;
@@ -1039,15 +1039,15 @@ static void perform_statement(list_t *list_item)
 				// target to see if it was a group or single line
 				else {
 					int target_group = trunc(se->target_line);
-					int target_statement = (se->target_line - target_group)  * 100;
+					int target_step = (se->target_line - target_group)  * 100;
 					
 					// if the original DO had only a group, only do the RETURN if we are at the end of this group
-					if (target_statement == 0 && (this_group != next_group)) {
+					if (target_step == 0 && (this_group != next_group)) {
 						interpreter_state.next_statement = se->returnpoint;
 						interpreter_state.stack = lst_remove_node_with_data(interpreter_state.stack, se);
 					}
 					// if it had a group and statement, then only return if both changed
-					else if (this_group != next_group && this_statement != next_statement) {
+					else if (this_group != next_group && this_step != next_step) {
 						interpreter_state.next_statement = se->returnpoint;
 						interpreter_state.stack = lst_remove_node_with_data(interpreter_state.stack, se);
 					}
