@@ -87,9 +87,9 @@ void print_statistics()
   // if the ->next is the first item on the next line
   int stmts_max = 0, diff = 0, next_num;
   list_t *next_line;
-  list_t *start = interpreter_state.lines[interpreter_state.first_line];
+  list_t *start = interpreter_state.lines[interpreter_state.first_line_index];
   
-  for(int i = interpreter_state.first_line; i < MAXLINE - 1; i++) {
+  for(int i = interpreter_state.first_line_index; i < MAXLINE - 1; i++) {
     // get the next line's statements, and continue if its empty
     list_t *this_line = interpreter_state.lines[i];
     if (interpreter_state.lines[i] == NULL)

@@ -49,9 +49,9 @@ struct VERSION {
 /**
  * Returns the version information structure.
  */
-static struct VERSION getVersion() \
+static struct VERSION getVersion()
 {
-    struct VERSION v = {0, 1, 0};
+    struct VERSION v = {0, 9, 0};
     return v;
 }
 

@@ -160,10 +160,12 @@ line:
   // keep track of the line number as we parse so we can report offending lines
 	NUMBER { errline = $1; } statements
 	{
-    // there are only 9999 possible lines so we make an array that large
+    // there are only 3199 possible lines so we make an array that large
     // even though it ends up mostly empty. to convert the X.Y format, we
     // simply multiply by 100 to shift the decimal so that 3.10 is line 310
-	  interpreter_state.lines[(int)($1 * 100)] = $3;
+    // however, due to decimal conversion, 5.10 might end up as 5.099999...
+    // and that would trunced to 5.09, so we have to round the result
+	  interpreter_state.lines[(int)round($1 * 100)] = $3;
 	}       
 	;
 

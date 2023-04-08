@@ -27,7 +27,6 @@ Boston, MA 02111-1307, USA.  */
 #ifndef __RETROFOCAL_H__
 #define __RETROFOCAL_H__
 
-#include "version.h"
 #include "stdhdr.h"
 
 /**
@@ -143,20 +142,28 @@ typedef struct statement_struct {
   } parms;
 } statement_t;
 
-/* runtime stacks */
-/* used for tracking GOSUB, FOR/NEXT, etc. It is not clear that there needs to
- be two separate types here, as this might making popping a FOR from an early
- RETURN more difficult?
+/* runtime stacks
+ * used for tracking DO, FOR, etc.
+ *
+ * due to the way FOCAL does a NEXT or RETURN at the end of
+ * lines, we need to track the original line number, which is
+ * not needed in BASIC. We could do this using line_for_statement
+ * on the head or returnpoint, but in the case of loops we're going
+ * to be doing this a lot so we'll store it.
+ *
+ * In the case of a DO, we also need to know the original target
+ * line, because DO can automatically RETURN at the end of a group
+ * or individual line, so we record target_line.
  */
 typedef struct {
+  int type;
+  double original_line; // need to know what line the DO or FOR was on, so record it to avoid searching for it
+  double target_line;   // in the case of a DO, we also need to know where it was going, so we can see if it's at the end of that group
   list_t *head;
+  list_t *returnpoint;
   variable_t *index_variable;
   double begin, end, step;
-} forcontrol_t;
-
-typedef struct {
-  list_t *returnpoint;
-} gosubcontrol_t;
+} stackentry_t;
 
 /* this is the main state for the interpreter, largely consisting of the lines of
  code, a pointer to the first line for easy lookup, a pointer to the current
@@ -164,12 +171,11 @@ typedef struct {
  GOSUB and FOR/NEXT */
 typedef struct {
   list_t *lines[MAXLINE];         // the lines in the program, stored as an array of statement lists
-  int first_line;		              // index of the first line in the lines array
+  int first_line_index;		        // index of the first line in the lines array, this is *100 the FOCAL line, thus the name
   list_t *current_statement;      // currently executing statement
   list_t *next_statement;         // next statement to run, might change for GOTO and such
   list_t *variable_values;		    // name/value pairs used to store variable values
-  list_t *forstack;	              // current stack of FOR statements
-  list_t *dostack;	              // current stack of gosub statements
+  list_t *stack;	                // runtime stack
   int cursor_column;              // current column of the output cursor
   double format;                  // FOCAL uses a single print format
   int running_state;              // is the program running (1), paused/stopped (0), or setting up a function (-1)

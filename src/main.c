@@ -27,6 +27,7 @@ Boston, MA 02111-1307, USA.  */
 #include <getopt.h>
 
 #include "retrofocal.h"
+#include "version.h"
 #include "statistics.h"
 #include "parse.h"
 

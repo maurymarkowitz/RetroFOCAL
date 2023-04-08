@@ -1,10 +1,8 @@
 RetroFOCAL TODO/BUGS/ERRATA list
 
+- final print formatting tweaks for -1 etc.
+
 - order of operations! = ^, *, /, +- (* and / are not the same level!)
-
-- fix line-number handling
-
-- fix statistics for GOTO and GOSUB etc.
 
 - convert ASCII to DEC in FIN and FOUT and similar places
 

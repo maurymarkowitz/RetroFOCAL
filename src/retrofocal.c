@@ -689,7 +689,7 @@ static void print_item(printitem_t *item)
 static double line_for_statement(const list_t *statement)
 {
   // get a pointer to the program from the first line
-  list_t *program = interpreter_state.lines[interpreter_state.first_line];
+  list_t *program = interpreter_state.lines[interpreter_state.first_line_index];
   
   // get the index of this statement in that list
   int target_index = lst_index_of_data(program, statement->data);
@@ -697,8 +697,8 @@ static double line_for_statement(const list_t *statement)
   // loop forward through the program until we find a line who's
   // first statement is higher than that index. That means we must
   // be on the previous line
-  int this_index, previous_line = interpreter_state.first_line;
-  for (int i = interpreter_state.first_line; i < MAXLINE; i++) {
+  int this_index, previous_line = interpreter_state.first_line_index;
+  for (int i = interpreter_state.first_line_index; i < MAXLINE; i++) {
     // skip empty lines
     if (interpreter_state.lines[i] == NULL) continue;
     
@@ -726,7 +726,7 @@ static double current_line()
 static list_t *find_line(double linenumber)
 {
   char buffer[50];
-	int group = round(trunc(linenumber));
+	int group = trunc(linenumber);
 	int line = round((linenumber - group) * 100);
   
   // negative numbers are not allowed
@@ -854,10 +854,13 @@ static void perform_statement(list_t *list_item)
 			case DO:
 			{
 				// DO is a GOSUB which may call a line or a group
-				gosubcontrol_t *new = malloc(sizeof(*new));
+				stackentry_t *new_do = malloc(sizeof(*new_do));
 				
-				new->returnpoint = lst_next(list_item);
-				interpreter_state.dostack = lst_append(interpreter_state.dostack, new);
+				new_do->type = DO;
+				new_do->original_line = current_line();
+				new_do->target_line = evaluate_expression(statement->parms._do).number;
+				new_do->returnpoint = lst_next(list_item);
+				interpreter_state.stack = lst_append(interpreter_state.stack, new_do);
 				interpreter_state.next_statement = find_line(evaluate_expression(statement->parms._do).number);
 			}
 				break;
@@ -869,14 +872,16 @@ static void perform_statement(list_t *list_item)
 				
 			case FOR:
 			{
-				forcontrol_t *new_for = malloc(sizeof(*new_for));
+				stackentry_t *new_for = malloc(sizeof(*new_for));
 				either_t *loop_value;
 				int type = 0;
 				
+				new_for->type = FOR;
+				new_for->original_line = current_line();
 				new_for->index_variable = statement->parms._for.variable;
 				new_for->begin = evaluate_expression(statement->parms._for.begin).number;
 				new_for->end = evaluate_expression(statement->parms._for.end).number;
-				if (statement->parms._for.step)
+				if (statement->parms._for.step != NULL)
 					new_for->step = evaluate_expression(statement->parms._for.step).number;
 				else {
 					new_for->step = 1;
@@ -885,7 +890,7 @@ static void perform_statement(list_t *list_item)
 				loop_value = variable_value(new_for->index_variable, &type);
 				loop_value->number = new_for->begin;
 				
-				interpreter_state.forstack = lst_append(interpreter_state.forstack, new_for);
+				interpreter_state.stack = lst_append(interpreter_state.stack, new_for);
 			}
 				break;
 				
@@ -948,55 +953,7 @@ static void perform_statement(list_t *list_item)
 				}
 			}
 				break;
-				
-				//      case NEXT:
-				//      {
-				//				// make sure there is a stack
-				//				if (interpreter_state.forstack  == NULL || lst_length(interpreter_state.forstack) == 0) {
-				//					basic_error("NEXT without FOR");
-				//					break;
-				//				}
-				//
-				//				// get the most-recent FOR, which is the *end* of the list
-				//				forcontrol_t *pfc = lst_last_node(interpreter_state.forstack)->data;
-				//
-				//				// see if the next has any variable names, that is, NEXT I vs. NEXT,
-				//				// and if so, ensure the latest FOR on the stack is one of those variables
-				//				if (lst_length(ps->parms.next) > 0) {
-				//					bool foundIt = false;
-				//					list_t *var = lst_first_node(ps->parms.next);
-				//					for (int i = 0; i < lst_length(ps->parms.next); i++) {
-				//						if (strcmp(pfc->index_variable->name, ((variable_t *)var->data)->name) == 0) {
-				//							foundIt = true;
-				//						}
-				//						else {
-				//							var = lst_next(ps->parms.next);
-				//						}
-				//					}
-				//					if (!foundIt) {
-				//						basic_error("NEXT with mismatched FOR");
-				//						break;
-				//					}
-				//				}
-				//
-				//				// do a STEP
-				//        int type = 0;
-				//				either_t *lv = variable_value(pfc->index_variable, &type);
-				//        lv->number += pfc->step;
-				//
-				//				// and see if we need to go back to the FOR or we're done and we continue on
-				//        if (((pfc->step < 0) && (lv->number >= pfc->end)) ||
-				//            ((pfc->step > 0) && (lv->number <= pfc->end))) {
-				//          // we're not done, go back to the head of the loop
-				//          interpreter_state.next_statement = lst_next(pfc->head);
-				//        } else {
-				//          // we are done, remove this entry from the stack and just keep going
-				//          interpreter_state.forstack = lst_remove_node_with_data(interpreter_state.forstack, pfc);
-				//					free(pfc);
-				//        }
-				//      }
-				//        break;
-				
+								
 			case TYPE:
 			{
 				// loop over the items in the print list and print them out
@@ -1008,15 +965,15 @@ static void perform_statement(list_t *list_item)
 				
 			case RETURN:
 			{
-				gosubcontrol_t *pgc;
-				if (interpreter_state.dostack == NULL || lst_length(interpreter_state.dostack) == 0) {
+				stackentry_t *se;
+				if (lst_length(interpreter_state.stack) == 0 || ((stackentry_t *)lst_last_node(interpreter_state.stack)->data)->type != DO) {
 					focal_error("RETURN without DO");
 					break;
 				}
 				
-				pgc = lst_last_node(interpreter_state.dostack)->data;
-				interpreter_state.next_statement = pgc->returnpoint;
-				interpreter_state.dostack = lst_remove_node_with_data(interpreter_state.dostack, pgc);
+				se = lst_last_node(interpreter_state.stack)->data;
+				interpreter_state.next_statement = se->returnpoint;
+				interpreter_state.stack = lst_remove_node_with_data(interpreter_state.stack, se);
 			}
 				break;
 				
@@ -1035,16 +992,64 @@ static void perform_statement(list_t *list_item)
 		// to go next, which might be back to the start of a FOR, or doing the
 		// equivalent of a RETURN
 		double this_line = current_line();
-		double next_line = line_for_statement(lst_next(list_item));
-		int this_group = trunc(this_line);
-		int this_statement = round(this_line - this_group);
-		int next_group = trunc(next_line);
-		int next_statement = round(next_line - next_group);
+		list_t *next = lst_next(list_item);
 		
+		// we might be at the end of the program
+		double next_line;
+		if (next != NULL)
+			next_line = line_for_statement(next);
+		else
+			next_line = -1.0;
 
+		int this_group = trunc(this_line);
+		int this_statement = (this_line - this_group) * 100;
+		int next_group = trunc(next_line);
+		int next_statement = (next_line - next_group) * 100;
 		
-		
-		
+		// are we at the end of a group or a line?
+		if (this_group != next_group || this_statement != next_statement) {
+			if (lst_length(interpreter_state.stack) > 0) {
+				// pull the top item
+				stackentry_t *se = lst_last_node(interpreter_state.stack)->data;
+				
+				// if it's a FOR, we perform a next if we are at the end of any line
+				if (se->type == FOR && (this_group != next_group || this_statement != next_statement)) {
+					int type = 0;
+					either_t *lv = variable_value(se->index_variable, &type);
+					lv->number += se->step;
+
+					// and see if we need to go back to the FOR or we're done and we continue on
+					if (((se->step < 0) && (lv->number >= se->end)) ||
+							((se->step > 0) && (lv->number <= se->end))) {
+						// we're not done, go back to the head of the loop
+						interpreter_state.next_statement = lst_next(se->head);
+					} else {
+						// we are done, remove this entry from the stack and just keep going
+						interpreter_state.stack = lst_remove_node_with_data(interpreter_state.stack, se);
+						free(se);
+					}
+					
+				}
+				// or it might be a DO, in which case we have to check the original
+				// target to see if it was a group or single line
+				else {
+					int target_group = trunc(se->target_line);
+					int target_statement = (se->target_line - target_group)  * 100;
+					
+					// if the original DO had only a group, only do the RETURN if we are at the end of this group
+					if (target_statement == 0 && (this_group != next_group)) {
+						interpreter_state.next_statement = se->returnpoint;
+						interpreter_state.stack = lst_remove_node_with_data(interpreter_state.stack, se);
+					}
+					// if it had a group and statement, then only return if both changed
+					else if (this_group != next_group && this_statement != next_statement) {
+						interpreter_state.next_statement = se->returnpoint;
+						interpreter_state.stack = lst_remove_node_with_data(interpreter_state.stack, se);
+					}
+				}
+
+			}
+		} // end-of-line handling
 	} // statement is not null
 } /* perform_statement */
 
@@ -1116,7 +1121,7 @@ void interpreter_post_parse(void)
   // NOTE: do we need to do this? isn't this already there?
   interpreter_state.lines[first_line] = first_statement;
   // and keep track of this for posterity
-  interpreter_state.first_line = first_line;
+  interpreter_state.first_line_index = first_line;
   
   // a program runs from the first line, so...
   interpreter_state.current_statement = first_statement;          // the first statement
@@ -1140,7 +1145,7 @@ void interpreter_run(void)
 	gettimeofday(&reset_time, NULL);
   
   // last line number we ran, used for tracing/stepping
-  int last_line = interpreter_state.first_line;
+  int last_line = interpreter_state.first_line_index;
   if (trace_lines)
     printf("[%i]\n", last_line);
   
