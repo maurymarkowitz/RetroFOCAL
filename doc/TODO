@@ -2,14 +2,14 @@ RetroFOCAL TODO/BUGS/ERRATA list
 
 - final print formatting tweaks for -1 etc.
 
-- order of operations! = ^, *, /, +- (* and / are not the same level!)
+- properly space out ASK and TYPE
+
+- flesh out options for spaces, colons and equals in TYPE and ASK
+
+- order of operations! = ^, *, /, (+ and -) -- * and / are not the same level!
 
 - convert ASCII to DEC in FIN and FOUT and similar places
-
-- properly space out ASK and TYPE
 
 - support ? for turning TRACE on and off, allowed in GO and at the front of any other statement
 
 - support the psuedo-variable # which prints system flags
-
-- flesh out options for spaces, colons and equals in TYPE and ASK
