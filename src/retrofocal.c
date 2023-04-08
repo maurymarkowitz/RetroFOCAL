@@ -839,13 +839,18 @@ static void perform_statement(list_t *list_item)
 							}
 						}
 						
+						// trim any leading spaces
+						char *trim = line;
+						while(isspace(trim[0]))
+							trim++;
+
 						// find the storage for this variable
 						value = variable_value(ppi->expression->parms.variable, &type);
 						
 						// FOCAL only has numeric variables, but it does have the ability to
 						// type in strings at prompts, so we have to hand-convert the string
 						// into a value, we can't simply sscanf it
-						value->number = string_to_number(line);
+						value->number = string_to_number(trim);
 					}
 				} // loop over list of items
 			} // ASK
