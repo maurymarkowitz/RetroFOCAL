@@ -430,7 +430,11 @@ static value_t evaluate_expression(expression_t *expression)
       result.type = STRING;
       result.string = expression->parms.string;
       break;
-      
+		case numstr:
+			result.type = NUMBER;
+			result.number = string_to_number(expression->parms.string);
+			break;
+
       // variables are also easy, just copy over their value from storage
     case variable:
     {
@@ -801,6 +805,8 @@ static void perform_statement(list_t *list_item)
 				// ASK is similar to BASIC's INPUT, and allows mixing prompts and inputs.
 				// It also has the option of printing a colon, like BASIC's question mark,
 				// but does so for every input, not just the first
+				//
+				// one difference with BASIC: entering nothing will return zero
 				
 				// loop over the items in the variable/prompt list
 				for (list_t *I = statement->parms.input; I != NULL; I = lst_next(I)) {

@@ -85,7 +85,7 @@ typedef struct {
 
 /* expressions */
 typedef enum {
-  number, string, variable, op
+  number, string, numstr, variable, op
 } expression_type_t;
 
 typedef struct expression_struct {

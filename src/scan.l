@@ -111,16 +111,14 @@ FOUT    { return FOUT; }
 
  /* string constants */
 \"[^"]*\"   {
-             yytext[strlen(yytext) - 1] = '\0';
-             yylval.s = str_new(yytext + 1);
+             yytext[strlen(yytext) - 1] = '\0';   // cut off the trailing quote
+             yylval.s = str_new(yytext + 1);      // and the leading one
              return STRING;
            }
  
  /* FOCAL has a second number format used for string inputs, it starts with a 0 like 0YES */
 0[A-Za-z][A-Za-z0-9]* {
-    // DEC's character codes are +128, so A is 161
-              yytext[strlen(yytext) - 1] = '\0';
-              yylval.s = str_new(yytext + 1);
+              yylval.s = str_new(yytext);
               return NUMSTR;
             }
 

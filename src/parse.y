@@ -582,7 +582,7 @@ factor:
   |
   NUMSTR
   {
-    expression_t *new = make_expression(string);
+    expression_t *new = make_expression(numstr);
     new->parms.string = $1;
     $$ = new;
   }
