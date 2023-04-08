@@ -1,0 +1,23 @@
+10.01 a "Number",size
+10.03 i (size) 10.05,10.05,10.10
+10.05 q
+10.10 t "List of prime numbers",!
+10.15 s l = 0
+10.20 f i = 1, size;s iflags(i) = 1
+10.30 s iflags(1) = 0
+10.40 f num = 1, size; do 20
+10.50 f num = 1, size; do 30
+10.60 t !
+10.90 g 10.01
+20.10 i (iflags(num)) 20.20, 20.90, 20.20
+20.20 s prime = num
+20.30 s mult = prime + prime
+20.40 i (mult-size) 20.50, 20.50, 20.90
+20.50 f i = mult, prime, size;s iflags(i) = 0
+20.90 r
+30.10 i (iflags(num)) 30.90, 30.90
+30.20 t %5, num, " "
+30.30 s l=l+1
+30.40 i (l-9) 30.90
+30.50 t !;s l=0
+30.90 r

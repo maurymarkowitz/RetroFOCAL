@@ -1,0 +1,44 @@
+01.05 S IM=31;S RM=61                                                           
+01.06 A "ENTER X-AXIS LENGTH"XL;S XL=FABS(XL);I (XL) ,1.06                      
+01.10 A "ENTER EQUATION ORDER(1,2,3)"IH                                         
+01.20 I (IH-1) 1.5,2.1;                                                         
+01.30 I (IH-2) ,3.1;                                                            
+01.40 I (IH-3) ,4.1;                                                            
+01.50 Q                                                                         
+02.10 S A2=0;S A3=0;A "ENTER A1"A1"ENTER B"B                                    
+02.20 T !!"EQUATION IS LINEAR "A1"*X+"B"=Y"!!                                   
+02.30 D 5;G 1.1                                                                 
+03.10 S A3=0;A "ENTER A2"A2"ENTER A1"A1"ENTER B"B                               
+03.20 T !!"EQUATION IS QUADRATIC "A2"*X^2+"A1"*X+"B"=Y"!!                       
+03.30 D 5;G 1.1                                                                 
+04.10 A "ENTER A3"A3"ENTER A2"A2"ENTER A1"A1"ENTER B"B                          
+04.20 T !!"EQUATION IS CUBIC "A3"*X^3+"A2"*X^2+"A1"*X+"B"=Y"!!                  
+04.30 D 5;G 1.1                                                                 
+05.07 T "       "                                                               
+05.10 T "-30       -20       -10         0        10"                           
+05.11 T "        20        30"!                                                 
+05.13 T "       "                                                               
+05.14 T "  +         +         +         +         +"                           
+05.15 T "         +         +"!                                                 
+05.20 S X=-XL;F I=1,(XL*2+1);D 6                                                
+05.30 R                                                                         
+06.10 T %7.1,X;S IC=X^3*A3+X^2*A2+X*A1+B+IM                                     
+06.15 S IC=FITR(IC+.5)                                                          
+06.20 I (IC-1) 6.25,6.4,6.3                                                     
+06.25 S IC=1;G 6.4                                                              
+06.30 I (IC-RM) 6.4,6.4                                                         
+06.35 S IC=RM                                                                   
+06.40 I (IC-IM) 6.42,6.8,6.8                                                    
+06.42 F J=1,IC;D 7                                                              
+06.50 T "*";F J=IC,IM-2;D 7                                                     
+06.55 T "!";I (X) 6.99,6.6,6.99                                                 
+06.60 F J=IM,RM;D 7                                                             
+06.65 G 6.99                                                                    
+06.80 F J=1,IM;D 7                                                              
+06.82 I (IC-IM) ,6.85;T "!";F J=IM,IC-2;D 7                                     
+06.85 T "*";I (X) 6.99,6.9,6.99                                                 
+06.90 F J=IC,RM;D 7                                                             
+06.99 T !;S X=X+1;R                                                             
+07.10 I (X) 7.2,7.3,7.2                                                         
+07.20 T " ";R                                                                   
+07.30 T "-";R                                                                   

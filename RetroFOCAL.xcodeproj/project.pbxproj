@@ -72,6 +72,13 @@
 		55B96990252F4FCA0021CD8B /* makefile */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.make; path = makefile; sourceTree = "<group>"; };
 		55B96993252F5AB80021CD8B /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 		55C0605728B13842002B8345 /* retrofocal.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = retrofocal.1; sourceTree = "<group>"; };
+		55D3592229E0CBC800047CD9 /* bottles.fc */ = {isa = PBXFileReference; lastKnownFileType = text; path = bottles.fc; sourceTree = "<group>"; };
+		55D3592329E0CBE900047CD9 /* diceg.fc */ = {isa = PBXFileReference; lastKnownFileType = text; path = diceg.fc; sourceTree = "<group>"; };
+		55D3592429E0CBEB00047CD9 /* dampsine.fc */ = {isa = PBXFileReference; lastKnownFileType = text; path = dampsine.fc; sourceTree = "<group>"; };
+		55D3592529E0CC0300047CD9 /* fact.fc */ = {isa = PBXFileReference; lastKnownFileType = text; path = fact.fc; sourceTree = "<group>"; };
+		55D3592629E0CC1300047CD9 /* iplot.fc */ = {isa = PBXFileReference; lastKnownFileType = text; path = iplot.fc; sourceTree = "<group>"; };
+		55D3592729E0CC2A00047CD9 /* primes.fc */ = {isa = PBXFileReference; lastKnownFileType = text; path = primes.fc; sourceTree = "<group>"; };
+		55D3592829E0CC3500047CD9 /* schrod.fc */ = {isa = PBXFileReference; lastKnownFileType = text; path = schrod.fc; sourceTree = "<group>"; };
 		55DEE88128A6A6B800270949 /* RetroFOCAL design.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "RetroFOCAL design.md"; sourceTree = "<group>"; };
 		55E12DB82904279A0005D17F /* RetroFOCAL build notes.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "RetroFOCAL build notes.md"; sourceTree = "<group>"; };
 		55EBA451296E3A3F00FCD43A /* parse.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = parse.h; sourceTree = "<group>"; };
@@ -151,10 +158,17 @@
 		55B96987252CC1D30021CD8B /* test */ = {
 			isa = PBXGroup;
 			children = (
+				55D3592229E0CBC800047CD9 /* bottles.fc */,
+				55D3592429E0CBEB00047CD9 /* dampsine.fc */,
+				55D3592329E0CBE900047CD9 /* diceg.fc */,
+				55D3592529E0CC0300047CD9 /* fact.fc */,
+				55D3592629E0CC1300047CD9 /* iplot.fc */,
 				55FB295C29C37F2500BE2097 /* lunar.fc */,
-				55FB295B29C37EEE00BE2097 /* test_programs */,
-				55FB295929C373F900BE2097 /* test.bsh */,
 				552013BD29C7B2E300280B32 /* numtest.fc */,
+				55D3592729E0CC2A00047CD9 /* primes.fc */,
+				55D3592829E0CC3500047CD9 /* schrod.fc */,
+				55FB295929C373F900BE2097 /* test.bsh */,
+				55FB295B29C37EEE00BE2097 /* test_programs */,
 			);
 			path = test;
 			sourceTree = "<group>";
