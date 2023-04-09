@@ -634,7 +634,7 @@ variable:
     insert_variable(new);
 	}
 	|
-  VARIABLE_NAME '(' exprlist ')' // this assumes only () is allowed for subscripts
+  VARIABLE_NAME '(' exprlist ')' // this assumes only () is allowed for subscripts, not <> or []
   {
     variable_t *new = malloc(sizeof(*new));
     new->name = $1;
@@ -645,47 +645,72 @@ variable:
   }
 
 printlist:
-  // a null printlist is valid, it means "new line"
-  {
-	  $$ = NULL;
-  }
-  |
-  expression printlist
+  expression
   {
     printitem_t *new = malloc(sizeof(*new));
     new->expression = $1;
     new->separator = 0;
-    $$ = lst_prepend($2, new);
+    $$ = lst_prepend(NULL, new);
+  }
+  |
+  printlist expression
+  {
+    printitem_t *new = malloc(sizeof(*new));
+    new->expression = $2;
+    new->separator = 0;
+    $$ = lst_append($1, new);
   }
   // this is common in FOCAL, you might see TYPE !!! to add some vertical space
   |
-  printsep printlist
+  printsep
   {
     printitem_t *new = malloc(sizeof(*new));
     new->expression = NULL;
     new->separator = $1;
-    $$ = lst_prepend($2, new);
+    $$ = lst_prepend(NULL, new);
   }
   |
-  // switches format to E
-  '%' printlist
+  printlist printsep
   {
     printitem_t *new = malloc(sizeof(*new));
     new->expression = NULL;
-    new->format = -1;
-    $$ = lst_prepend($2, new);
+    new->separator = $2;
+    $$ = lst_append($1, new);
   }
   |
-  // handle the formats, which can be anywhere on the line
-  '%' NUMBER printlist
+  '%' NUMBER
   {
     printitem_t *new = malloc(sizeof(*new));
     new->expression = NULL;
     new->format = $2;
-    $$ = lst_prepend($3, new);
+    $$ = lst_append(NULL, new);
   }
-	;
-
+  |
+  printlist '%' NUMBER
+  {
+    printitem_t *new = malloc(sizeof(*new));
+    new->expression = NULL;
+    new->format = $3;
+    $$ = lst_append($1, new);
+  }
+  |
+  '%'
+  {
+    printitem_t *new = malloc(sizeof(*new));
+    new->expression = NULL;
+    new->format = -1;
+    $$ = lst_prepend(NULL, new);
+  }
+  |
+  printlist '%'
+  {
+    printitem_t *new = malloc(sizeof(*new));
+    new->expression = NULL;
+    new->format = -1;
+    $$ = lst_prepend($1, new);
+  }
+  ;
+  
   /* FOCAL uses a number of special characters, not just separators */
 printsep:
   ','
