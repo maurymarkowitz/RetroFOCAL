@@ -104,7 +104,7 @@ FOUT    { return FOUT; }
 
  /* variable references, only first two characters are used but we save them all. F is not allowed. */
  /* NOTE: underscore is supported here but unlikely to have been used in actual code. */
-[A-EG-Za-eg-z][A-Za-z0-9_]* {
+[A-EG-Za-eg-z][A-Za-z0-9_\"\'"]* {
              yylval.s = str_new(yytext);
              return VARIABLE_NAME;
            }
