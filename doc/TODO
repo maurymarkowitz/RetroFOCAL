@@ -2,8 +2,6 @@ RetroFOCAL TODO/BUGS/ERRATA list
 
 - final print formatting tweaks for -1 etc.
 
-- properly space out ASK and TYPE
-
 - flesh out options for spaces, colons and equals in TYPE and ASK
 
 - order of operations! = ^, *, /, (+ and -) -- * and / are not the same level!
