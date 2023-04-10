@@ -391,28 +391,29 @@ static double string_to_number(const char *string)
  */
 static int format_decimals(char *string)
 {
-	if (string == NULL)
+	int len = (int)strlen(string);
+	if (len == 0)
 		return 0;
 	
 	// look for the decimal place
 	int offset = 0;
-	while(string[offset] != '.')
+	while(string[offset] != '.' && offset < len)
 			offset++;
 	
 	// how many digits to the left of the decimal?
 	// it could be zero, in which case we're done
-	int decimals = (int)strlen(string) - offset;
-	if (decimals == 0)
+	int decimals = len - offset - 1;
+	if (decimals <= 0)
 		return 0;
 	
 	// it wasn't zero, so convert it to an int
-	int val = atoi(&string[offset]);
+	int val = atoi(&string[offset + 1]);
 	
 	// multiply that if needed
 	// NOTE: this assumes there are never more than two places, which
 	//   should always be the case because the parser would have
 	//   returned a syntax error otherwise
-	if (decimals > 1)
+	if (decimals == 1)
 		val *= 10;
 	
 	// all done!
@@ -711,9 +712,19 @@ static void print_item(printitem_t *item)
 				// if it's a number, make a c-style formatter for the output
 				char fmtstr[MAXSTRING];
 				int width = atoi(interpreter_state.format);
-				int prec = format_decimals(item->format);
-				sprintf(fmtstr, "= %%%d.%df", width, prec);
+				int prec = format_decimals(interpreter_state.format);
 				
+				// FIXME: need to support "-1" here
+				
+				if (type_equals && type_space)
+					sprintf(fmtstr, "= %%%d.%df", width, prec);
+				else if (type_equals)
+					sprintf(fmtstr, "=%%%d.%df", width, prec);
+				else if (type_space)
+					sprintf(fmtstr, " %%%d.%df", width, prec);
+				else
+					sprintf(fmtstr, "%%%d.%df", width, prec);
+
 				interpreter_state.cursor_column += printf(fmtstr, width, prec, v.number);
 			}
 				break;
