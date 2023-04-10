@@ -42,82 +42,84 @@
      STRING = 258,
      NUMBER = 259,
      NUMSTR = 260,
-     VARIABLE_NAME = 261,
-     FUNCTION_NAME = 262,
-     ASK = 263,
-     COMMENT = 264,
-     CONTINUE = 265,
-     DO = 266,
-     ERASE = 267,
-     FOR = 268,
-     GO = 269,
-     GOTO = 270,
-     IF = 271,
-     MODIFY = 272,
-     QUIT = 273,
-     RETURN = 274,
-     SET = 275,
-     TYPE = 276,
-     WRITE = 277,
-     FABS = 278,
-     FATN = 279,
-     FCOS = 280,
-     FEXP = 281,
-     FITR = 282,
-     FLOG = 283,
-     FRAN = 284,
-     FSGN = 285,
-     FSIN = 286,
-     FSQT = 287,
-     FADC = 288,
-     FDIS = 289,
-     FDXS = 290,
-     FCOM = 291,
-     FNEW = 292,
-     FIN = 293,
-     FOUT = 294,
-     VARLIST = 295
+     FMTSTR = 261,
+     VARIABLE_NAME = 262,
+     FUNCTION_NAME = 263,
+     ASK = 264,
+     COMMENT = 265,
+     CONTINUE = 266,
+     DO = 267,
+     ERASE = 268,
+     FOR = 269,
+     GO = 270,
+     GOTO = 271,
+     IF = 272,
+     MODIFY = 273,
+     QUIT = 274,
+     RETURN = 275,
+     SET = 276,
+     TYPE = 277,
+     WRITE = 278,
+     FABS = 279,
+     FATN = 280,
+     FCOS = 281,
+     FEXP = 282,
+     FITR = 283,
+     FLOG = 284,
+     FRAN = 285,
+     FSGN = 286,
+     FSIN = 287,
+     FSQT = 288,
+     FADC = 289,
+     FDIS = 290,
+     FDXS = 291,
+     FCOM = 292,
+     FNEW = 293,
+     FIN = 294,
+     FOUT = 295,
+     VARLIST = 296
    };
 #endif
 /* Tokens.  */
 #define STRING 258
 #define NUMBER 259
 #define NUMSTR 260
-#define VARIABLE_NAME 261
-#define FUNCTION_NAME 262
-#define ASK 263
-#define COMMENT 264
-#define CONTINUE 265
-#define DO 266
-#define ERASE 267
-#define FOR 268
-#define GO 269
-#define GOTO 270
-#define IF 271
-#define MODIFY 272
-#define QUIT 273
-#define RETURN 274
-#define SET 275
-#define TYPE 276
-#define WRITE 277
-#define FABS 278
-#define FATN 279
-#define FCOS 280
-#define FEXP 281
-#define FITR 282
-#define FLOG 283
-#define FRAN 284
-#define FSGN 285
-#define FSIN 286
-#define FSQT 287
-#define FADC 288
-#define FDIS 289
-#define FDXS 290
-#define FCOM 291
-#define FNEW 292
-#define FIN 293
-#define FOUT 294
-#define VARLIST 295
+#define FMTSTR 261
+#define VARIABLE_NAME 262
+#define FUNCTION_NAME 263
+#define ASK 264
+#define COMMENT 265
+#define CONTINUE 266
+#define DO 267
+#define ERASE 268
+#define FOR 269
+#define GO 270
+#define GOTO 271
+#define IF 272
+#define MODIFY 273
+#define QUIT 274
+#define RETURN 275
+#define SET 276
+#define TYPE 277
+#define WRITE 278
+#define FABS 279
+#define FATN 280
+#define FCOS 281
+#define FEXP 282
+#define FITR 283
+#define FLOG 284
+#define FRAN 285
+#define FSGN 286
+#define FSIN 287
+#define FSQT 288
+#define FADC 289
+#define FDIS 290
+#define FDXS 291
+#define FCOM 292
+#define FNEW 293
+#define FIN 294
+#define FOUT 295
+#define VARLIST 296
 
 
 
@@ -135,7 +137,7 @@ typedef union YYSTYPE
   variable_t *variable;
 }
 /* Line 1529 of yacc.c.  */
-#line 139 "/Volumes/Bigger/Users/maury/Desktop/RetroFOCAL/obj/Intermediates.noindex/RetroFOCAL.build/Debug/retrofocal.build/DerivedSources/y.tab.h"
+#line 141 "/Volumes/Bigger/Users/maury/Desktop/RetroFOCAL/obj/Intermediates.noindex/RetroFOCAL.build/Debug/retrofocal.build/DerivedSources/y.tab.h"
     YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1

@@ -122,6 +122,12 @@ FOUT    { return FOUT; }
               return NUMSTR;
             }
 
+ /* and we have to do format strings separately as well, to preserve the trailing zero */
+%[0-9]*[.]*[0-9]* {
+              yylval.s = str_new(yytext + 1);
+              return FMTSTR;
+            }
+
 } // back out of KEYWORD_FOUND, the following apply to everything
 
  /* other numeric constants and line numbers */

@@ -93,6 +93,7 @@ static expression_t *make_operator(int arity, int o)
 %token <s> STRING // only used in constants
 %token <d> NUMBER // in FOCAL, even line numbers are doubles
 %token <s> NUMSTR // this is the unique "0YES" format, which is stored here as a string for debugging purposes
+%token <s> FMTSTR // and this is used to store the format specifier, so rounding doesn't remove trailing zeros
 %token <s> VARIABLE_NAME
 %token <s> FUNCTION_NAME
 
@@ -497,7 +498,19 @@ function:
   }
   |
   /* functions with optional parameters, which we store but ignore */
-  fn_0 '(' ')'
+  fn_0 "()"
+  {
+    expression_t *new = make_operator(0, $1);
+    $$ = new;
+  }
+  |
+  fn_0 "[]"
+  {
+    expression_t *new = make_operator(0, $1);
+    $$ = new;
+  }
+  |
+  fn_0 "<>"
   {
     expression_t *new = make_operator(0, $1);
     $$ = new;
@@ -510,8 +523,36 @@ function:
     new->parms.op.p[0] = $3;
     $$ = new;
   }
+  |
+  fn_0 '[' expression ']'
+  {
+    expression_t *new = make_operator(0, $1);
+    new->parms.op.p[0] = $3;
+    $$ = new;
+  }
+  |
+  fn_0 '<' expression '>'
+  {
+    expression_t *new = make_operator(0, $1);
+    new->parms.op.p[0] = $3;
+    $$ = new;
+  }
 	|
 	fn_1 '(' expression ')'
+  {
+    expression_t *new = make_operator(1, $1);
+    new->parms.op.p[0] = $3;
+    $$ = new;
+  }
+  |
+  fn_1 '[' expression ']'
+  {
+    expression_t *new = make_operator(1, $1);
+    new->parms.op.p[0] = $3;
+    $$ = new;
+  }
+  |
+  fn_1 '<' expression '>'
 	{
 	  expression_t *new = make_operator(1, $1);
 	  new->parms.op.p[0] = $3;
@@ -677,28 +718,35 @@ printlist:
     new->separator = $2;
     $$ = lst_append($1, new);
   }
+  // the formatters are annoying because they are typed in as a number
+  // lacking trailing zeros, so 10.4 means 10 width, four decimals. The
+  // problem is when you read that back and try to figure out if 10.4 means
+  // 10.40 or 10.04. adding to the annoyance is that the format string looks
+  // just like a number, so the scanner has to look for the % as well as the
+  // digits to match, which leads to...
   |
-  '%' NUMBER
+  FMTSTR
+  {
+    printitem_t *new = malloc(sizeof(*new));
+    new->expression = NULL;
+    new->format = $1;
+    $$ = lst_append(NULL, new);
+  }
+  |
+  printlist FMTSTR
   {
     printitem_t *new = malloc(sizeof(*new));
     new->expression = NULL;
     new->format = $2;
-    $$ = lst_append(NULL, new);
-  }
-  |
-  printlist '%' NUMBER
-  {
-    printitem_t *new = malloc(sizeof(*new));
-    new->expression = NULL;
-    new->format = $3;
     $$ = lst_append($1, new);
   }
+  // we shouldn't need these, the scanner should match a null here
   |
   '%'
   {
     printitem_t *new = malloc(sizeof(*new));
     new->expression = NULL;
-    new->format = -1;
+    new->format = "-1";
     $$ = lst_prepend(NULL, new);
   }
   |
@@ -706,7 +754,7 @@ printlist:
   {
     printitem_t *new = malloc(sizeof(*new));
     new->expression = NULL;
-    new->format = -1;
+    new->format = "-1";
     $$ = lst_prepend($1, new);
   }
   ;

@@ -109,7 +109,7 @@ typedef struct expression_struct {
 typedef struct {
   expression_t *expression;
   int separator;      /* ';' ',' or 0 */
-  double format;      /* %x.y */
+  char *format;      /* %x.y */
 } printitem_t;
 
 /* Every statement in the program gets a statement entry. the most
@@ -177,7 +177,7 @@ typedef struct {
   list_t *variable_values;		    // name/value pairs used to store variable values
   list_t *stack;	                // runtime stack
   int cursor_column;              // current column of the output cursor
-  double format;                  // FOCAL uses a single print format
+  char *format;                   // FOCAL uses a single print format
   int running_state;              // is the program running (1), paused/stopped (0), or setting up a function (-1)
 } interpreterstate_t;
 

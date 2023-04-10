@@ -382,6 +382,43 @@ static double string_to_number(const char *string)
 	return val;
 } /* string_to_number */
 
+/** Extracts the decimal part of a string and returns an int value.
+ * This is needed in order to account for trailing zeros in format
+ * strings, so that "15.10" is different than "15.1".
+ *
+ * @param string The string to extract the decimal from.
+ * @return The decimal part as an integer, or zero if there is no decimal.
+ */
+static int format_decimals(char *string)
+{
+	if (string == NULL)
+		return 0;
+	
+	// look for the decimal place
+	int offset = 0;
+	while(string[offset] != '.')
+			offset++;
+	
+	// how many digits to the left of the decimal?
+	// it could be zero, in which case we're done
+	int decimals = (int)strlen(string) - offset;
+	if (decimals == 0)
+		return 0;
+	
+	// it wasn't zero, so convert it to an int
+	int val = atoi(&string[offset]);
+	
+	// multiply that if needed
+	// NOTE: this assumes there are never more than two places, which
+	//   should always be the case because the parser would have
+	//   returned a syntax error otherwise
+	if (decimals > 1)
+		val *= 10;
+	
+	// all done!
+	return val;
+}
+
 /** Number of jiffies since program start (or reset) 1/60th in Commodore/Atari format.
  *
  */
@@ -649,8 +686,8 @@ static void print_item(printitem_t *item)
 		// is it a formatter?
 		else if (item->format != 0) {
 			// check that it's valid
-			int width = trunc(item->format);
-			int prec = round((item->format - width) * 100);
+			int width = atoi(item->format);
+			int prec = format_decimals(item->format);
 			if (width > 31 || prec > 31)
 				focal_error("Format has length greater than 31");
 			
@@ -673,8 +710,8 @@ static void print_item(printitem_t *item)
 			{
 				// if it's a number, make a c-style formatter for the output
 				char fmtstr[MAXSTRING];
-				int width = trunc(interpreter_state.format);
-				int prec = round((interpreter_state.format - width) * 100);
+				int width = atoi(interpreter_state.format);
+				int prec = format_decimals(item->format);
 				sprintf(fmtstr, "= %%%d.%df", width, prec);
 				
 				interpreter_state.cursor_column += printf(fmtstr, width, prec, v.number);
@@ -1152,7 +1189,7 @@ void interpreter_run(void)
   interpreter_state.cursor_column = 0;
 	
 	// the normal format is similar
-	interpreter_state.format = 0.0;
+	interpreter_state.format = "5.4";
 
   // start the clock and mark us as running
   start_ticks = clock();
