@@ -168,7 +168,6 @@
 				55D3592729E0CC2A00047CD9 /* primes.fc */,
 				55D3592829E0CC3500047CD9 /* schrod.fc */,
 				55FB295929C373F900BE2097 /* test.bsh */,
-				55FB295B29C37EEE00BE2097 /* test_programs */,
 			);
 			path = test;
 			sourceTree = "<group>";
@@ -193,13 +192,6 @@
 				55B96993252F5AB80021CD8B /* .gitignore */,
 			);
 			path = git;
-			sourceTree = "<group>";
-		};
-		55FB295B29C37EEE00BE2097 /* test_programs */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = test_programs;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
