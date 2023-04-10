@@ -39,7 +39,7 @@ bool write_stats = false;
 int tab_columns = 10;                   // based on PET BASIC, which is a good enough target
 bool trace_lines = false;								// turned on or off with a ?
 bool ask_colon = true;          				// print a colon in ASK
-bool type_equals = true;								// print the = in TYPEs
+bool type_equals = false;								// print the = in TYPEs
 bool type_space = true;								  // print a leading space in TYPE
 bool upper_case = true;          				// force ASK input to upper case, which is generally the case for DEC
 double random_seed = -1;                // reset with RANDOMIZE, if -1 then auto-seeds
@@ -690,7 +690,7 @@ static void print_item(printitem_t *item)
 			if (width > 31 || prec > 31)
 				focal_error("Format has length greater than 31");
 			
-			// -1 is valid for us, it means E format
+			// -1 is valid, it means E format
 			interpreter_state.format = item->format;
 		}
 		// is it totally empty?
@@ -714,14 +714,11 @@ static void print_item(printitem_t *item)
 				
 				// FIXME: need to support "-1" here
 				
-				if (type_equals && type_space)
-					sprintf(fmtstr, "= %%%d.%df", width, prec);
-				else if (type_equals)
-					sprintf(fmtstr, "=%%%d.%df", width, prec);
-				else if (type_space)
-					sprintf(fmtstr, " %%%d.%df", width, prec);
+				// this currently prints a leading space and a space for the sign
+				if (type_equals)
+					sprintf(fmtstr, "=  %%%d.%df", width, prec);
 				else
-					sprintf(fmtstr, "%%%d.%df", width, prec);
+					sprintf(fmtstr, " %%%d.%df", width, prec);
 
 				interpreter_state.cursor_column += printf(fmtstr, width, prec, v.number);
 			}
