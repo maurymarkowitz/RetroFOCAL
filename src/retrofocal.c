@@ -192,27 +192,25 @@ either_t *variable_value(const variable_t *variable, int *type)
   return &storage->value[index];
 } /* variable_value */
 
-/* cover method for variable_value, allows it to be exported to the parser
- without it having to know about either_t, which is private.
+/** Cover method for variable_value, allows it to be exported to the parser
+ * without it having to know about either_t, which is private.
  */
 void insert_variable(const variable_t *variable)
 {
   int ignore = 0;
   variable_value(variable, &ignore);
-}
+} /* insert_variable */
 
-/* and another version which takes the type for use with DEFINT etc. */
-void insert_typed_variable(const variable_t *variable, int type)
-{
-  variable_value(variable, &type);
-}
-
-/* converts a number to a new value_t */
-static value_t double_to_value(const double v)
+/** Copies a double into a new value_t .
+ *
+ * @param num The double to convert.
+ * @return New value_t with the number inside.
+ */
+static value_t double_to_value(const double num)
 {
   value_t r;
   r.type = NUMBER;
-  r.number = v;
+  r.number = num;
   return r;
 } /* double_to_value */
 
@@ -418,7 +416,7 @@ static int format_decimals(char *string)
 	
 	// all done!
 	return val;
-}
+} /* format_decimals */
 
 /** Number of jiffies since program start (or reset) 1/60th in Commodore/Atari format.
  *
@@ -661,8 +659,8 @@ static void print_item(printitem_t *item)
 	// which would imply its something that can actually be printed
 	expression_t *e = item->expression;
 	
-	// if the expression is empty, then its some sort of control, which
-	// will either be in the format or the sepatator
+	// if the expression is empty, then its some sort of control entry,
+	// which will either be in the format or separator
 	if (e == NULL) {
 		// is it a separator?
 		if (item->separator > 0) {
@@ -701,7 +699,7 @@ static void print_item(printitem_t *item)
 		}
 		
 	}
-	// if e is not null, then its an expression we want to evaluate and print
+	// if e is not null, then it's an expression we want to evaluate and print
 	else {
 		// get the value of the expression for this item
 		value_t v = evaluate_expression(e);
@@ -773,13 +771,23 @@ static double line_for_statement(const list_t *statement)
   }
   // didn't find it
   return -1;
-}
+} /* line_for_statement */
 
+/** Curries line_for_statement to return the current line.
+ *
+ * @return The currently executing line number as a double.
+ */
 /* curries line_for_statement to return the current line */
 static double current_line()
 {
   return line_for_statement(interpreter_state.current_statement);
-}
+} /* current_line */
+
+/** Returns a pointer to the named line or returns an error if it's not found.
+ *
+ * @param linenumber The line to find, in FOCAL format, xx.yy.
+ * @return A list_t pointer to the line.
+ */
 
 /* returns a pointer to the named line or returns an error if it's not found */
 static list_t *find_line(double linenumber)
@@ -843,7 +851,7 @@ static list_t *find_line(double linenumber)
 	sprintf(buffer, "Undefined target line %i.%i in branch", group, step);
 	focal_error(buffer);
 	return NULL;
-}
+} /*find_line */
 
 /** Runs a single statement, like ASK or TYPE
  *
@@ -1161,12 +1169,13 @@ static void delete_lines() {
   }
 }
 
-/* after yacc has done it's magic, we form a program by pointing
- the ->next for each line to the head of the next non-empty line.
- that way we don't have to search through the line array for the
- next non-null entry during the run loop, we just keep stepping
- through the ->next until we fall off the end. this is how most
-interpreters handled it anyway. */
+/** After yacc has done it's magic, we form a program by pointing
+ * the ->next for each line to the head of the next non-empty line.
+ * that way we don't have to search through the line array for the
+ * next non-null entry during the run loop, we just keep stepping
+ * through the ->next until we fall off the end. this is how most
+ * interpreters handled it anyway.
+ */
 void interpreter_post_parse(void)
 {
   // look for the first entry in the lines array with a non-empty statement list
@@ -1191,9 +1200,10 @@ void interpreter_post_parse(void)
   
   // a program runs from the first line, so...
   interpreter_state.current_statement = first_statement;          // the first statement
-}
+} /* interpreter_post_parse */
 
-/* the main loop for the program */
+/** The main loop for the program.
+ */
 void interpreter_run(void)
 {
   // the cursor starts in col 0
@@ -1237,4 +1247,4 @@ void interpreter_run(void)
   end_ticks = clock();
   gettimeofday(&end_time, NULL);
   interpreter_state.running_state = 0;
-}
+} /* interpreter_run */
