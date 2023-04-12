@@ -42,7 +42,7 @@ Command-line options include:
 
 If you wish to use RetroFOCAL to simply check syntax or collect statistics, use the -n and -p switches.
 
-Short options with no parameters can be gan ganged, for instance -unp.
+Short options with no parameters can be ganged, for instance -unp.
 
 ## Building RetroFOCAL
 
