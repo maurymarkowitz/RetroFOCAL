@@ -584,7 +584,19 @@ static value_t evaluate_expression(expression_t *expression)
 						result.number = sqrt(a);
 						break;
 						
-					case FNEW: // these are both unhandled and return 0
+						// various plotting functions
+					case FADC:
+						result.number = 0.0;
+						break;
+					case FDIS:
+						result.number = 0.0;
+						break;
+					case FDXS:
+						result.number = 0.0;
+						break;
+
+						// machine language call and common memory, return 0
+					case FNEW:
 						result.number = 0.0;
 						break;
 					case FCOM:
@@ -596,7 +608,7 @@ static value_t evaluate_expression(expression_t *expression)
         } //switch
       } //arity = 1
       
-      // now the functions that take two parameters
+      // now the operators that take two parameters
       else if (expression->parms.op.arity == 2) {
         // cache the parameters
         double a = parameters[0].number;
@@ -628,9 +640,10 @@ static value_t evaluate_expression(expression_t *expression)
           case '=':
             if (parameters[0].type >= NUMBER)
               result = double_to_value(-(a == b));
-            else
+						else {
 							result.number = 0;
 							focal_error("Type mismatch, string and number in comparison"); // it should not be possible for this to happen
+						}
             break;
 
           default:
@@ -649,7 +662,8 @@ static value_t evaluate_expression(expression_t *expression)
 } /* evaluate_expression */
 
 /** Prints a single printitem_t, which may be an expression, a field
- * separator which includes ! for newlines, or a formatter.
+ * separator which includes ! for newlines, or a formatter. Updates
+ * cursor_column as it goes, to allow next tab position to be determined.
  *
  * @param item The printitem to interpret.
  */
@@ -716,9 +730,9 @@ static void print_item(printitem_t *item)
 				
 				// this currently prints a leading space and a space for the sign
 				if (type_equals)
-					sprintf(fmtstr, "=  %%%d.%df", width, prec);
+					sprintf(fmtstr, "= %%%d.%df", width, prec);
 				else
-					sprintf(fmtstr, " %%%d.%df", width, prec);
+					sprintf(fmtstr, "  %%%d.%df", width, prec);
 
 				interpreter_state.cursor_column += printf(fmtstr, width, prec, v.number);
 			}

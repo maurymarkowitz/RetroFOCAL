@@ -415,6 +415,13 @@ statement:
   that can be easily implemented in yacc
   */
  
+// %left '='
+// %left '+' '-'
+// %left '/'
+// %left '*' // multiply is higher than divide
+// %left '^' // multiply is higher than divide
+// %left U-
+ 
  //expression:
 //  expression '+' expression {$$ = $1 + $3;} |
 //  expression '-' expression {$$ = $1 - $3;} |
@@ -675,7 +682,7 @@ variable:
     insert_variable(new);
 	}
 	|
-  VARIABLE_NAME '(' exprlist ')' // this assumes only () is allowed for subscripts, not <> or []
+  VARIABLE_NAME '(' exprlist ')' // this assumes only () is allowed for subscripts, not <> or [], and only one-d arrays
   {
     variable_t *new = malloc(sizeof(*new));
     new->name = $1;
@@ -782,7 +789,8 @@ printsep:
   }
   ;
 	
- /* used in places that take a list of expressions, like function call parameters */
+// /* used in places that take a list of expressions, like function call parameters */
+// FOCAL doesn't use this, the only place would be in 2-D arrays which we don't support
 exprlist:
 	expression
 	{
