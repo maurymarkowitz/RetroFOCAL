@@ -407,13 +407,6 @@ static int format_decimals(char *string)
 	// it wasn't zero, so convert it to an int
 	int val = atoi(&string[offset + 1]);
 	
-	// multiply that if needed
-	// NOTE: this assumes there are never more than two places, which
-	//   should always be the case because the parser would have
-	//   returned a syntax error otherwise
-	if (decimals == 1)
-		val *= 10;
-	
 	// all done!
 	return val;
 } /* format_decimals */
@@ -981,7 +974,10 @@ static void perform_statement(list_t *list_item)
 				
 			case GOTO:
 			{
-				interpreter_state.next_statement = find_line(evaluate_expression(statement->parms.go).number);
+				if (statement->parms.go == NULL)
+					interpreter_state.next_statement = find_line(interpreter_state.first_line_index);
+				else
+					interpreter_state.next_statement = find_line(evaluate_expression(statement->parms.go).number);
 			}
 				break;
 				

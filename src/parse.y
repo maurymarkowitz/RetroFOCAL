@@ -260,13 +260,16 @@ statement:
   GO /* same as BASIC's RUN */
   {
     statement_t *new = make_statement(GOTO);
+    new->parms.go = NULL;
     $$ = new;
+    
+    linenum_go_totals++;
   }
   |
   GOTO expression /* essentially identical to above, but in the documentation they never put line numbers on a GO */
   {
     statement_t *new = make_statement(GOTO);
-    new->parms._do = $2;
+    new->parms.go = $2;
     $$ = new;
     
     /* static analyzer */
@@ -312,7 +315,7 @@ statement:
     
     /* static analyzer */
     linenum_then_go_totals++;
-    linenum_constants_total++;
+    linenum_constants_total += 2;
     if ($5 == errline) {
       linenum_same_line++;
     } else if ($5 > errline) {
@@ -340,7 +343,7 @@ statement:
     
     /* static analyzer */
     linenum_then_go_totals++;
-    linenum_constants_total++;
+    linenum_constants_total += 3;
     if ($5 == errline) {
       linenum_same_line++;
     } else if ($5 > errline) {
@@ -622,7 +625,7 @@ factor:
         numeric_constants_one++;
       }
     }
-    /* everything else is a float */
+    /* everything else is a float - NOTE: in FOCAL, this does include line numbers */
     else {
         numeric_constants_float++;
     }
