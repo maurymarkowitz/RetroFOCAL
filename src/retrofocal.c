@@ -727,7 +727,7 @@ static void print_item(printitem_t *item)
 				else
 					sprintf(fmtstr, "  %%%d.%df", width, prec);
 
-				interpreter_state.cursor_column += printf(fmtstr, width, prec, v.number);
+				interpreter_state.cursor_column += printf(fmtstr, v.number);
 			}
 				break;
 				
