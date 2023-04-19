@@ -34,9 +34,9 @@ Command-line options include:
 `--version`, `-v`: print version info  
 `--upper-case`, `-u`: force input to upper-case, basically like using caps lock  
 `--random`, `-r`: seed the random number generator  
-`--output-file`, `-o`: redirect PRINT to the named file  
-`--input-file`, `-i`: redirect INPUT from the named file, one INPUT value per line  
-`--no_run`, `-n`: do not run the BASIC program, simply read and parse it and then exit  
+`--output-file`, `-o`: redirect TYPE to the named file  
+`--input-file`, `-i`: redirect ASK from the named file, one value per line  
+`--no_run`, `-n`: do not run the FOCAL program, simply read and parse it and then exit  
 `--print_statistics`, `-p`: send a selection of statistics to the console  
 `--write_statistics`, `-w`: write the statistics to the named file in a machine readable format
 
