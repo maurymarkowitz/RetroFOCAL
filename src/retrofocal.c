@@ -936,10 +936,10 @@ static void perform_statement(list_t *list_item)
 				
 				new_do->type = DO;
 				new_do->original_line = current_line();
-				new_do->target_line = evaluate_expression(statement->parms._do).number;
+				new_do->target_line = statement->parms._do;
 				new_do->returnpoint = lst_next(list_item);
 				interpreter_state.stack = lst_append(interpreter_state.stack, new_do);
-				interpreter_state.next_statement = find_line(evaluate_expression(statement->parms._do).number);
+				interpreter_state.next_statement = find_line(statement->parms._do);
 			}
 				break;
 				
@@ -974,10 +974,10 @@ static void perform_statement(list_t *list_item)
 				
 			case GOTO:
 			{
-				if (statement->parms.go == NULL)
+				if (statement->parms.go == 0)
 					interpreter_state.next_statement = find_line(interpreter_state.first_line_index);
 				else
-					interpreter_state.next_statement = find_line(evaluate_expression(statement->parms.go).number);
+					interpreter_state.next_statement = find_line(statement->parms.go);
 			}
 				break;
 				

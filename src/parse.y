@@ -204,7 +204,7 @@ statement:
     $$ = new;
   }
   |
-  DO expression /* PDP-8 manual shows "DO ALL", but it is not explained, same as GO? */
+  DO NUMBER /* PDP-8 manual shows "DO ALL", but it is not explained, same as GO? */
   {
     statement_t *new = make_statement(DO);
     new->parms._do = $2;
@@ -213,14 +213,12 @@ statement:
     /* static analyzer */
     linenum_do_totals++;
     linenum_constants_total++;
-    if ($2->parms.number) {
-      if ($2->parms.number == errline) {
-        linenum_same_line++;
-      } else if ($2->parms.number > errline) {
-          linenum_forwards++;
-      } else {
-          linenum_backwards++;
-      }
+    if ($2 == errline) {
+      linenum_same_line++;
+    } else if ($2 > errline) {
+      linenum_forwards++;
+    } else {
+      linenum_backwards++;
     }
   }
   |
@@ -260,13 +258,22 @@ statement:
   GO /* same as BASIC's RUN */
   {
     statement_t *new = make_statement(GOTO);
-    new->parms.go = NULL;
+    new->parms.go = 0;
     $$ = new;
     
     linenum_go_totals++;
   }
   |
-  GOTO expression /* essentially identical to above, but in the documentation they never put line numbers on a GO */
+  GOTO /* essentially identical to above, but in the documentation they never put line numbers on a GO */
+  {
+    statement_t *new = make_statement(GOTO);
+    new->parms.go = 0;
+    $$ = new;
+    
+    linenum_go_totals++;
+  }
+  |
+  GOTO NUMBER
   {
     statement_t *new = make_statement(GOTO);
     new->parms.go = $2;
@@ -275,14 +282,12 @@ statement:
     /* static analyzer */
     linenum_go_totals++;
     linenum_constants_total++;
-    if ($2->parms.number) {
-      if ($2->parms.number == errline) {
-        linenum_same_line++;
-      } else if ($2->parms.number > errline) {
-          linenum_forwards++;
-      } else {
-          linenum_backwards++;
-      }
+    if ($2 == errline) {
+      linenum_same_line++;
+    } else if ($2 > errline) {
+      linenum_forwards++;
+    } else {
+      linenum_backwards++;
     }
   }
 	|

@@ -124,8 +124,8 @@ typedef struct statement_struct {
       variable_t *variable;
       expression_t *begin, *end, *step;
     } _for;
-    expression_t *_do;
-    expression_t *go;
+    double _do;
+    double go;
     struct {
       expression_t *condition;
       double less_line;
