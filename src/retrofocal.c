@@ -42,7 +42,7 @@ bool ask_colon = true;          				// print a colon in ASK
 bool type_equals = false;								// print the = in TYPEs
 bool type_space = true;								  // print a leading space in TYPE
 bool upper_case = true;          				// force ASK input to upper case, which is generally the case for DEC
-double random_seed = -1;                // reset with RANDOMIZE, if -1 then auto-seeds
+int random_seed = -1;              		  // reset with RANDOMIZE, if -1 then auto-seeds
 
 char *source_file = "";
 char *input_file = "";

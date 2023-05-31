@@ -52,7 +52,7 @@ extern bool trace_lines;
 extern bool ask_colon;        // print a colon before each ASK input (like BASIC's ?)
 extern bool type_equals;      // print an equals before each TYPE output?
 extern bool upper_case;       // force ASK inputs to upper case
-extern double random_seed;    // reset with RANDOMIZE, if -1 then auto-seeds
+extern int random_seed;       // reset with RANDOMIZE, if -1 then auto-seeds
 
 extern char *source_file;
 extern char *input_file;

@@ -82,6 +82,10 @@ void parse_options(int argc, char *argv[])
   int option_index = 0;
   int printed_help = false;
   
+  // used to test whether an optional parameter is actually a number or not,
+  // if not, we back up one input - see -r
+  char *test;
+  
   while (1) {
     // eat an option and exit if we're done
     int c = getopt_long(argc, argv, "hvua:r:i:o:wpn", program_options, &option_index); // should match the items above, but with flag-setters excluded
@@ -133,9 +137,17 @@ void parse_options(int argc, char *argv[])
         break;
         
       case 'r':
-        random_seed = strtol(optarg, 0, INT_MAX);
-        break;
+        test = optarg;
+        random_seed = (int)strtol(optarg, &test, 10);
         
+        // now see if we actually read anything, we might have been handed the
+        // next switch or option rather than a number. if so, use zero as the
+        // seed and back up the optind so it can read it correctly
+        if (test == optarg)
+          optind--;
+        
+        break;
+
       default:
         abort();
     }
