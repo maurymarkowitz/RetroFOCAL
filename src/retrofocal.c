@@ -866,6 +866,8 @@ static void perform_statement(list_t *list_item)
 	statement_t *statement = list_item->data;
 	if (statement) {
 		switch (statement->type) {
+			case COMMENT:
+				break;
 				
 			case ASK:
 			{
@@ -1063,7 +1065,7 @@ static void perform_statement(list_t *list_item)
 				break;
 				
 			default:
-				printf("Unimplemented statement %d\n", statement->type);
+				focal_error("Unimplemented statement");
 				exit(0);
 		} //end switch
 		
