@@ -33,6 +33,7 @@ Boston, MA 02111-1307, USA.  */
 
 %option noyywrap
 %option caseless
+%option yylineno
 
  // used to track where we are in the statement so we can have keywords
  // and variables with the same name
@@ -144,5 +145,8 @@ FOUT    { return FOUT; }
 
  /* eat other whitespace */
 [ \t\r\l]   {  }
+
+ /* default rule to report any leftover chars */
+. printf("Bad input character '%s' at line %d\n", yytext, yylineno);
 
 %%
