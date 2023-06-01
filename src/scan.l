@@ -56,7 +56,7 @@ Boston, MA 02111-1307, USA.  */
     https://stackoverflow.com/questions/59117309/rest-of-line-in-bison/59122569#59122569
   */
 <INITIAL>{
-C|COMMENT|CONTINUE.* { yylval.s = str_new(str_copy(yytext + 3, yyleng - 3)); return COMMENT; } // manual lists CONTINUE separately, but its a comment
+C.*|COMMENT.*|CONTINUE.* { yylval.s = str_new(str_copy(strlen(yytext), yyleng - strlen(yytext))); return COMMENT; } // manual lists CONTINUE separately, but its a comment
 A|ASK     { BEGIN(KEYWORD_FOUND); return ASK; }     // INPUT
 D|DO      { BEGIN(KEYWORD_FOUND); return DO; }      // combines GOTO and GOSUB
 F|FOR     { BEGIN(KEYWORD_FOUND); return FOR; }     // one-line only, no NEXT
