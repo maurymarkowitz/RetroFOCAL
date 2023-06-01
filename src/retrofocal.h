@@ -40,7 +40,10 @@ Boston, MA 02111-1307, USA.  */
  */
 
 /* consts used during parsing the source */
-#define MAXLINE 3199          // 1.01 through 31.99
+//
+// according to DEC's documentation, the maximum line is 31.99,
+// but the bottles.fc goes to 50.99. We'll go to 99.99 to be safe.
+#define MAXLINE 9999          // 1.01 through 99.99
 
 /* internal state variables used for I/O and other tasks */
 extern bool run_program;      // default to running the program, not just parsing it
