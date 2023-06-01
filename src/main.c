@@ -154,7 +154,7 @@ void parse_options(int argc, char *argv[])
   } // while
   
   // now see if there's a filename
-  if (optind < argc)
+  if (optind <= argc && argc > 1)
     // we'll just assume one file if any
     source_file = argv[argc - 1];
   else
@@ -184,10 +184,14 @@ int main(int argc, char *argv[])
   interpreter_state.variable_values = NULL;
 
   // open the file and see if it exists
+  if (strlen(source_file) == 0) {
+    fprintf(stderr, "No filename provided.\n");
+    exit(EXIT_FAILURE);
+  }
   yyin = fopen(source_file, "r");
   if (yyin == NULL) {
     if (errno == ENOENT) {
-      fprintf(stderr, "File not found or no filename provided.\n");
+      fprintf(stderr, "File not found or invalid filename provided.\n");
       exit(EXIT_FAILURE);
     } else {
       fprintf(stderr, "Error %i when opening file.\n", errno);
@@ -208,8 +212,8 @@ int main(int argc, char *argv[])
   
   // now call rand to prime the pump, see:
   // https://stackoverflow.com/questions/76367489/srand-rand-slowly-changing-starting-value/76367884#76367884
-  double pump = rand();
-  pump = rand();
+  (void)rand();
+  (void)rand();
 
   // and go!
   if (run_program)
