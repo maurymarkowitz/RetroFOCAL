@@ -1091,6 +1091,8 @@ static void perform_statement(list_t *list_item)
 		
 		// are we at the end of a group or a line?
 		if (this_group != next_group || this_step != next_step) {
+			
+			// is there something on the stack?
 			if (lst_length(interpreter_state.stack) > 0) {
 				// pull the top item
 				stackentry_t *se = lst_last_node(interpreter_state.stack)->data;
@@ -1115,23 +1117,23 @@ static void perform_statement(list_t *list_item)
 				}
 				// or it might be a DO, in which case we have to check the original
 				// target to see if it was a group or single line
-				else {
+				else if (se->type == FOR) {
 					int target_group = trunc(se->target_line);
 					int target_step = (se->target_line - target_group)  * 100;
 					
 					// if the original DO had only a group, only do the RETURN if we are at the end of this group
-					if (target_step == 0 && (this_group != next_group)) {
+					if (target_step == 0 && this_group == target_group && this_group != next_group) {
 						interpreter_state.next_statement = se->returnpoint;
 						interpreter_state.stack = lst_remove_node_with_data(interpreter_state.stack, se);
 					}
-					// if it had a group and statement, then only return if both changed
-					else if (this_group != next_group && this_step != next_step) {
+					// if it had a group and step, then only return if both changed
+					else if (target_step != 0 && this_group == target_group && this_step == target_step) {
 						interpreter_state.next_statement = se->returnpoint;
 						interpreter_state.stack = lst_remove_node_with_data(interpreter_state.stack, se);
 					}
-				}
+				} // is a FOR or DO
 
-			}
+			} // stack has entries
 		} // end-of-line handling
 	} // statement is not null
 } /* perform_statement */
