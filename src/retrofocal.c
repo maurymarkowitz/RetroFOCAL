@@ -1099,22 +1099,19 @@ static void perform_statement(list_t *list_item)
 				
 				// if it's a FOR, we perform a next if we are at the end of any line
 				if (se->type == FOR) {
-					// FORs loop at the end of the line or group
-					if  (this_group != next_group || this_step != next_step) {
-						int type = 0;
-						either_t *lv = variable_value(se->index_variable, &type);
-						lv->number += se->step;
-						
-						// and see if we need to go back to the FOR or we're done and we continue on
-						if (((se->step < 0) && (lv->number >= se->end)) ||
-								((se->step > 0) && (lv->number <= se->end))) {
-							// we're not done, go back to the head of the loop
-							interpreter_state.next_statement = lst_next(se->head);
-						} else {
-							// we are done, remove this entry from the stack and just keep going
-							interpreter_state.stack = lst_remove_node_with_data(interpreter_state.stack, se);
-							free(se);
-						}
+					int type = 0;
+					either_t *lv = variable_value(se->index_variable, &type);
+					lv->number += se->step;
+					
+					// and see if we need to go back to the FOR or we're done and we continue on
+					if (((se->step < 0) && (lv->number >= se->end)) ||
+							((se->step > 0) && (lv->number <= se->end))) {
+						// we're not done, go back to the head of the loop
+						interpreter_state.next_statement = lst_next(se->head);
+					} else {
+						// we are done, remove this entry from the stack and just keep going
+						interpreter_state.stack = lst_remove_node_with_data(interpreter_state.stack, se);
+						free(se);
 					}
 				}
 				// or it might be a DO, in which case we have to check the original
