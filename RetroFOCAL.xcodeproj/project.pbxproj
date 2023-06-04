@@ -10,6 +10,7 @@
 		550D54A3288DB6950062DF12 /* strng.c in Sources */ = {isa = PBXBuildFile; fileRef = 550D54A1288DB6950062DF12 /* strng.c */; };
 		550D54A6289BF9670062DF12 /* list.c in Sources */ = {isa = PBXBuildFile; fileRef = 550D54A5289BF9670062DF12 /* list.c */; };
 		552013BE29C7B32900280B32 /* numtest.fc in CopyFiles */ = {isa = PBXBuildFile; fileRef = 552013BD29C7B2E300280B32 /* numtest.fc */; };
+		55431A8F2A2950A00022FA1B /* bottles.fc in CopyFiles */ = {isa = PBXBuildFile; fileRef = 55D3592229E0CBC800047CD9 /* bottles.fc */; };
 		5599AEFA239C0A6F00490A3A /* retrofocal.c in Sources */ = {isa = PBXBuildFile; fileRef = 5599AEF9239C0A6F00490A3A /* retrofocal.c */; };
 		5599AEFE239C0ABF00490A3A /* scan.l in Sources */ = {isa = PBXBuildFile; fileRef = 5599AEFC239C0ABF00490A3A /* scan.l */; };
 		55A42363287360B00070AF00 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 55A42361287360B00070AF00 /* main.c */; };
@@ -42,6 +43,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 16;
 			files = (
+				55431A8F2A2950A00022FA1B /* bottles.fc in CopyFiles */,
 				552013BE29C7B32900280B32 /* numtest.fc in CopyFiles */,
 				55FB295D29C37F2C00BE2097 /* lunar.fc in CopyFiles */,
 			);

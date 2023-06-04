@@ -7,3 +7,10 @@ Version 1.0 - initial release, 2023
 Version 1.1.1 - bug fixes, April 2023
 
 - numerous minor bug fixes across the app, LL now produces output identical to FOCAL-69
+
+Version 1.1.2 - bug fixes, June 2023
+
+- fixed improper RETURNs that removed too many items on the stack in some cases
+  (bottles.fc now runs properly as a result)
+- removed non-breaking spaces from lunar.fc line 5.90
+- add copy rule for bottles.fc to output folder
