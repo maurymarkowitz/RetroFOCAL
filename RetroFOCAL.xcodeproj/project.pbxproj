@@ -16,6 +16,7 @@
 		55A42363287360B00070AF00 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 55A42361287360B00070AF00 /* main.c */; };
 		55A42364287360B00070AF00 /* statistics.c in Sources */ = {isa = PBXBuildFile; fileRef = 55A42362287360B00070AF00 /* statistics.c */; };
 		55B9698C252F44E70021CD8B /* parse.y in Sources */ = {isa = PBXBuildFile; fileRef = 55B9698B252F44E70021CD8B /* parse.y */; };
+		55F2AB9A2A2E242700F93D99 /* sumer.fc in CopyFiles */ = {isa = PBXBuildFile; fileRef = 55F2AB992A2E241A00F93D99 /* sumer.fc */; };
 		55FB295D29C37F2C00BE2097 /* lunar.fc in CopyFiles */ = {isa = PBXBuildFile; fileRef = 55FB295C29C37F2500BE2097 /* lunar.fc */; };
 /* End PBXBuildFile section */
 
@@ -43,6 +44,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 16;
 			files = (
+				55F2AB9A2A2E242700F93D99 /* sumer.fc in CopyFiles */,
 				55431A8F2A2950A00022FA1B /* bottles.fc in CopyFiles */,
 				552013BE29C7B32900280B32 /* numtest.fc in CopyFiles */,
 				55FB295D29C37F2C00BE2097 /* lunar.fc in CopyFiles */,
@@ -84,6 +86,7 @@
 		55DEE88128A6A6B800270949 /* RetroFOCAL design.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "RetroFOCAL design.md"; sourceTree = "<group>"; };
 		55E12DB82904279A0005D17F /* RetroFOCAL build notes.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "RetroFOCAL build notes.md"; sourceTree = "<group>"; };
 		55EBA451296E3A3F00FCD43A /* parse.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = parse.h; sourceTree = "<group>"; };
+		55F2AB992A2E241A00F93D99 /* sumer.fc */ = {isa = PBXFileReference; lastKnownFileType = text; path = sumer.fc; sourceTree = "<group>"; };
 		55FB295929C373F900BE2097 /* test.bsh */ = {isa = PBXFileReference; explicitFileType = text.script.sh; path = test.bsh; sourceTree = "<group>"; };
 		55FB295C29C37F2500BE2097 /* lunar.fc */ = {isa = PBXFileReference; lastKnownFileType = text; name = lunar.fc; path = test/lunar.fc; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
@@ -169,6 +172,7 @@
 				552013BD29C7B2E300280B32 /* numtest.fc */,
 				55D3592729E0CC2A00047CD9 /* primes.fc */,
 				55D3592829E0CC3500047CD9 /* schrod.fc */,
+				55F2AB992A2E241A00F93D99 /* sumer.fc */,
 				55FB295929C373F900BE2097 /* test.bsh */,
 			);
 			path = test;
