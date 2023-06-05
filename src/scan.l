@@ -106,20 +106,33 @@ FOUT    { return FOUT; }
  /* variable references, only first two characters are used but we save them all. F is not allowed. */
  /* NOTE: underscore is supported here but unlikely to have been used in actual code. */
 [A-EG-Za-eg-z][A-Za-z0-9_\"\'"]* {
-             yylval.s = str_new(yytext);
-             return VARIABLE_NAME;
-           }
+            yylval.s = str_new(yytext);
+            return VARIABLE_NAME;
+          }
 
  /* string constants */
-\"[^"]*\" {
-             yytext[strlen(yytext) - 1] = '\0';   // cut off the trailing quote
-             yylval.s = str_new(yytext + 1);      // and the leading one
-             return STRING;
-           }
+\"[^"^\n]*[\"\n] {
+            // new string, trim the leading quote
+            char *s = str_new(yytext + 1);
+  
+            // there may be a trailing quote, in most cases anyway
+            if (s[strlen(s) - 1] == '"')
+              s[strlen(s) - 1] = '\0';
+             
+            // but it may also be a newline, in which case we trim it and
+            // then re-emit the character so it fires the EOL code in the parser
+            if (s[strlen(s) - 1] == '\n') {
+              s[strlen(s) - 1] = '\0';
+              unput('\n');
+            }
+
+            yylval.s = s;      // this clips the leading quote, which is always there
+            return STRING;
+          }
  
  /* FOCAL has a second number format used for string inputs, it starts with a 0 like 0YES */
 0[A-Za-z][A-Za-z0-9]* {
-              yylval.s = str_new(yytext);
+            yylval.s = str_new(yytext);
               return NUMSTR;
             }
 
