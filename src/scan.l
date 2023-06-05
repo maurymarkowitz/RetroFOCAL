@@ -94,7 +94,7 @@ FDXS    { return FDXS; }
 
  /* these are listed in the 1970 programming languages manual, but are not explained */
 FNEW    { return FNEW; } // like a BASIC SYS or CALL, calls a machine-code routine
-FCOM    { return FCOM; } // UW-FOCAL explains that this is used to access core, to share data between programs
+FCOM    { return FCOM; } // UW-FOCAL explains this sets up common memory to share data between programs
 
  /* FOCAL-71 additions */
 FIN     { return FIN; }
@@ -111,7 +111,7 @@ FOUT    { return FOUT; }
            }
 
  /* string constants */
-\"[^"]*\"   {
+\"[^"]*\" {
              yytext[strlen(yytext) - 1] = '\0';   // cut off the trailing quote
              yylval.s = str_new(yytext + 1);      // and the leading one
              return STRING;
