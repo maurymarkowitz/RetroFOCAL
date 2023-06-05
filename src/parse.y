@@ -513,19 +513,19 @@ function:
   }
   |
   /* functions with optional parameters, which we store but ignore */
-  fn_0 "()"
+  fn_0 '(' ')'
   {
     expression_t *new = make_operator(0, $1);
     $$ = new;
   }
   |
-  fn_0 "[]"
+  fn_0 '[' ']'
   {
     expression_t *new = make_operator(0, $1);
     $$ = new;
   }
   |
-  fn_0 "<>"
+  fn_0 '<' '>'
   {
     expression_t *new = make_operator(0, $1);
     $$ = new;
@@ -598,6 +598,7 @@ fn_1:
   FSGN { $$ = FSGN; } |
   FSIN { $$ = FSIN; } |
   FOUT { $$ = FOUT; }
+  ;
   
  /* ultimately all expressions end up here in factor, which is either a
     constant value, a variable value, or a parened expression. in
