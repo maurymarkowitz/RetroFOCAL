@@ -23,10 +23,10 @@ Boston, MA 02111-1307, USA.  */
 /* makes a new string and copies in chars */
 char* str_new(char *string)
 {
-  char *newstr = malloc((MAXSTRING + 1) * sizeof(char));
+  char *newstr = calloc((MAXSTRING + 1), sizeof(char));
   
   if (newstr == NULL) {
-    fprintf(stderr, "Malloc in str_new failed.");
+    fprintf(stderr, "Calloc in str_new failed.");
     exit(EXIT_FAILURE);
   }
 
@@ -45,7 +45,7 @@ char* str_copy(const char *string, size_t no_of_chars)
   while (len < no_of_chars && string[len])
     len++;
 
-  char *new_str = malloc(len + 1);
+  char *new_str = calloc(len + 1, sizeof(char));
   if (new_str) {
     memcpy(new_str, string, len);
     new_str[len] = 0;
@@ -66,7 +66,7 @@ char* str_escape(const char *string)
 
   p = (char *)string;
   /* Each source byte needs maximally four destination chars (\777) */
-  q = dest = malloc(strlen(string) * 4 + 1);
+  q = dest = calloc(strlen(string) * 4 + 1, sizeof(char));
 
   while (*p) {
     switch (*p)

@@ -118,8 +118,8 @@ either_t *variable_value(const variable_t *variable, int *type)
   if (storage == NULL) {
     int slots;
     
-    // malloc a single slot, if it's an array we'll use this slot as the template
-    storage = malloc(sizeof(*storage));
+    // calloc a single slot, if it's an array we'll use this slot as the template
+    storage = calloc(1, sizeof(*storage));
     storage->type = NUMBER;	// this is all we have in FOCAL, but leaving in the type for simplicity
     		
     // see if this reference includes subscripts
@@ -141,8 +141,8 @@ either_t *variable_value(const variable_t *variable, int *type)
       slots = 1;
     }
     
-    // now malloc the result and insert it into the values tree
-    storage->value = malloc(slots * sizeof(storage->value[0]));
+    // now calloc the result and insert it into the values tree
+    storage->value = calloc(slots, sizeof(storage->value[0]));
 		interpreter_state.variable_values = lst_insert_with_key_sorted(interpreter_state.variable_values, storage, storage_name);
   }
   
