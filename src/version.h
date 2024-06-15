@@ -65,7 +65,7 @@ static void getVersionString(char *vers)
     struct VERSION v = getVersion();
     char major[10];
     char minor[10];
-    char build[20];
+    char build[30];
     
     sprintf(major, "%i.", v.major);
     sprintf(minor, "%i.", v.minor);
