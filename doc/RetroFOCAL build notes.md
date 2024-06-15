@@ -23,7 +23,7 @@ It should be possible to fix this problem with a suitable custom build rule, but
 
 ## Coding style
 
-RetroFOCAL is writen in a semi-cannonical C format, as defined by the [Canonical C Style Guide](https://people.canonical.com/~msawicz/guides/c/cguide.html). There are two main differences:
+RetroFOCAL is written in a semi-canonical C format, as defined by the [Canonical C Style Guide](https://people.canonical.com/~msawicz/guides/c/cguide.html). There are two main differences:
 
 1) single-line "blocks" are separated onto two lines to make them look more like multi-line blocks
 ```
