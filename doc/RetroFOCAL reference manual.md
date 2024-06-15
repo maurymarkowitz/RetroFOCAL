@@ -44,7 +44,7 @@ For example:
 
 `TYPE` {*scon*|*exp*|!|#|:}[,...]
 
-This indicates that the `TYPE` statement consists of the statement keyword followed by a string constant, a numeric expression, or the control characters bang, a hash, or a colon. The square bracketed section at the end indicates that the first item can be followed by any number of similar expressions.
+This indicates that the `TYPE` statement consists of the statement keyword followed by a string constant, a numeric expression, or the control characters bang, hash, or colon. The square bracketed section at the end indicates that the first item can be followed by any number of similar expressions separated by commas.
 
 <!-- TOC --><a name="introduction"></a>
 ## Introduction
@@ -60,7 +60,7 @@ RetroFOCAL is a version of the FOCAL programming language intended to run classi
 The goal of RetroFOCAL is to allow you to run popular FOCAL programs written during the language's Golden Age in the late 1960s. As such, it is also marked by a number of deliberate limitations:
 
 - the language is intended to *run* programs, not *edit* them, and it thus lacks an interactive editor
-- you cannot `WRITE` a program, or `LIBRARY CALL` to load it from disk or `LIBRARY SAVE` to save it
+- you cannot `WRITE` a program, `LIBRARY CALL` to load it from disk, or `LIBRARY SAVE` to save it
 - if does not (currently) have file handling features
 
 <!-- TOC --><a name="some-underlying-concepts"></a>
@@ -83,9 +83,9 @@ The purpose of an **expression** is to provide data to be acted on by the statem
 - **operator** - symbol characters, typically from mathematics, that take one or two expressions and produce a number.
 - **function** - operators using names instead of symbols.
 
-FOCAL programs are generally organized over multiple **lines**, each of which contains one or more statements. A line always starts with a **line number**, which acts as a label so other parts of the program can refer to it, as well as a way for various editing tools to allow the user to indicate which lines they wish to edit. In FOCAL, in a somewhat recursive definition, line numbers consist of two parts, the **group number** and the **line number**, which are separated by a period so they look like floating point numbers. Examples include "1.10" or "9.50".
+FOCAL programs are generally organized over multiple **lines**, each of which contains one or more statements. A line always starts with a **line number**, which acts as a label so other parts of the program can refer to it, as well as a way for various editing tools to allow the user to indicate which lines they wish to edit. In FOCAL, in a somewhat recursive definition, line numbers consist of two parts, the **group number** and the **line number**, which are separated by a period so they look like floating point numbers. Examples include 1.10 or 19.50.
 
-After the line number, there is a statement keyword and then any expressions that keyword may use, forming a complete statement. Lines may have more than one statement separated by semicolons. Multi-statement lines were common in FOCAL programs as they saved memory, as they did not have to have the 5-digit line number for every statement, the single semicolon using only one character of memory.
+After the line number, there is a statement keyword and then any expressions that keyword may use, forming a complete statement. Lines may have more than one statement separated by semicolons. Multi-statement lines were common in FOCAL programs; they saved memory because they did not have to have the 5-digit line number for every statement, only the single semicolon using one character of memory.
 
 As memory was extremely scarce on the machines FOCAL ran on, it also included the ability to abbreviate any statement keyword to its first character. For instance, the statement keyword `TYPE` can be entered as `T`. The statement keywords were carefully selected so each one started with a unique character.
 
@@ -107,7 +107,7 @@ Line 1.20 of this program starts with an assignment statement, this time using t
 
 Line 1.30 shows a conditional branch, which is based on the value of C. The expression calculates C-10, and as C will be 15 at this point, the resulting value will be 5. As 5 is a positive value, and the branch is only taken if it is negative, execution continues with the next statement, which prints "15 is larger than 10" to the console. If one were to set the value of A to 3 in line 1.10, this statement would not be printed.
 
-Execution then continues to line 1.40, which ends the program.
+Execution then continues to line 1.40, which ends the execution of the program.
 
 <!-- TOC --><a name="data-in-basic-programs"></a>
 ## Data in FOCAL programs
