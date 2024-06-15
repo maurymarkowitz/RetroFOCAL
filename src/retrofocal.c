@@ -934,7 +934,7 @@ static void perform_statement(list_t *list_item)
 			case DO:
 			{
 				// DO is a GOSUB which may call a line or a group
-				stackentry_t *new_do = malloc(sizeof(*new_do));
+				stackentry_t *new_do = calloc(1, sizeof(*new_do));
 				
 				new_do->type = DO;
 				new_do->original_line = current_line();
@@ -952,7 +952,7 @@ static void perform_statement(list_t *list_item)
 				
 			case FOR:
 			{
-				stackentry_t *new_for = malloc(sizeof(*new_for));
+				stackentry_t *new_for = calloc(1, sizeof(*new_for));
 				either_t *loop_value;
 				int type = 0;
 				
