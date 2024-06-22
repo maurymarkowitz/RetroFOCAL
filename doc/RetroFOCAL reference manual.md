@@ -7,7 +7,73 @@ Version 1.1.3
 
 [![GPL license](http://img.shields.io/badge/license-GPL-brightgreen.svg)](https://opensource.org/licenses/gpl-license)
 
+<!-- TOC --><a name="introduction"></a>
+## Introduction
+
+<!-- TOC --><a name="what-is-RetroFOCAL"></a>
+### What is RetroFOCAL?
+
+RetroFOCAL is a version of the FOCAL programming language intended to run classic FOCAL programs. RetroFOCAL is designed to run any program that ran on FOCAL-71, which is a superset of the otherwise similar FOCAL-69. Practically any major program should run properly without conversion. Programs must be provided in plain text, better known as "source code", which was the normal way to distribute FOCAL code.
+
+<!-- TOC --><a name="what-RetroFOCAL-is-not"></a>
+### What RetroFOCAL is not
+
+The goal of RetroFOCAL is to allow you to run popular FOCAL programs written during the language's Golden Age in the late 1960s. As such, it is also marked by a number of deliberate limitations:
+
+- the language is intended to *run* programs, not *edit* them, and it thus lacks an interactive editor
+- you cannot `WRITE` a program, `LIBRARY CALL` to load it from disk, or `LIBRARY SAVE` it
+- if does not (currently) have file handling features
+
 <!-- TOC start (generated with https://github.com/derlin/bitdowntoc) -->
+
+- [About this manual](#about-this-manual)
+   * [Abbreviations](#abbreviations)
+   * [Formatting and notation](#formatting-and-notation)
+- [Introduction](#introduction)
+   * [What is RetroFOCAL?](#what-is-retrofocal)
+   * [What RetroFOCAL is not](#what-retrofocal-is-not)
+- [Some underlying concepts](#some-underlying-concepts)
+   * [Syntax example](#syntax-example)
+- [Data in FOCAL programs](#data-in-focal-programs)
+   * [Variables](#variables)
+   * [Arrays](#arrays)
+- [Commands](#commands)
+   * [`DO` - runs a single subroutine, also used as the subroutine call statement](#do-runs-a-single-subroutine-also-used-as-the-subroutine-call-statement)
+   * [`GO` - runs a program, also used as the unconditional branch statement](#go-runs-a-program-also-used-as-the-unconditional-branch-statement)
+   * [`ERASE` - erases lines from a program, also used as a statement to clear variable values](#erase-erases-lines-from-a-program-also-used-as-a-statement-to-clear-variable-values)
+   * [`MODIFY` - recalls a given line into memory to allow it to be edited](#modify-recalls-a-given-line-into-memory-to-allow-it-to-be-edited)
+   * [`WRITE` - outputs the program code to the printer](#write-outputs-the-program-code-to-the-printer)
+- [Program statements](#program-statements)
+   * [`COMMENT`[*scon*] and `CONTINUE`](#commentscon-and-continue)
+   * [`SET` *var*`=`*expr*](#set-varexpr)
+   * [`DO` {*lineno*|*groupno*}](#do-linenogroupno)
+   * [`GOTO` [*lineno*] and `GO`](#goto-lineno-and-go)
+   * [`ERASE` [*lineno*]](#erase-lineno)
+   * [`IF` (*exp*) *lineno*{;|[,*lineno*][{;|,*lineno*]}}](#if-exp-linenolinenolineno)
+   * [`FOR` *var*=*expr1*,*expr2*[,*expr3*];*statmnt*[;*statmnt*...]](#for-varexpr1expr2expr3statmntstatmnt)
+   * [`QUIT`](#quit)
+   * [``RETURN`](#return)
+- [Input/Output Statements](#inputoutput-statements)
+   * [`ASK` [*sexp*,]*var*[,*sexp*][,*var*...]](#ask-sexpvarsexpvar)
+   * [`TYPE` [*exp*{|[,|!|#|:]},...]]](#type-exp)
+- [Operators](#operators)
+- [Mathematical functions](#mathematical-functions)
+   * [`FABS`(*exp*)](#fabsexp)
+   * [`FEXP`(*exp*)](#fexpexp)
+   * [`FITR`(*exp*)](#fitrexp)
+   * [`FLOG`(*exp*)](#flogexp)
+   * [`FRAN`()](#fran)
+   * [`FSGN`(*exp*)](#fsgnexp)
+   * [`FSQT`(*exp*)](#fsqtexp)
+- [Trigonometric functions](#trigonometric-functions)
+   * [`FATN`(*exp*)](#fatnexp)
+   * [`FCOS`(*exp*)](#fcosexp)
+   * [`FSIN`(*exp*)](#fsinexp)
+- [Character functions](#character-functions)
+   * [`FIN`(*scon*)](#finscon)
+   * [`FOUT`(*exp*)](#foutexp)
+
+<!-- TOC end -->
 
 <!-- TOC --><a name="about-this-manual"></a>
 ## About this manual
@@ -46,23 +112,6 @@ For example:
 `TYPE` {*scon*|*exp*|!|#|:}[,...]
 
 This indicates that the `TYPE` statement consists of the statement keyword followed by a string constant, a numeric expression, or the control characters bang, hash, or colon. The square bracketed section at the end indicates that the first item can be followed by any number of similar expressions separated by commas.
-
-<!-- TOC --><a name="introduction"></a>
-## Introduction
-
-<!-- TOC --><a name="what-is-RetroFOCAL"></a>
-### What is RetroFOCAL?
-
-RetroFOCAL is a version of the FOCAL programming language intended to run classic FOCAL programs written from the 1960s into the 1970s. RetroFOCAL is designed to run any program that ran on FOCAL-71, which is a superset of the otherwise similar FOCAL-69. Practically any major program should run properly without conversion. Programs must be provided in plain text, better known as "source code", which was the normal way to distribute FOCAL code.
-
-<!-- TOC --><a name="what-RetroFOCAL-is-not"></a>
-### What RetroFOCAL is not
-
-The goal of RetroFOCAL is to allow you to run popular FOCAL programs written during the language's Golden Age in the late 1960s. As such, it is also marked by a number of deliberate limitations:
-
-- the language is intended to *run* programs, not *edit* them, and it thus lacks an interactive editor
-- you cannot `WRITE` a program, `LIBRARY CALL` to load it from disk, or `LIBRARY SAVE` to save it
-- if does not (currently) have file handling features
 
 <!-- TOC --><a name="some-underlying-concepts"></a>
 ## Some underlying concepts
@@ -197,11 +246,11 @@ In contrast to most programming languages of the era, FOCAL does not clear out t
 In the shell, `ERASE` was used to delete individual lines or groups from a program. As RetroFOCAL does not support editing, this option is not available.
 
 <!-- TOC --><a name="if-lexp-then-linestatmntstatmnt"></a>
-### `IF` (*exp*) *lineno*{;|<cr>|[,*lineno*][{;|<cr>|,*lineno*]}}
+### `IF` (*exp*) *lineno*{;|[,*lineno*][{;|,*lineno*]}}
 
 `IF` calculates the value of the expression *exp*. It then branches to one of the three optional line numbers following; if the value is negative it branches to the first number, the second if it is zero, and the third if it is positive. FOCAL does not include any logical expressions, to branch if the value of a variable is a particular value, one subtracts the value from the variable and then branches if the result is zero.
 
-As many branches are really testing only one outcome, FOCAL allows the list to be shortened by leaving off options that are not used. This can be accomplished by ending the statement with a semicolon, the statement separator, or using a <cr>, the end-of-line. In these cases, execution continues normally if that option is not included.
+As many branches are really testing only one outcome, FOCAL allows the list to be shortened by leaving off options that are not used. This can be accomplished by ending the statement with a semicolon, the statement separator, or using a <newline>, the end-of-line. In these cases, execution continues normally if that option is not included.
 
 This peculiar style of *conditional branching* originates with FORTRAN, and may seem confusing to users more familiar with other languages like BASIC. It can also lead to confusing code as the only thing the `IF` statement can perform is a branch, you cannot use it to perform other statements as you can in most languages.
 
