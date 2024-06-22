@@ -247,16 +247,17 @@ In the shell, `ERASE` was used to delete individual lines or groups from a progr
 
 `IF` calculates the value of the expression *exp*. It then branches to one of the three optional line numbers following; if the value is negative it branches to the first number, the second if it is zero, and the third if it is positive. FOCAL does not include any logical expressions, to branch if the value of a variable is a particular value, one subtracts the value from the variable and then branches if the result is zero.
 
-As many branches are really testing only one outcome, FOCAL allows the list to be shortened by leaving off options that are not used. This can be accomplished by ending the statement with a semicolon, the statement separator, or using a <newline>, the end-of-line. In these cases, execution continues normally if that option is not included.
+As many branches are really testing only one outcome, FOCAL allows the list to be shortened by leaving off options that are not used. This can be accomplished by ending the statement with a semicolon (the statement separator) or using a <newline> to end the line. In these cases, execution continues normally if that option is not included.
 
 This peculiar style of *conditional branching* originates with FORTRAN, and may seem confusing to users more familiar with other languages like BASIC. It can also lead to confusing code as the only thing the `IF` statement can perform is a branch, you cannot use it to perform other statements as you can in most languages.
 
 #### Examples:
 
+    1.1 IF (25-25)2.1,2.3,2.5
+    1.2 QUIT
     2.1 TYPE "LESS THAN ZERO"; QUIT
     2.3 TYPE "EQUAL TO ZERO"; QUIT
     2.5 TYPE "GREATER THAN ZERO"; QUIT
-    2.7 IF (25-25)2.1,2.3,2.5
 
 The test will always produce zero, so this program will output:
 
@@ -271,6 +272,19 @@ The test will always produce zero, so this program will output:
     1.50 Q
     
 This causes the program to repeatedly add 1 to the current value of A, print the new value to the console, and then start again at line 1.20. This loop will continue until the value in A reaches 20, which will occur after 10 loops. When it does reach 20, the `IF` will then attempt to follow the second target, which does not exist, so it will continue on to the next line and end execution.
+
+As FOCAL's `IF` only  supports branching, simple tasks may require several lines. For instance, this BASIC code:
+
+    10 X=4
+    20 IF X=4 THEN PRINT "X IS FOUR"
+    30 END
+
+Has no direct equivalent in FOCAL. Instead, one can use an `IF` to call the `TYPE` and skip over it otherwise:
+
+    1.10 S X=4
+    1.20 I (X-4)1.40,1.30,1.40
+    1.30 T "X IS FOUR"
+    1.40 Q
 
 <!-- TOC --><a name="for-avaraexpr1-to-aexpr2-step-aexpr3-statmnt-and-next-avaravar"></a>
 ### `FOR` *var*=*expr1*,*expr2*[,*expr3*];*statmnt*[;*statmnt*...]
@@ -336,7 +350,7 @@ As the lines of code making up subroutines are normal statements, programs might
 This section describes the input/output statements that are used to access and display data.
 
 <!-- TOC --><a name="input-sexpvarvar"></a>
-### `ASK` [*sexp*,]*var*[,*sexp*][,*var*...]
+### `ASK` [*sexp*,]*var*[,*sexp*][,*var*][,...]
 
 `ASK` is the primary statement for asking the user for data from the keyboard. When it is encountered in a program, execution pauses and a colon prompt, `:`, is displayed on the console to indicate the computer is waiting for input. If the optional *sexp* is included, that text will be printed in front of the colon as an additional prompt. The user then enters their response and indicates they are done by pressing the <return> key. The value that they typed in is then processed and assigned to corresponding *var*.
 
@@ -482,6 +496,8 @@ Returns the sine of the expression in parentheses.
 
 <!-- TOC --><a name="string-functions"></a>
 ## Character functions
+
+FOCAL includes only two string functions, added in FOCAL-71. It is important to note that these functions use ASCII values, and were added specifically to aid programs that needed to work with ASCII as it became universal by the late 1960s. This contrasts with the conversions that occur using the `ASK` command or assigning a string constant to a variable, in which case the value will be a 6-bit DEC character value. This means that one cannot `ASK A` and then test the value using these functions, they will return different values.
 
 <!-- TOC --><a name="ascsexp"></a>
 ### `FIN`(*scon*)
