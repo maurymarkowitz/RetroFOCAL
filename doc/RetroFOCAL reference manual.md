@@ -7,15 +7,12 @@ Version 1.1.3
 
 [![GPL license](http://img.shields.io/badge/license-GPL-brightgreen.svg)](https://opensource.org/licenses/gpl-license)
 
-<!-- TOC --><a name="introduction"></a>
 ## Introduction
 
-<!-- TOC --><a name="what-is-RetroFOCAL"></a>
 ### What is RetroFOCAL?
 
 RetroFOCAL is a version of the FOCAL programming language intended to run classic FOCAL programs. RetroFOCAL is designed to run any program that ran on FOCAL-71, which is a superset of the otherwise similar FOCAL-69. Practically any major program should run properly without conversion. Programs must be provided in plain text, better known as "source code", which was the normal way to distribute FOCAL code.
 
-<!-- TOC --><a name="what-RetroFOCAL-is-not"></a>
 ### What RetroFOCAL is not
 
 The goal of RetroFOCAL is to allow you to run popular FOCAL programs written during the language's Golden Age in the late 1960s. As such, it is also marked by a number of deliberate limitations:
@@ -452,11 +449,11 @@ FOCAL does not require a dummy expression in the parens.
 <!-- TOC --><a name="sgnaexp"></a>
 ### `FSGN`(*exp*)
 
-Returns a — 1 if *exp* evaluates to a negative number, or a 1 if *exp* evaluates to a positive number or zero.
+Returns a — 1 if *exp* evaluates to a negative number, or a 1 if *exp* evaluates to a positive number, or zero if *exp* is exactly zero.
 
 #### Notes:
 
-FOCAL differs from most versions of BASIC, where the corresponding `SGN` function will return 0 if *exp* evaluates to 0.
+FOCAL-69 evaluated to 1 if *exp* was zero. This was changed in FOCAL-71, which is what RetroBASIC implements. This may introduce subtle bugs in earlier programs.
 
 <!-- TOC --><a name="sqraexp"></a>
 ### `FSQT`(*exp*)

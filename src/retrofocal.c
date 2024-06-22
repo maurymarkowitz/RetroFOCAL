@@ -565,7 +565,7 @@ static value_t evaluate_expression(expression_t *expression)
 						result.number = sin(a);
 						break;
 					case FSGN:
-						// early MS variants return 1 for 0, this implements the newer version where 0 returns 0
+						// FOCAL-69 returns 1 when a=0, this implements the FOCAL-71 version where 0 returns 0
 						if (a < 0)
 							result.number = -1;
 						else if (a == 0)
