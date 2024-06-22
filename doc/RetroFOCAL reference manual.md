@@ -27,6 +27,7 @@ The following abbreviations will be used in this manual:
 - *exp* - expression
 - *statmnt* - any complete statement
 - *lineno* - a line number
+- *groupno* - a group number
 
 <!-- TOC --><a name="formatting-and-notation"></a>
 ### Formatting and notation
@@ -143,8 +144,9 @@ FOCAL consisted of two separate programs, the FOCAL runtime, and a shell program
 
 RetroFOCAL only implements the statements, not the commands. They are mentioned here only as some of the FOCAL commands could also be used as statements, in which case they sometimes performed entirely different actions. The commands in the original FOCAL-69 are:
 
-### `GO` - runs a program, also used as a statement
-### `ERASE` - erases lines from a program, also used as a statement
+### `DO` - runs a single subroutine, also used as the subroutine call statement
+### `GO` - runs a program, also used as the unconditional branch statement
+### `ERASE` - erases lines from a program, also used as a statement to clear variable values
 ### `MODIFY` - recalls a given line into memory to allow it to be edited
 ### `WRITE` - outputs the program code to the printer
 
@@ -153,7 +155,7 @@ DEC FOCAL also included a number of commands that performed disk actions, which 
 <!-- TOC --><a name="program-statements"></a>
 ## Program statements
 
-This section explains the statements associated with loops, conditional and unconditional branches, subroutines, and similar functionality. It also explains the means of accessing data and the optional commands used for defining variables. The following list is not in order; it is meant to group statements with similar functionality.
+This section explains the statements associated with loops, conditional and unconditional branches, subroutines, and similar functionality. It also explains the means of accessing data and the optional commands used for defining variables. The following list is not in alphabetical order; it is meant to group statements with similar functionality.
 
 <!-- TOC --><a name="comment-scon"></a>
 ### `COMMENT`[*scon*] and `CONTINUE`
@@ -162,8 +164,18 @@ This section explains the statements associated with loops, conditional and unco
 
 In FOCAL, only the first letter of the statement keyword is examined, and the rest is ignored. For this reason, this statement is also sometimes used as a label in the code, in which case it is considered to read `CONTINUE`, not `COMMENT`. Using it in this fashion allows an otherwise empty line to be the target of a `GOTO`.
 
+<!-- TOC --><a name="let-varexpr"></a>
+### `SET` *var*`=`*expr*
+
+The most common statement found in most programs is the assignment statement, with the keyword `SET`. This calculates the value of the expression *expr* and then assigns the result to *var*.
+
 <!-- TOC --><a name="goto-aexp"></a>
-### `GOTO` [*exp*]
+### `DO` {*lineno*|*groupno*}
+
+`DO` is similar to `GOTO` in that it moves execution to the specified line number. However, the outcome is that control is transferred to the statement after the `DO` once the called line or group is complete. For instance, if one calls `DO 10`, execution will continue at the first line of group 10, progress through the rest of the lines in group 10, and then return to the statement after the `DO 10`. If one uses `DO 10.10`, execution will continue on 10.10 and then return when that single line has completed.
+
+<!-- TOC --><a name="goto-aexp"></a>
+### `GOTO` [*lineno*] and `GO`
 
 FOCAL progresses through a program by performing statements one at a time, moving to the next statement when one is completed. In this respect, a program can be thought of as a single, long list of statements. This normally linear flow is interrupted by **branches**, statements that deliberately send the execution to another point in the program. In FOCAL, branches move to a **target**, which is indicated by a line number.
 
@@ -174,7 +186,6 @@ As FOCAL only reads the first letter of the keyword, this same instruction was a
 In RetroFOCAL, `GO`ing occurs automatically after the program is loaded, so a `GO` with no line number found within the program text is a branch to the start of the problem.
 
 #### Examples:
-
 
 <!-- TOC --><a name="erase"></a>
 ### `ERASE` [*lineno*]
@@ -192,7 +203,7 @@ In the shell, `ERASE` was used to delete individual lines or groups from a progr
 
 As many branches are really testing only one outcome, FOCAL allows the list to be shortened by leaving off options that are not used. This can be accomplished by ending the statement with a semicolon, the statement separator, or using a <cr>, the end-of-line. In these cases, execution continues normally if that option is not included.
 
-This style of *conditional branching* originates with FORTRAN, and may seem confusing to users more familiar with other languages like BASIC. It can also lead to confusing code as the only thing the `IF` statement can perform is a branch, you cannot use it to perform optional statements as you can in most languages.
+This peculiar style of *conditional branching* originates with FORTRAN, and may seem confusing to users more familiar with other languages like BASIC. It can also lead to confusing code as the only thing the `IF` statement can perform is a branch, you cannot use it to perform other statements as you can in most languages.
 
 #### Examples:
 
@@ -213,7 +224,7 @@ The test will always produce zero, so this program will output:
     1.40 I (A-20)1.20
     1.50 Q
     
-This causes the program to repeatedly add 1 to the current value of A, print the new value to the console, and then start again at line 1.20. This loop will continue until the value in A reaches 20, which will occur after 10 loops. When it does reach 20, the `IF` will then attempt to follow the second target, which does not exist, so it will continue on to the next line and stop.
+This causes the program to repeatedly add 1 to the current value of A, print the new value to the console, and then start again at line 1.20. This loop will continue until the value in A reaches 20, which will occur after 10 loops. When it does reach 20, the `IF` will then attempt to follow the second target, which does not exist, so it will continue on to the next line and end execution.
 
 <!-- TOC --><a name="for-avaraexpr1-to-aexpr2-step-aexpr3-statmnt-and-next-avaravar"></a>
 ### `FOR` *var*=*expr1*,*expr2*[,*expr3*];*statmnt*[;*statmnt*...]
@@ -269,14 +280,9 @@ This will produce:
 <!-- TOC --><a name="gosub-and-return"></a>
 ### ``RETURN`
 
-FOCAL programs normally call subroutines using the `DO` statement, which automatically returns to the statement after the `DO` when that group or line completes. There are situations where this is not the case and the subroutine needs to exit earlier. `RETURN` is called in these situations.
+FOCAL programs normally call subroutines using the `DO` statement, which automatically returns to the statement after the `DO` when the reaches the end of the referenced group or line. There are situations where the subroutine needs to exit earlier. `RETURN` is called in these situations.
 
 As the lines of code making up subroutines are normal statements, programs might accidentally run them when they reach the end of the main program code. If this occurs, a `RETURN` in that subroutine may be called without a `DO` and an error will occur. To prevent this, programs generally place a `QUIT` statement immediately before the subroutines, or alternately, place the `QUIT` at a high line number like 99.99 and then `GOTO 99.99` at the end of the main code.
-
-<!-- TOC --><a name="let-varexpr"></a>
-### `SET` *var*`=`*expr*
-
-The most common statement found in most programs is the assignment statement, with the keyword `SET`. This calculates the value of the expression *expr* and then assigns the result to *var*.
 
 <!-- TOC --><a name="inputoutput-statements"></a>
 ## Input/Output Statements
@@ -284,11 +290,11 @@ The most common statement found in most programs is the assignment statement, wi
 This section describes the input/output statements that are used to access and display data.
 
 <!-- TOC --><a name="input-sexpvarvar"></a>
-### `ASK` [*sexp*,]*var*[,*var*...]
+### `ASK` [*sexp*,]*var*[,*sexp*][,*var*...]
 
 `ASK` is the primary statement for asking the user for data from the keyboard. When it is encountered in a program, execution pauses and a colon prompt, `:`, is displayed on the console to indicate the computer is waiting for input. If the optional *sexp* is included, that text will be printed in front of the colon as an additional prompt. The user then enters their response and indicates they are done by pressing the <return> key. The value that they typed in is then processed and assigned to corresponding *var*.
 
-`ASK` can accept multiple inputs in a single statement, using a comma-separated list of variables. The user may enter the value on its own and press <return>, or they can enter multiple values on a single line by separating the values with commas. If the user types in fewer values than there are variables in the statement, another colon prompt will be displayed, and the process will repeat until a value has been received for each *var*.
+`ASK` can accept multiple inputs in a single statement, using a comma-separated list of variables. The user may enter the value on its own and press <return>, or they can enter multiple values on a single line by separating the values with commas. If the user types in fewer values then there are variables in the statement, another colon prompt will be displayed, and the process will repeat until a value has been received for each *var*. In contrast to most BASIC dialects, prompt text can be placed in front of any variable, not just at the start of the statement. 
 
 #### Examples:
 
@@ -372,12 +378,12 @@ Returns the absolute value of a number without regard to whether it is positive 
 <!-- TOC --><a name="expaexp"></a>
 ### `FEXP`(*exp*)
 
-Returns the value of *e* (approximately 2.71828283), raised to the power specified by the expression in parentheses. For instance, `EXP(3)`, returns 20.0855365.
+Returns the value of *e* (approximately 2.7182828), raised to the power specified by the expression in parentheses. For instance, `EXP(3)`, returns 20.0855365.
 
 <!-- TOC --><a name="intaexp"></a>
 ### `FITR`(*exp*)
 
-Returns the greatest integer less than or equal to the value of the expression. This is true whether the expression evaluates to a positive or negative number. Thus, `FITR(3.445)` returns 3, while `FITR(-3.445)` returns -4. This function is similar to the `floor` function found in most programming languages.
+Returns the greatest integer less than or equal to the value of the expression. This is true whether the expression evaluates to a positive or negative number. Thus, `FITR(3.445)` returns 3, while `FITR(-3.445)` returns -4. This function is similar to the `floor` function found in most programming languages, or `INT` in BASIC.
 
 <!-- TOC --><a name="logaexp"></a>
 ### `FLOG`(*exp*)
@@ -396,7 +402,7 @@ Returns a — 1 if *exp* evaluates to a negative number, or a 1 if *exp* evaluat
 
 #### Notes:
 
-FOCAL differs from most versions of BASIC, where the corresponding `SGN` function will return 0 if *exp* evaluates to 0. In FOCAL, only -1 and +1 are returned.
+FOCAL differs from most versions of BASIC, where the corresponding `SGN` function will return 0 if *exp* evaluates to 0.
 
 <!-- TOC --><a name="sqraexp"></a>
 ### `FSQT`(*exp*)
