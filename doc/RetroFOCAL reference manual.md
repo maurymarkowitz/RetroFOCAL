@@ -298,20 +298,19 @@ This section describes the input/output statements that are used to access and d
 
 #### Examples:
 
-    10 PRINT "Enter five numbers to be summed..."
-    20 FOR I=1 TO 5
-    30 INPUT "Number",V
-    40 T=T+V
-    50 NEXT I
-    60 PRINT "The total is "T
-    70 END
+    1.10 T "Enter five numbers to be summed..."
+    1.20 F I=1,5; D 2
+    1.30 T "The total is "T!
+    1.40 Q
+    2.10 A "Number",V
+    2.20 S T=T+V
 
 When run, this example will produce the following:
 
     Enter five numbers to be summed...
     Number?
 
-The user responds by typing a number and pressing <return>. This returns to the top of the `FOR` loop and repeats, so the complete interaction would be something like:
+The user responds by typing a number and pressing <return>. This returns to the front of the `FOR` loop and repeats, so the complete interaction would be something like:
 
     Enter five numbers to be summed...
     Number? 5
@@ -321,13 +320,13 @@ The user responds by typing a number and pressing <return>. This returns to the 
     Number? 7
     The total is 17
 
-Using multiple variables in a single `INPUT` has a similar effect. For instance:
+Using multiple variables in a single `ASK` has a similar effect. For instance:
 
-    10 PRINT "Enter three numbers to be summed..."
-    20 INPUT "Type three numbers separated by commas "A,B,C
-    30 PRINT "The total is "A+B+C
+    1.10 T "Enter three numbers to be summed..."
+    1.20 A "Type three numbers separated by commas "A,B,C
+    1.30 T "The total is "A+B+C
 
-The difference here is the way that the user's input is interpreted. The user can type three values on one line, separated by commas, as noted in the prompt. They can also type a single value and press <return>, which will cause the `INPUT` to display the question mark and continue until all values are provided. In this example, the user types one value per line:
+The difference here is the way that the user's input is interpreted. The user can type three values on one line, separated by commas, as noted in the prompt. They can also type a single value and press <return>, which will cause the `ASK` to display the colon and continue until all values are provided. In this example, the user types one value per line:
 
     Enter three numbers to be summed...
     Type three numbers separated by commas 3
@@ -336,15 +335,11 @@ The difference here is the way that the user's input is interpreted. The user ca
     The total is 6
 
 <!-- TOC --><a name="print-exp"></a>
-### `TYPE` [*exp*{|[;|,]},...]]
+### `TYPE` [*exp*{|[,|!|#|:]},...]]
 
-`TYPE` is used to produce output on the user's console. It is one of the most common statements found in most FOCAL programs. The statement is designed to be very flexible, able to output values from any type of expression. In the case of string expressions, the output is sent unchanged to the console. For numeric values, it is formatted to ensure very large or small numbers do not fill the screen.
+`TYPE` is used to produce output on the user's console. It is one of the most common statements found in most FOCAL programs. The statement is designed to be very flexible, able to output values from any type of expression. In the case of string expressions, the output is sent unchanged to the console. For numeric values, it is formatted to ensure very large or small numbers do not fill the screen. `TYPE` can accept any number of subsequent expressions, including zero. These expressions are separated with one of the three "print separators", the comma, the semicolon, or if the preceding expression is a string constant, nothing.
 
-`TYPE` can accept any number of subsequent expressions, including zero. These expressions are separated with one of the three "print separators", the comma, the semicolon, or if the preceding expression is a string constant, nothing. `PRINT` normally outputs a newline when it completes, so it is not uncommon to see a "bare" `PRINT` statement with no expression as a way to print a newline. The newline is not output if the line ends with the semicolon or comma. In that case, any following `PRINT` will start on the same line.
-
-A curiosity of the FOCAL language is that the question-mark may be used as an alias for the `PRINT` statement. This was intended to allow users to type in "questions" at the command line, for instance, `? 5+5`, meaning "what is 5 plus 5". The interpreter would internally expand the question-mark to `PRINT`, perform the expression, and print the result, `10`. As the question-mark is expanded on entry, using it in a program will expand result in `PRINT` appearing in its place when `LIST`ed.
-
-There are a number of oddities and gotchas in common dialects, many of which are not mentioned in most references.
+In contrast to most languages, including BASIC, FOCAL does *not* automatically insert a newline at the end of a `TYPE` statement. To do so, and most uses of `TYPE` will want to, `!` is used as a separator. There can be any number of these on a line. FOCAL also allowed `#` to perform a carriage return without a subsequent linefeed, which was often used with line printers. `:` output a tab, working in a fashion similar to the `TAB` function in BASIC.
 
 #### Examples:
 
@@ -358,14 +353,18 @@ In this example, the expression is numeric. The value will be calculated, format
 
      9
 
+Because FOCAL explicitly defined the newlines, you could have a single statement with multiple lines of output:
+
+    T "This..."!"is"!" multiple-line"!"output"
+
 <!-- TOC --><a name="operators"></a>
 ## Operators
 
 RetroFOCAL supports the standard set of arithmetic operators: `+` for addition, `-` for subtraction, `*` for multiplication, `/` for division, and `^` for exponentiation.
 
-In contrast to most programming languages, FOCAL does not group operator precedence. In most languages, `^` has the highest precedence, followed by `*` and `/`, and finally `+` and `-`. In FOCAL, multiplication and division are two different levels, so it is `^`, `*`, `/`, with `+` and `-` at the same level.
+FOCAL does not group operator precedence in the same fashion as other languages. In most languages, `^` has the highest precedence, followed by `*` and `/`, and finally `+` and `-`. In FOCAL, multiplication and division are two different levels, so it is `^`, `*`, `/`, with `+` and `-` at the same level.
 
-Another difference is that FOCAL allows expressions to be bracketed with parentheses, `(` and `)`, square brackets, `[` and `]`, or "triangle brackets", `<` and `>`. For instance: `SET A=<10*[5+1]*(1+5)>` will evaluate 5+1, 1+5, and then 10*6*6.
+Another difference is that FOCAL allows expressions to be bracketed with parentheses, `(` and `)`, square brackets, `[` and `]`, or "triangle brackets", `<` and `>`. This can be helpful when reading complex expressions. For instance: `SET A=<10*[5+1]*(1+5)>` will evaluate 5+1, 1+5, and then 10*6*6.
 
 <!-- TOC --><a name="mathematical-functions"></a>
 ## Mathematical functions
@@ -383,7 +382,7 @@ Returns the value of *e* (approximately 2.7182828), raised to the power specifie
 <!-- TOC --><a name="intaexp"></a>
 ### `FITR`(*exp*)
 
-Returns the greatest integer less than or equal to the value of the expression. This is true whether the expression evaluates to a positive or negative number. Thus, `FITR(3.445)` returns 3, while `FITR(-3.445)` returns -4. This function is similar to the `floor` function found in most programming languages, or `INT` in BASIC.
+Returns the greatest integer less than or equal to the value of the expression. This is true whether the expression evaluates to a positive or negative number. Thus, `FITR(3.445)` returns 3, while `FITR(-3.445)` returns -4. This function is similar to the `floor` function found in most programming languages, or `INT` in most dialects of BASIC.
 
 <!-- TOC --><a name="logaexp"></a>
 ### `FLOG`(*exp*)
@@ -393,7 +392,13 @@ Returns the natural logarithm of the number or expression. `FLOG(0)` gives an er
 <!-- TOC --><a name="rndaexp"></a>
 ### `FRAN`()
 
-Returns a random number between -1 and +1. This varies rather significantly from most languages, which produce a value between 0 and 0.99999... Note that it does not require a dummy expression in the parens.
+Returns a random number between -1 and +1.
+
+#### Notes:
+
+This random number generator varies rather significantly from most languages, which generally produce a value between 0 and 0.99999...
+
+FOCAL does not require a dummy expression in the parens.
 
 <!-- TOC --><a name="sgnaexp"></a>
 ### `FSGN`(*exp*)
