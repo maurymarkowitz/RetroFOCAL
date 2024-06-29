@@ -266,9 +266,9 @@ static int char_code_for_character(const char one_char)
 /** Returns a number encoding a string using DEC's 6-bit codes. The value
  * is always an integer, but may have an exponent if the string has an E.
  *
- * FOCAL was built on a machine with no inherant string support, and the
+ * FOCAL was built on a machine with no inherent string support, and the
  * language does not have any internal string handling. However, the need
- * to input short strings for things like "yes or no" remained, so the
+ * to input short strings for things like "yes" or 'no" remained, so the
  * solution was to use the 6-bit teletype codes where A=1 and Z=26 and then
  * just string them together so that "A" produces 1, "A1" produces 11 and
  * "Z1" produces 261. The weird part is that if the number is two digits,
@@ -501,19 +501,18 @@ static value_t evaluate_expression(expression_t *expression)
         result.type = NUMBER;
 
         switch (expression->parms.op.opcode) {
+						
+						// this is the no-parameter version, which is basically a getchar
+						// that returns the DEC ASCII code
+					case FIN:
+					{
+						char c = getchar();
+						result.number = (int)c + 128;
+					}
+
           case FRAN:
             result.number = ((double)rand() / (double)RAND_MAX); // don't forget the cast!
             break;
-						
-						// TIME is the number of jiffies since the last restart, always 1/60 even on PAL.
-						// In our code, we treat the start of the program as the restart time. This can
-						// be changed by setting the value of TIME$ (which is really weird if you think
-						// about it, why not set TIME?) so we keep track of that value in reset_ticks
-						// and modify the value if it's not zero
-						
-						// returns the number of seconds since restart in HMS format
-						// this is the case where TIME$ appears on its own in a function-like call,
-						// the other syntax is TIME=value, which is handled as a statement, not a function
 
 					default:
 						focal_error("Unhandled arity-0 function");
@@ -544,19 +543,20 @@ static value_t evaluate_expression(expression_t *expression)
             break;
 					case FIN:
 					{
-						char c[2];
-						c[0] = (char)a;
-						c[1] = '\0';
-						result.type = STRING;
-						result.string = str_new(c);
+						// takes the value of the first char and converts it to DEC ASCII
+						char c = parameters[0].string[0];
+						result.number = (int)c + 128;
 					}
 						break;
 					case FITR:
 						result.number = floor(a);
 						break;
           case FOUT:
-            result.type = STRING;
-            result.string = str_new(number_to_string(a));
+					{
+						// writes the char and returns its DEC ASCII value
+						putchar((int)a - 128);
+						result.number = a;
+					}
             break;
           case FLOG:
 						result.number = log(a);

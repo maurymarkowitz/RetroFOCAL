@@ -260,8 +260,6 @@ statement:
     statement_t *new = make_statement(GOTO);
     new->parms.go = 0;
     $$ = new;
-    
-    linenum_go_totals++;
   }
   |
   GOTO /* essentially identical to above, but in the documentation they never put line numbers on a GO */
