@@ -1,5 +1,7 @@
 RetroFOCAL TODO/BUGS/ERRATA list
 
+- copy over multi-input ASK statements from RetroBASIC
+
 - add TYPE $ to print the variable list. note that it adds @ to one-character names
 
 - final print formatting tweaks for -1 etc.
