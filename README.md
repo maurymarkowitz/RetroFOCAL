@@ -40,17 +40,19 @@ Command-line options include:
 `--print_statistics`, `-p`: send a selection of statistics to the console  
 `--write_statistics`, `-w`: write the statistics to the named file in a machine readable format
 
-If you wish to use RetroFOCAL to simply check syntax or collect statistics, use the -n and -p switches.
+If you wish to use RetroFOCAL to simply check syntax or collect statistics, use the `-n` and `-p` switches.
 
-Short options with no parameters can be ganged, for instance -unp.
+Short options with no parameters can be ganged, for instance `-unp`.
 
 ## Building RetroFOCAL
 
-The RetroFOCAL interpreter is written for lex/yacc/c and is normally compiled with flex/bison. It has no external depedancies, although cygwin is required for compiling on Windows. A makefile is included that should run on almost any Unix-like system, including macOS.
+The RetroFOCAL interpreter is written for lex/yacc/c and is normally compiled with flex/bison. It has no external dependancies, although cygwin is required for compiling on Windows. A makefile is included that should run on almost any Unix-like system, including macOS. In your terminal, navigate to the RetroBASIC folder you downloaded and extracted, and:
+
+```make all```
 
 An Xcode project is also included, which is the primary building method during testing. It has one drawback (currently), the bison build rule in Xcode does not properly build `parse.h` into the `src` folder, but follows yacc-like rules and builds `y.tab.h` file in the `../DerivedFiles` folder. If you make changes to `parse.y`, be sure to copy the new `y.tab.h` to `/src/parse.h` for those changes to be visible.
 
-If anyone would like to contribute a VS.net project, it would be greatly appeciated.
+If anyone would like to contribute a VS.net project, it would be greatly appreciated.
 
 ## Missing features and Erata
 
