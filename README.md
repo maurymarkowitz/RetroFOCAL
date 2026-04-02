@@ -52,25 +52,25 @@ https://github.com/maurymarkowitz/RetroFOCAL/releases
 
 Binary packages are provided for macOS, Linux, and Windows when releases are published.
 
-Homebrew (macOS/Linux):
+On macOS and Linux, you can use homebrew::
 
 ```sh
 brew tap maurymarkowitz/tap https://github.com/maurymarkowitz/homebrew-tap
 brew install maurymarkowitz/tap/retrofocal
 ```
 
-Scoop (Windows):
+On Apple Silicon, Homebrew defaults to `/opt/homebrew` instead of `/usr/local`.
+
+On Windows, you can use scoop:
 
 ```powershell
 scoop bucket add maurymarkowitz https://github.com/maurymarkowitz/scoop-bucket
 scoop install retrofocal
 ```
 
-On Apple Silicon, Homebrew defaults to `/opt/homebrew` instead of `/usr/local`.
-
 ## Building RetroFOCAL
 
-The project is built using Make (with `flex` and `bison` for lex/yacc). On macOS and Linux, all of the dependancies and tools should already be installed. On windows, the system uses MinGW, which you will need to installs before building. See [docs/BUILD.md](docs/BUILD.md) for full instructions for Linux/macOS and Windows, including install/uninstall paths and required packages.
+The project is built using Make (with `flex` and `bison` for lex/yacc). On macOS and Linux, all of the dependancies and tools should already be installed. On windows, the system uses MinGW, which you will need to install before building. See [docs/BUILD.md](docs/BUILD.md) for full instructions for Linux/macOS and Windows, including install/uninstall paths and required packages.
 
 ## Missing features and Erata
 
