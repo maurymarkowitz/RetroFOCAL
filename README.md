@@ -19,30 +19,6 @@ RetroFOCAL is an interpreter for programs written in the FOCAL language seen on 
 RetroFOCAL can redirect the output from `TYPE` statements and `ASK` prompts to a file, and read the responses to `ASK` statements from a file. This can be used to provide the same input to a program multiple times, and then the output can be `diff`ed to look for changes. This is aided by a command-line option to set the random number seed value, so that the random numbers are always the same. It also includes a simple static analyzer that (optionally) prints statistics for the program after it completes. This includes the length of the program and its line number range, the number and types of variables used, and similar details.
 
 RetroFOCAL is based on [RetroBASIC](https://github.com/maurymarkowitz/RetroBASIC) by Maury Markowitz, which is based on gnbasic by James Bowman.
- 
-## Running RetroFOCAL
-
-RetroFOCAL is meant to be used with an existing program source file, not interactively. To run it, use:
-
-```./retrofocal program.fc```
-
-It will accept any text file as input and report (cryptic) errors if it cannot properly parse it. If parsing succeeds, the program (normally) begins running immediately.
-
-Command-line options include:
-
-`--help`, `-h`: print usage notes  
-`--version`, `-v`: print version info  
-`--upper-case`, `-u`: force input to upper-case, basically like using caps lock  
-`--random`, `-r`: seed the random number generator  
-`--output-file`, `-o`: redirect TYPE to the named file  
-`--input-file`, `-i`: redirect ASK from the named file, one value per line  
-`--no_run`, `-n`: do not run the FOCAL program, simply read and parse it and then exit  
-`--print_statistics`, `-p`: send a selection of statistics to the console  
-`--write_statistics`, `-w`: write the statistics to the named file in a machine readable format
-
-If you wish to use RetroFOCAL to simply check syntax or collect statistics, use the `-n` and `-p` switches.
-
-Short options with no parameters can be ganged, for instance `-unp`.
 
 ## Installing RetroFOCAL
 
@@ -71,6 +47,30 @@ scoop install retrofocal
 ## Building RetroFOCAL
 
 The project is built using Make (with `flex` and `bison` for lex/yacc). On macOS and Linux, all of the dependancies and tools should already be installed. On windows, the system uses MinGW, which you will need to install before building. See [docs/BUILD.md](docs/BUILD.md) for full instructions for Linux/macOS and Windows, including install/uninstall paths and required packages.
+
+## Running RetroFOCAL
+
+RetroFOCAL is meant to be used with an existing program source file, not interactively. To run it, use:
+
+```./retrofocal program.fc```
+
+It will accept any text file as input and report (cryptic) errors if it cannot properly parse it. If parsing succeeds, the program (normally) begins running immediately.
+
+Command-line options include:
+
+`--help`, `-h`: print usage notes  
+`--version`, `-v`: print version info  
+`--upper-case`, `-u`: force input to upper-case, basically like using caps lock  
+`--random`, `-r`: seed the random number generator  
+`--output-file`, `-o`: redirect TYPE to the named file  
+`--input-file`, `-i`: redirect ASK from the named file, one value per line  
+`--no_run`, `-n`: do not run the FOCAL program, simply read and parse it and then exit  
+`--print_statistics`, `-p`: send a selection of statistics to the console  
+`--write_statistics`, `-w`: write the statistics to the named file in a machine readable format
+
+If you wish to use RetroFOCAL to simply check syntax or collect statistics, use the `-n` and `-p` switches.
+
+Short options with no parameters can be ganged, for instance `-unp`.
 
 ## Missing features and Erata
 
