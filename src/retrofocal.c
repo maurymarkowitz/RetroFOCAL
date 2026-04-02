@@ -29,6 +29,19 @@ Boston, MA 02111-1307, USA.  */
 #include "retrofocal.h"
 #include "parse.h"
 
+/* Portable timersub macro for Windows/MinGW compatibility */
+#ifndef timersub
+#define timersub(a, b, result)                       \
+  do {                                               \
+    (result)->tv_sec = (a)->tv_sec - (b)->tv_sec;   \
+    (result)->tv_usec = (a)->tv_usec - (b)->tv_usec; \
+    if ((result)->tv_usec < 0) {                     \
+      --(result)->tv_sec;                            \
+      (result)->tv_usec += 1000000;                  \
+    }                                                \
+  } while (0)
+#endif
+
 /* here's the actual definition of the interpreter state which is extern in the header */
 interpreterstate_t interpreter_state;
 
