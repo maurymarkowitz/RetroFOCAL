@@ -22,3 +22,34 @@ DEC released two major versions of FOCAL, the original which was retroactively k
 Several other versions of FOCAL emerged over time, including a [lost version from Microsoft](https://devblogs.microsoft.com/oldnewthing/20200616-00/?p=103869) and the DECUS-distributed [FOCL.S](http://www.bitsavers.org/pdf/dec/decus/focal/FOCAL8-148_FOCL-S.pdf) which added strings. The only major variation that seems to have seen any use was [U/W-FOCAL](https://www.grc.com/pdp-8/docs/FOCAL_Reference_Manual.pdf) from Jim van Zee at the University of Washington. This added a large number of new functions, two-dimensional arrays, a variety of array functions, and a variety of other tweaks and additions. There are not too many changes that it couldn't be supported for a little work. But as the main goal of RetroFOCAL is to run common FOCAL programs, and those use the DEC dialects, support for U/W has not yet been added.
 
 There are other modern versions of FOCAL, including Dave Pitt's [FOCAL-69](https://github.com/AndrewSav/focal-69) interpreter. This version includes a fully interactive command line environment and full support for files and library calls. Any focal program that does not work in RetroFOCAL will likely work in Dave's version, but the number of such examples should be very small.
+
+## Coding style
+
+RetroFOCAL is written in a semi-canonical C format, as defined by the [Canonical C Style Guide](https://people.canonical.com/~msawicz/guides/c/cguide.html). There are two main differences:
+
+1) single-line "blocks" are separated onto two lines to make them look more like multi-line blocks
+```
+  while (condition)
+     dosomething;
+```
+  as opposed to:
+
+```
+  while (condition) dosomething;
+```
+2) multi-line blocks have the opening brace on the statement line, to make them look more like single-line blocks
+```
+  while (condition) {
+     dosomething;
+     andsomethingelse;
+  }
+```
+    as opposed to:
+
+```
+  while (condition)
+  {
+     dosomething;
+     andsomethingelse;
+  }
+```

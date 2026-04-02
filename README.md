@@ -44,15 +44,33 @@ If you wish to use RetroFOCAL to simply check syntax or collect statistics, use 
 
 Short options with no parameters can be ganged, for instance `-unp`.
 
+## Installing RetroFOCAL
+
+The latest source code and any prebuilt binaries are available at:
+
+https://github.com/maurymarkowitz/RetroFOCAL/releases
+
+Binary packages are provided for macOS, Linux, and Windows when releases are published.
+
+Homebrew (macOS/Linux):
+
+```sh
+brew tap maurymarkowitz/tap https://github.com/maurymarkowitz/homebrew-tap
+brew install maurymarkowitz/tap/retrofocal
+```
+
+Scoop (Windows):
+
+```powershell
+scoop bucket add maurymarkowitz https://github.com/maurymarkowitz/scoop-bucket
+scoop install retrofocal
+```
+
+On Apple Silicon, Homebrew defaults to `/opt/homebrew` instead of `/usr/local`.
+
 ## Building RetroFOCAL
 
-The RetroFOCAL interpreter is written for lex/yacc/c and is normally compiled with flex/bison. It has no external dependancies, although cygwin is required for compiling on Windows. A makefile is included that should run on almost any Unix-like system, including macOS. In your terminal, navigate to the RetroBASIC folder you downloaded and extracted, and:
-
-```make all```
-
-An Xcode project is also included, which is the primary building method during testing. It has one drawback (currently), the bison build rule in Xcode does not properly build `parse.h` into the `src` folder, but follows yacc-like rules and builds `y.tab.h` file in the `../DerivedFiles` folder. If you make changes to `parse.y`, be sure to copy the new `y.tab.h` to `/src/parse.h` for those changes to be visible.
-
-If anyone would like to contribute a VS.net project, it would be greatly appreciated.
+The project is built using Make (with `flex` and `bison` for lex/yacc). On macOS and Linux, all of the dependancies and tools should already be installed. On windows, the system uses MinGW, which you will need to installs before building. See [docs/BUILD.md](docs/BUILD.md) for full instructions for Linux/macOS and Windows, including install/uninstall paths and required packages.
 
 ## Missing features and Erata
 
