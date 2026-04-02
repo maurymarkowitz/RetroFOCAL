@@ -33,4 +33,19 @@ clean:
 	$(rm) $(TARGET) $(TARGET).o
 	$(rm) *.tab.h *.tab.c *.lex.c
 
+# Install paths (can be overridden with make PREFIX=/custom/path)
+PREFIX ?= /usr/local
+BINDIR ?= $(PREFIX)/bin
+MANDIR ?= $(PREFIX)/share/man
+DOCDIR ?= $(PREFIX)/share/doc/retrofocal
+
+install: $(TARGET)
+	mkdir -p $(BINDIR)
+	cp $(TARGET) $(BINDIR)/
+	mkdir -p $(MANDIR)/man1
+	cp docs/retrofocal.1 $(MANDIR)/man1/ 2>/dev/null || true
+	mkdir -p $(DOCDIR)
+	cp README.md docs/*.md $(DOCDIR)/ 2>/dev/null || true
+	cp -r examples $(DOCDIR)/
+
 all: retrofocal
