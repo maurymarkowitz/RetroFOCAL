@@ -3,23 +3,35 @@ name: Update Scoop Manifest
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release tag to use (e.g. v2.2.0)'
+        required: true
 
 jobs:
   update:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Check HOMEBREW_AND_SCOOP_TOKEN secret
+        run: |
+          if [ -z "${{ secrets.HOMEBREW_AND_SCOOP_TOKEN }}" ]; then
+            echo "ERROR: HOMEBREW_AND_SCOOP_TOKEN secret is not set. Add it to repository secrets and rerun."
+            exit 1
+          fi
+
       - name: Checkout scoop bucket
         uses: actions/checkout@v4
         with:
           repository: maurymarkowitz/scoop-bucket
-          token: ${{ secrets.SCOOP_TOKEN }}
+          token: ${{ secrets.HOMEBREW_AND_SCOOP_TOKEN }}
           path: scoop-bucket
 
       - name: Download Windows release asset
         run: |
-          VERSION=${{ github.event.release.tag_name }}
-          RELEASE_URL="${{ github.server_url }}/${{ github.repository }}/releases/download/${VERSION}/retrofocal-windows-x86_64.zip"
+          TAG="${{ github.event.release.tag_name || github.event.inputs.tag_name }}"
+          RELEASE_URL="${{ github.server_url }}/${{ github.repository }}/releases/download/${TAG}/retrofocal-windows-x86_64.zip"
           curl -L -o retrofocal-windows-x86_64.zip "$RELEASE_URL"
 
       - name: Compute SHA256
@@ -29,17 +41,36 @@ jobs:
 
       - name: Update scoop manifest
         run: |
-          VERSION=${{ github.event.release.tag_name }}
+          TAG="${{ github.event.release.tag_name || github.event.inputs.tag_name }}"
+          VERSION=${TAG}
           VERSION=${VERSION#v}
-          sed -i "s/\"version\": \".*\"/\"version\": \"${VERSION}\"/" scoop-bucket/bucket/retrofocal.json
-          sed -i "s/\"hash\": \".*\"/\"hash\": \"${HASH}\"/" scoop-bucket/bucket/retrofocal.json
-          sed -i "s|releases/download/.*/retrofocal-windows-x86_64.zip|releases/download/${{ github.event.release.tag_name }}/retrofocal-windows-x86_64.zip|" scoop-bucket/bucket/retrofocal.json
+          HASH=$(sha256sum retrofocal-windows-x86_64.zip | cut -d ' ' -f1)
+          MANIFEST="scoop-bucket/bucket/retrofocal.json"
+          if [ ! -f "$MANIFEST" ]; then
+            echo "ERROR: Manifest not found at $MANIFEST"
+            find scoop-bucket -name "*.json" -type f
+            exit 1
+          fi
+          echo "Updating: $MANIFEST"
+          echo "VERSION: $VERSION"
+          echo "HASH: $HASH"
+          TAG_WITH_V="v${VERSION}"
+          if [ "$TAG" != "$TAG_WITH_V" ]; then
+            TAG_WITH_V="$TAG"
+          fi
+          echo "TAG (for URL): $TAG_WITH_V"
+          jq ".version = \"${VERSION}\" | .url = \"https://github.com/maurymarkowitz/RetroFOCAL/releases/download/${TAG_WITH_V}/retrofocal-windows-x86_64.zip\" | .hash = \"${HASH}\"" "$MANIFEST" > "${MANIFEST}.tmp" && mv "${MANIFEST}.tmp" "$MANIFEST"
 
       - name: Commit & push updates
         run: |
           cd scoop-bucket
           git config user.name github-actions
           git config user.email github-actions@github.com
+          git remote set-url origin "https://x-access-token:${{ secrets.HOMEBREW_AND_SCOOP_TOKEN }}@github.com/maurymarkowitz/scoop-bucket.git"
           git add bucket/retrofocal.json
-          git commit -m "Update scoop manifest for ${{ github.event.release.tag_name }}"
+          if git diff --cached --quiet; then
+            echo "No changes to commit. Skipping push."
+            exit 0
+          fi
+          git commit -m "Update scoop manifest for ${{ github.event.release.tag_name || github.event.inputs.tag_name }}"
           git push

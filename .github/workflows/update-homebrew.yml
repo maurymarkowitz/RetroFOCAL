@@ -3,6 +3,11 @@ name: Update Homebrew Tap
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release tag to use (e.g. v2.2.0)'
+        required: true
 
 jobs:
   update:
@@ -14,19 +19,32 @@ jobs:
 
       - name: Download release tarball
         run: |
-          curl -L -o source.tar.gz "${{ github.event.release.tarball_url }}"
+          TAG="${{ github.event.release.tag_name || github.event.inputs.tag_name }}"
+          if [ -n "${{ github.event.release.tarball_url }}" ]; then
+            URL="${{ github.event.release.tarball_url }}"
+          else
+            URL="https://github.com/maurymarkowitz/RetroFOCAL/archive/refs/tags/${TAG}.tar.gz"
+          fi
+          curl -L -o source.tar.gz "${URL}"
 
       - name: Compute SHA256
         id: sha
         run: |
           echo "sha=$(sha256sum source.tar.gz | cut -d ' ' -f1)" >> $GITHUB_OUTPUT
 
-      - name: Clone homebrew tap
+      - name: Checkout homebrew tap
+        uses: actions/checkout@v4
+        with:
+          repository: maurymarkowitz/homebrew-tap
+          token: ${{ secrets.HOMEBREW_AND_SCOOP_TOKEN }}
+          path: homebrew-tap
+
+      - name: Update Homebrew formula
         run: |
-          git clone https://x-access-token:${{ secrets.HOMEBREW_TAP_TOKEN }}@github.com/maurymarkowitz/homebrew-tap.git
           cd homebrew-tap
 
-          url="https://github.com/maurymarkowitz/RetroFOCAL/archive/refs/tags/${{ github.event.release.tag_name }}.tar.gz"
+          TAG="${{ github.event.release.tag_name || github.event.inputs.tag_name }}"
+          url="https://github.com/maurymarkowitz/RetroFOCAL/archive/refs/tags/${TAG}.tar.gz"
           sha="${{ steps.sha.outputs.sha }}"
 
           sed -i "s|^  url \".*\"|  url \"${url}\"|" Formula/retrofocal.rb
@@ -34,7 +52,8 @@ jobs:
 
           git config user.name "github-actions"
           git config user.email "actions@github.com"
+          git remote set-url origin "https://x-access-token:${{ secrets.HOMEBREW_AND_SCOOP_TOKEN }}@github.com/maurymarkowitz/homebrew-tap.git"
 
           git add Formula/retrofocal.rb
-          git commit -m "Update retrofocal to ${{ github.event.release.tag_name }}"
+          git commit -m "Update retrofocal to ${TAG}"
           git push
