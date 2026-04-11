@@ -116,6 +116,13 @@ static expression_t *make_operator(int arity, int o)
 %token TYPE
 %token WRITE
 
+ // LIBRARY statement keywords
+%token LIBRARY
+%token CALL
+%token SAVE
+%token RUN
+%token ALL
+
  // functions from FOCAL-69
 %token FABS
 %token FATN
@@ -225,6 +232,32 @@ statement:
   ERASE /* ERASE can also be followed by a line or group number to erase those lines. this code only handles clearing out variable values */
   {
     statement_t *new = make_statement(ERASE);
+    new->parms.erase.mode = 0;
+    $$ = new;
+  }
+  |
+  ERASE ALL
+  {
+    statement_t *new = make_statement(ERASE);
+    new->parms.erase.mode = 3;
+    $$ = new;
+  }
+  |
+  ERASE NUMBER
+  {
+    statement_t *new = make_statement(ERASE);
+    new->parms.erase.target = $2;
+    if (fabs($2 - trunc($2)) < 0.00001)
+      new->parms.erase.mode = 2;
+    else
+      new->parms.erase.mode = 1;
+    $$ = new;
+  }
+  |
+  MODIFY NUMBER
+  {
+    statement_t *new = make_statement(MODIFY);
+    new->parms.modify_line = $2;
     $$ = new;
   }
 	|
@@ -370,7 +403,29 @@ statement:
     }
   }
   |
-  QUIT
+  LIBRARY CALL STRING
+  {
+    statement_t *new = make_statement(LIBRARY);
+    new->parms.library.filename = $3;
+    new->parms.library.action = 1;
+    $$ = new;
+  }
+  |
+  LIBRARY SAVE STRING
+  {
+    statement_t *new = make_statement(LIBRARY);
+    new->parms.library.filename = $3;
+    new->parms.library.action = 0;
+    $$ = new;
+  }
+  |  LIBRARY RUN STRING
+  {
+    statement_t *new = make_statement(LIBRARY);
+    new->parms.library.filename = $3;
+    new->parms.library.action = 2;
+    $$ = new;
+  }
+  |  QUIT
   {
     statement_t *new = make_statement(QUIT);
     $$ = new;
@@ -414,6 +469,20 @@ statement:
 	  statement_t *new = make_statement(VARLIST);
 	  $$ = new;
 	}
+  |
+  WRITE
+  {
+    statement_t *new = make_statement(WRITE);
+    new->parms.write_spec = NULL;
+    $$ = new;
+  }
+  |
+  WRITE expression
+  {
+    statement_t *new = make_statement(WRITE);
+    new->parms.write_spec = $2;
+    $$ = new;
+  }
 	;
 
  /* expressions in FOCAL are very simple, and there are no comparison

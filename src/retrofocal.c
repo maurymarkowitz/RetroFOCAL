@@ -28,6 +28,8 @@ Boston, MA 02111-1307, USA.  */
 
 #include "retrofocal.h"
 #include "parse.h"
+#include "io.h"
+#include "write.h"
 
 /* Portable timersub macro for Windows/MinGW compatibility */
 #ifndef timersub
@@ -61,6 +63,7 @@ char *source_file = "";
 char *input_file = "";
 char *print_file = "";
 char *stats_file = "";
+char *cli_prompt = "*";           // prompt string for interactive CLI mode
 
 /* private types used only within the interpreter */
 
@@ -85,7 +88,7 @@ static double line_for_statement(const list_t *s);
 static double current_line(void);
 
 static void print_variables(void);
-static void delete_variables(void);
+void delete_variables(void);
 static void delete_lines(void);
 
 /* defitions of variables used by the static analyzer */
@@ -910,13 +913,20 @@ static void perform_statement(list_t *list_item)
 						if (ask_colon)	
 							printf(":");
 						
-						// see if we can get some data, we should at least get a return
+						// see if we can get some data using raw mode line input
 						fflush(stdout);
-						if (fgets(line, sizeof(line), stdin) != line)
-							exit(EXIT_FAILURE);
+						int input_result = raw_mode_input_line(line, sizeof(line));
 						
-						// we got something, so null-terminate the string
-						line[strlen(line) - 1] = '\0';
+						// Handle break (ESC) or EOF
+						if (input_result == -1) {
+							// BREAK detected
+							interpreter_state.running_state = 0;  // stop execution
+							return;
+						}
+						if (input_result == 0) {
+							// EOF detected
+							exit(EXIT_FAILURE);
+						}
 						
 						// optionally (almost always) convert to upper case
 						if (upper_case) {
@@ -959,8 +969,34 @@ static void perform_statement(list_t *list_item)
 				break;
 				
 			case ERASE:
-				// clears out variable values
-				delete_variables();
+				if (statement->parms.erase.mode == 0) {
+					// clears out variable values
+					delete_variables();
+				} else {
+					focal_error("ERASE with a line, group, or ALL argument is not allowed during program execution");
+				}
+				break;
+				
+			case MODIFY:
+			{
+				if (current_line() >= 1.0) {
+					focal_error("MODIFY is not allowed during program execution");
+				}
+
+				int index = (int)round(statement->parms.modify_line * 100);
+				if (index < 0 || index >= MAXLINE || interpreter_state.lines[index] == NULL) {
+					focal_error("Line does not exist");
+				}
+
+				const char *prompt = (cli_prompt && cli_prompt[0]) ? cli_prompt : "*";
+				printf("%s ", prompt);
+
+				char *output = write_program(index, index);
+				if (output) {
+					printf("%s", output);
+					free(output);
+				}
+			}
 				break;
 				
 			case FOR:
@@ -1059,8 +1095,131 @@ static void perform_statement(list_t *list_item)
 			}
 				break;
 				
-			case RETURN:
+			case WRITE:
 			{
+				// WRITE outputs the program; optionally with a line/group specification
+				// WRITE alone outputs entire program (excluding line 99, which is reserved for temporary CLI statements)
+				// WRITE 2 or WRITE 2.0 outputs group 2 (lines 2.00-2.99)
+				// WRITE 2.1 outputs single line 2.1
+				
+				int start_line = 1;
+				int end_line = 9900;  // Exclude line 99 (indices 9900-9999) which is reserved for temporary CLI statements
+				
+				if (statement->parms.write_spec != NULL) {
+					double value = evaluate_expression(statement->parms.write_spec).number;
+					int line_index = (int)round(value * 100);
+					
+					// Check if it's an integer (group) or fractional (specific line)
+					if (fabs(value - round(value)) < 0.00001) {
+						// Integer group - output lines X.00 to X.99
+						int group = (int)round(value);
+						start_line = group * 100;
+						end_line = start_line + 100;
+						if (start_line >= MAXLINE) {
+							fprintf(stderr, "Invalid group number.\n");
+							break;
+						}
+					} else {
+						// Non-integer line - output single line
+						if (line_index < 0 || line_index >= MAXLINE) {
+							fprintf(stderr, "Invalid line number.\n");
+							break;
+						}
+						start_line = line_index;
+						end_line = line_index + 1;
+					}
+				}
+				
+				char *output = write_program(start_line, end_line);
+				if (output) {
+					printf("%s", output);
+					free(output);
+				}
+			}
+				break;
+				
+			case LIBRARY:
+			{
+				// LIBRARY CALL loads a program file and parses it
+                // LIBRARY SAVE writes the current program to a file
+                // LIBRARY RUN loads a program file and immediately begins execution
+                if (statement->parms.library.action == 1) {
+                    // LIBRARY CALL: load and parse a file
+                    FILE *lib_file = fopen(statement->parms.library.filename, "r");
+                    if (lib_file == NULL) {
+                        fprintf(stderr, "Cannot open library file: %s\n", statement->parms.library.filename);
+                        break;
+                    }
+                    
+                    // Clear the current program
+                    for (int i = 0; i < MAXLINE; i++) {
+                        interpreter_state.lines[i] = NULL;
+                    }
+                    
+                    // Reset interpreter state and load the new program
+                    extern int yyparse(void);
+                    extern void yyrestart(FILE *input_file);
+                    extern FILE *yyin;
+                    
+                    FILE *old_yyin = yyin;
+                    yyin = lib_file;
+                    yyrestart(lib_file);
+                    yyparse();
+                    fclose(lib_file);
+                    yyin = old_yyin;
+                    
+                    // Prepare the new program for execution
+                    interpreter_post_parse();
+                } else if (statement->parms.library.action == 0) {
+                    // LIBRARY SAVE: write the current program to a file (excluding line 99, reserved for temporary CLI statements)
+                    char *output = write_program(1, 9900);
+                    if (output) {
+                        FILE *save_file = fopen(statement->parms.library.filename, "w");
+                        if (save_file == NULL) {
+                            fprintf(stderr, "Cannot open file for writing: %s\n", statement->parms.library.filename);
+                            free(output);
+                            break;
+                        }
+                        
+                        fprintf(save_file, "%s", output);
+                        fclose(save_file);
+                        free(output);
+                    }
+                } else {
+                    // LIBRARY RUN: load a program file and immediately execute it
+                    FILE *lib_file = fopen(statement->parms.library.filename, "r");
+                    if (lib_file == NULL) {
+                        fprintf(stderr, "Cannot open library file: %s\n", statement->parms.library.filename);
+                        break;
+                    }
+                    
+                    // Clear the current program
+                    for (int i = 0; i < MAXLINE; i++) {
+                        interpreter_state.lines[i] = NULL;
+                    }
+                    
+                    extern int yyparse(void);
+                    extern void yyrestart(FILE *input_file);
+                    extern FILE *yyin;
+                    
+                    FILE *old_yyin = yyin;
+                    yyin = lib_file;
+                    yyrestart(lib_file);
+                    yyparse();
+                    fclose(lib_file);
+                    yyin = old_yyin;
+                    
+                    interpreter_post_parse();
+                    
+                    /* Start execution at the first line of the loaded program */
+                    interpreter_state.next_statement = find_line(interpreter_state.first_line_index);
+                    return;
+                }
+            }
+                break;
+
+            case RETURN:
+            {
 				stackentry_t *se;
 				if (lst_length(interpreter_state.stack) == 0 || ((stackentry_t *)lst_last_node(interpreter_state.stack)->data)->type != DO) {
 					focal_error("RETURN without DO");
@@ -1180,7 +1339,7 @@ static void print_variables() {
   printf("\n\n");
 }
 /* used for CLEAR, NEW and similar instructions. */
-static void delete_variables() {
+void delete_variables() {
 	lst_free_everything(interpreter_state.variable_values);
 	interpreter_state.variable_values = NULL;
 }

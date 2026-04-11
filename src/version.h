@@ -51,7 +51,7 @@ struct VERSION {
  */
 static struct VERSION getVersion()
 {
-    struct VERSION v = {1, 2, 0};
+    struct VERSION v = {2, 0, 0};
     return v;
 }
 

@@ -61,6 +61,7 @@ extern char *source_file;
 extern char *input_file;
 extern char *print_file;
 extern char *stats_file;
+extern char *cli_prompt;      // prompt string for interactive mode
 
 /* variable **references** */
 /* this is used to record a reference to a variable in the code,
@@ -142,6 +143,16 @@ typedef struct statement_struct {
       expression_t *expression;
     } set;
     char *rem;
+    struct {
+      int mode;      /* 0 = variables only, 1 = line, 2 = group, 3 = ALL */
+      double target;
+    } erase;
+    double modify_line;
+    expression_t *write_spec;  /* optional parameter for WRITE: if integer, list group; if non-integer, list line */
+    struct {
+      char *filename;
+      int action;  /* 0 = LIBRARY SAVE, 1 = LIBRARY CALL, 2 = LIBRARY RUN */
+    } library;
   } parms;
 } statement_t;
 
@@ -182,6 +193,7 @@ typedef struct {
   int cursor_column;              // current column of the output cursor
   char *format;                   // FOCAL uses a single print format
   int running_state;              // is the program running (1), paused/stopped (0), or setting up a function (-1)
+  bool interactive_mode;          // true if started in interactive CLI mode
 } interpreterstate_t;
 
 /* and here's the link to an instance of interpstate_t defined in the c side */

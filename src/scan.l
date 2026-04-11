@@ -68,13 +68,20 @@ T|TYPE    { BEGIN(KEYWORD_FOUND); return TYPE; }    // PRINT
 
  /* non-program statements (mostly) */
 E|ERASE   { BEGIN(KEYWORD_FOUND); return ERASE; }   // erases lines of source, but also double-duty as CLR to reset variables
-G|GOTO    { BEGIN(KEYWORD_FOUND); return GOTO; }    // RUN, optional line number
+G|GO|GOTO    { BEGIN(KEYWORD_FOUND); return GOTO; }    // RUN, optional line number
+L|LIBRARY { BEGIN(KEYWORD_FOUND); return LIBRARY; } // LIBRARY CALL or LIBRARY SAVE
 M|MODIFY  { BEGIN(KEYWORD_FOUND); return MODIFY; }  // edits a single line
 W|WRITE   { BEGIN(KEYWORD_FOUND); return WRITE; }   // LIST
 }
 
  /* the following are only valid after one of the keyworda above */
 <KEYWORD_FOUND>{
+ /* keywords that follow LIBRARY */
+CALL    { return CALL; }
+SAVE    { return SAVE; }
+RUN     { return RUN; }
+ALL     { return ALL; }
+
  /* math functions */
 FABS		{ return FABS; }
 FATN		{ return FATN; }

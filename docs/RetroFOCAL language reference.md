@@ -1,5 +1,5 @@
-RetroFOCAL Reference Manual
-===========================
+RetroFOCAL Language Reference Manual
+====================================
 
 **Copyright © 2023 Maury Markowitz**
 
@@ -15,11 +15,7 @@ RetroFOCAL is a version of the FOCAL programming language intended to run classi
 
 ### What RetroFOCAL is not
 
-The goal of RetroFOCAL is to allow you to run popular FOCAL programs written during the language's Golden Age in the late 1960s. As such, it is also marked by a number of deliberate limitations:
-
-- the language is intended to *run* programs, not *edit* them, and it thus lacks an interactive editor
-- you cannot `WRITE` a program, `LIBRARY CALL` to load it from disk, or `LIBRARY SAVE` it
-- if does not (currently) have file handling features
+The goal of RetroFOCAL is to allow you to run popular FOCAL programs written during the language's Golden Age in the late 1960s. As such, it does not currently suport file handling beyond `LIBRARY CALL`, `LIBRARY SAVE`, and `LIBRARY RUN`.
 
 <!-- TOC start (generated with https://github.com/derlin/bitdowntoc) -->
 
@@ -35,40 +31,40 @@ The goal of RetroFOCAL is to allow you to run popular FOCAL programs written dur
    * [Variables](#variables)
    * [Arrays](#arrays)
 - [Commands](#commands)
-   * [`DO` - runs a single subroutine, also used as the subroutine call statement](#do-runs-a-single-subroutine-also-used-as-the-subroutine-call-statement)
-   * [`GO` - runs a program, also used as the unconditional branch statement](#go-runs-a-program-also-used-as-the-unconditional-branch-statement)
-   * [`ERASE` - erases lines from a program, also used as a statement to clear variable values](#erase-erases-lines-from-a-program-also-used-as-a-statement-to-clear-variable-values)
-   * [`MODIFY` - recalls a given line into memory to allow it to be edited](#modify-recalls-a-given-line-into-memory-to-allow-it-to-be-edited)
-   * [`WRITE` - outputs the program code to the printer](#write-outputs-the-program-code-to-the-printer)
+   * [`MODIFY`](#modify)
+   * [`WRITE`](#write)
+   * [`LIBRARY CALL`](#library-call)
+   * [`LIBRARY SAVE`](#library-save)
+   * [`LIBRARY RUN`](#library-run)
 - [Program statements](#program-statements)
-   * [`COMMENT`[*scon*] and `CONTINUE`](#commentscon-and-continue)
-   * [`SET` *var*`=`*expr*](#set-varexpr)
-   * [`DO` {*lineno*|*groupno*}](#do-linenogroupno)
-   * [`GOTO` [*lineno*] and `GO`](#goto-lineno-and-go)
-   * [`ERASE` [*lineno*]](#erase-lineno)
-   * [`IF` (*exp*) *lineno*{;|[,*lineno*][{;|,*lineno*]}}](#if-exp-linenolinenolineno)
-   * [`FOR` *var*=*expr1*,*expr2*[,*expr3*];*statmnt*[;*statmnt*...]](#for-varexpr1expr2expr3statmntstatmnt)
+   * [`COMMENT` and `CONTINUE`](#comment)
+   * [`SET`](#set)
+   * [`DO`](#do)
+   * [`GOTO` and `GO`](#goto)
+   * [`ERASE`](#erase)
+   * [`IF`](#if)
+   * [`FOR`](#for)
    * [`QUIT`](#quit)
-   * [``RETURN`](#return)
+   * [`RETURN`](#return)
 - [Input/Output Statements](#inputoutput-statements)
-   * [`ASK` [*sexp*,]*var*[,*sexp*][,*var*...]](#ask-sexpvarsexpvar)
-   * [`TYPE` [*exp*{|[,|!|#|:]},...]]](#type-exp)
+   * [`ASK`](#ask)
+   * [`TYPE`](#type)
 - [Operators](#operators)
 - [Mathematical functions](#mathematical-functions)
-   * [`FABS`(*exp*)](#fabsexp)
-   * [`FEXP`(*exp*)](#fexpexp)
-   * [`FITR`(*exp*)](#fitrexp)
-   * [`FLOG`(*exp*)](#flogexp)
-   * [`FRAN`()](#fran)
-   * [`FSGN`(*exp*)](#fsgnexp)
-   * [`FSQT`(*exp*)](#fsqtexp)
+   * [`FABS`](#fabs)
+   * [`FEXP`](#fexp)
+   * [`FITR`](#fitr)
+   * [`FLOG`](#flog)
+   * [`FRAN`](#fran)
+   * [`FSGN`](#fsgn)
+   * [`FSQT`](#fsqt)
 - [Trigonometric functions](#trigonometric-functions)
-   * [`FATN`(*exp*)](#fatnexp)
-   * [`FCOS`(*exp*)](#fcosexp)
-   * [`FSIN`(*exp*)](#fsinexp)
+   * [`FATN`](#fatn)
+   * [`FCOS`](#fcos)
+   * [`FSIN`](#fsin)
 - [Character functions](#character-functions)
-   * [`FIN`(*scon*)](#finscon)
-   * [`FOUT`(*exp*)](#foutexp)
+   * [`FIN`](#fin)
+   * [`FOUT`](#fout)
 
 <!-- TOC end -->
 
@@ -156,7 +152,83 @@ Line 1.30 shows a conditional branch, which is based on the value of C. The expr
 
 Execution then continues to line 1.40, which ends the execution of the program.
 
-<!-- TOC --><a name="data-in-basic-programs"></a>
+<!-- TOC --><a name="command-line-usage"></a>
+## Command-line usage
+
+RetroFOCAL can be invoked in two different modes: batch mode for running programs, and interactive mode for testing programs at the CLI.
+
+### Batch mode
+
+To run a program in batch mode, provide the filename as an argument:
+
+    retrofocal myprogram.fc
+
+The program will be loaded and executed immediately, and the interpreter will exit when the program completes or encounters an error.
+
+Command-line options:
+
+- `--run` or `-r`: Automatically run the program after loading (default behavior)
+- `--no-run` or `-n`: Load the program but do not run it automatically
+- `--stats`: Print program statistics after execution
+- `--help` or `-h`: Display help message
+
+Example:
+
+    retrofocal myprogram.fc --no-run
+    retrofocal myprogram.fc --stats
+
+### Interactive mode
+
+To enter interactive mode, invoke RetroFOCAL without providing a source file:
+
+    retrofocal
+
+This will display the FOCAL prompt (default: `*`) and wait for input. In interactive mode, you can:
+
+- Type program lines with line numbers to store them (e.g., `1.10 SET A=10`)
+- Type just a line number to delete that line
+- Type FOCAL statements without a line number to execute them immediately
+- Use `GO` or `DO` to run the stored program
+- Use `MODIFY <line>` to print the specified stored line if it exists
+- Use `WRITE` to display the current program
+- Use `ERASE <line>` to remove a stored line
+- Use `ERASE <group>` to remove all lines in a group
+- Use `ERASE ALL` to remove all stored lines
+- Use `LIBRARY CALL` to load a program from disk
+- Use `LIBRARY RUN` to load a program from disk and execute it immediately
+- Use `LIBRARY SAVE` to save the current program to disk
+- Type `QUIT` or press Ctrl+D to exit
+
+Command-line options for interactive mode:
+
+- `--prompt` or `-p`: Set the CLI prompt (default: `*`)
+
+Example:
+
+    retrofocal --prompt "FOCAL> "
+    FOCAL> 1.10 SET A=10
+    FOCAL> GO
+
+<!-- TOC --><a name="control-keys"></a>
+#### Control Keys: Break, Escape, Ctrl-C, Ctrl-X
+
+In RetroFOCAL, several key combinations can be used to interrupt execution:
+
+- The `ESC` key (or Escape key) pressed while the program is waiting for input during an `ASK` statement will stop execution immediately and return control to the CLI prompt in interactive mode, or terminate RetroFOCAL in batch mode.
+- On Windows, the Pause/Break key is also supported for this purpose.
+- `Ctrl-C` and `Ctrl-X` will immediately terminate RetroFOCAL and return to the shell, regardless of whether running in interactive or batch mode.
+
+These key combinations allow users to interrupt a running program at any time.
+
+### Using standard input and output
+
+You can redirect program output to files or pipelines using standard shell features:
+
+    retrofocal program.fc > output.txt          # Redirect output to file
+    retrofocal program.fc | grep "Result"       # Pipe output to grep
+    retrofocal program.fc 2>&1 | tee log.txt    # Capture both stdout and stderr
+
+<!-- TOC --><a name="data-in-focal-programs"></a>
 ## Data in FOCAL programs
 
 The ultimate goal of a program is to manipulate data. Data comes in two formats, *constants* which are values typed directly into the program code and cannot be changed while running, and *variables*, a letter that is used to reference a numeric value that can be changed by the program while it runs.
@@ -188,13 +260,82 @@ Any FOCAL variable can also be used as an **array**, or as they refer to it, a *
 
 FOCAL consisted of two separate programs, the FOCAL runtime, and a shell program that edited the source code and performed a small number of commands that were deliberately intended to look like FOCAL statements. So some of the statement-looking lines could be used in your program, while other statement-looking lines could only be used in the shell. This led to the separate concepts of **commands** and **statements**, a separation that many later dialects maintained.
 
-RetroFOCAL only implements the statements, not the commands. They are mentioned here only as some of the FOCAL commands could also be used as statements, in which case they sometimes performed entirely different actions. The commands in the original FOCAL-69 are:
+RetroFOCAL implements several commands as statements, allowing program code to control program loading, saving, execution, and display. These include `WRITE` for program listing, `MODIFY` for editing, and `LIBRARY CALL`, `LIBRARY SAVE`, and `LIBRARY RUN` for disk operations. FOCAL also re-uses or re-purposes several other keywords to have different meanings whether they are included inside a program or are used at the command line. These are documented below in the program statements area, and include `DO`, `GO` and `ERASE`.
 
-### `DO` - runs a single subroutine, also used as the subroutine call statement
-### `GO` - runs a program, also used as the unconditional branch statement
-### `ERASE` - erases lines from a program, also used as a statement to clear variable values
-### `MODIFY` - recalls a given line into memory to allow it to be edited
-### `WRITE` - outputs the program code to the printer
+<!-- TOC --><a name="modify"></a>
+#### `MODIFY` *lineno*
+
+The `MODIFY` command displays the content of a stored program line if it exists. This is useful for inspecting the exact contents of a line before editing or deleting it.
+
+Example usage:
+```
+MODIFY 1.10
+```
+
+This will print line 1.10 to the console, or show an error if the line does not exist.
+
+<!-- TOC --><a name="write"></a>
+#### `WRITE` [*exp*]
+
+The `WRITE` statement outputs the FOCAL program (or a portion of it) to the console in canonical format. This is the FOCAL equivalent to the `LIST` command in BASIC.
+
+If no argument is provided, the entire program is listed.
+
+If *exp* is provided, the output is filtered based on the value:
+- If *exp* evaluates to an integer (e.g., `2` or `2.0`), all lines in that group are listed (e.g., `WRITE 2` lists lines 2.00 through 2.99)
+- If *exp* evaluates to a non-integer (e.g., `2.1`), only that specific line is listed
+
+Example usage:
+```
+WRITE
+```
+Lists the entire program.
+
+```
+WRITE 2
+```
+Lists all lines in group 2 (2.00-2.99).
+
+```
+WRITE 2.5
+```
+Lists only line 2.50.
+
+<!-- TOC --><a name="library-call"></a>
+#### `LIBRARY CALL` *filename*
+
+The `LIBRARY CALL` statement loads a FOCAL program from disk and replaces the current program in memory. The *filename* should be a string constant representing the path to the FOCAL source file.
+
+Example usage:
+```
+LIBRARY CALL "myprogram.fc"
+```
+
+After a successful `LIBRARY CALL`, the newly loaded program replaces the current program. Execution does not automatically begin; the program can be run using the `GO` statement or by pressing Enter/Return at the CLI prompt.
+
+<!-- TOC --><a name="library-save"></a>
+#### `LIBRARY SAVE` *filename*
+
+The `LIBRARY SAVE` statement writes the current FOCAL program to the named file in canonical format. The *filename* should be a string constant representing the path where the file should be saved.
+
+Example usage:
+```
+LIBRARY SAVE "backup.fc"
+```
+
+This will write the current program to the specified file, overwriting any existing file with that name.
+
+<!-- TOC --><a name="library-run"></a>
+#### `LIBRARY RUN` *filename*
+
+The `LIBRARY RUN` statement loads a FOCAL program from disk and begins executing it immediately. The *filename* should be a string constant representing the path to the FOCAL source file.
+
+Example usage:
+```
+LIBRARY RUN "myprogram.fc"
+```
+
+Execution will continue with the newly loaded program, replacing the current program in memory.
 
 DEC FOCAL also included a number of commands that performed disk actions, which are all proceeded by the `LIBRARY` command.
 
@@ -203,24 +344,24 @@ DEC FOCAL also included a number of commands that performed disk actions, which 
 
 This section explains the statements associated with loops, conditional and unconditional branches, subroutines, and similar functionality. It also explains the means of accessing data and the optional commands used for defining variables. The following list is not in alphabetical order; it is meant to group statements with similar functionality.
 
-<!-- TOC --><a name="comment-scon"></a>
-### `COMMENT`[*scon*] and `CONTINUE`
+<!-- TOC --><a name="comment"></a>
+### `COMMENT` and `CONTINUE`
 
 `COMMENT` is used to insert comment text into the program code. Any text on the line after the `COMMENT` is ignored, and execution immediately moves to the next line.
 
-In FOCAL, only the first letter of the statement keyword is examined, and the rest is ignored. For this reason, this statement is also sometimes used as a label in the code, in which case it is considered to read `CONTINUE`, not `COMMENT`. Using it in this fashion allows an otherwise empty line to be the target of a `GOTO`.
+In FOCAL, only the first letter of the statement keyword is examined, and the rest is ignored. For this reason, this statement is also sometimes used as a label in code, allowing you to target a line with `GOTO` or `DO` but leave it largely empty to make it more obvious. In this case, a `C` is considered to read `CONTINUE`, not `COMMENT`, and it is not uncommon to see `CONTINUE` in some programs.
 
-<!-- TOC --><a name="let-varexpr"></a>
+<!-- TOC --><a name="set"></a>
 ### `SET` *var*`=`*expr*
 
 The most common statement found in most programs is the assignment statement, with the keyword `SET`. This calculates the value of the expression *expr* and then assigns the result to *var*.
 
-<!-- TOC --><a name="goto-aexp"></a>
+<!-- TOC --><a name="do"></a>
 ### `DO` {*lineno*|*groupno*}
 
-`DO` is similar to `GOTO` in that it moves execution to the specified line number. However, the outcome is that control is transferred to the statement after the `DO` once the called line or group is complete. For instance, if one calls `DO 10`, execution will continue at the first line of group 10, progress through the rest of the lines in group 10, and then return to the statement after the `DO 10`. If one uses `DO 10.10`, execution will continue on 10.10 and then return when that single line has completed.
+`DO` is similar to `GOTO` in that it moves execution to the specified line number. However, the outcome is that control is transferred to the statement after the `DO` once the called line or group is complete. For instance, if one calls `DO 10`, execution will continue at the first line of group 10, progress through the rest of the lines in group 10, and then return to the statement after the `DO 10`. If one uses `DO 10.10`, execution will move to line 10.10 and then return when that single line has completed.
 
-<!-- TOC --><a name="goto-aexp"></a>
+<!-- TOC --><a name="goto"></a>
 ### `GOTO` [*lineno*] and `GO`
 
 FOCAL progresses through a program by performing statements one at a time, moving to the next statement when one is completed. In this respect, a program can be thought of as a single, long list of statements. This normally linear flow is interrupted by **branches**, statements that deliberately send the execution to another point in the program. In FOCAL, branches move to a **target**, which is indicated by a line number.
@@ -234,15 +375,19 @@ In RetroFOCAL, `GO`ing occurs automatically after the program is loaded, so a `G
 #### Examples:
 
 <!-- TOC --><a name="erase"></a>
-### `ERASE` [*lineno*]
+### `ERASE` {[*lineno*|*groupno*|ALL]}
 
-Clears the stored values of all variables, and optionally lines from the program code.
+A plain `ERASE` clears the stored values of all variables. In contrast to most programming languages of the era, FOCAL does not clear out variable values when the program is loaded or run. That means the values from the previous program or execution of the current program may still be in memory. For this reason, plain `ERASE` is still useful to clear variables before running a new program.
 
-In contrast to most programming languages of the era, FOCAL does not clear out the variable values when the program is loaded or run. That means the values from the previous program or execution of the current program may still be in memory. For this reason, it was considered good form to place an `ERASE` at the start of all programs.
+Additionally, a very different `ERASE` is suppored are the command level, which is used to erase lines from the program. There are three variations:
 
-In the shell, `ERASE` was used to delete individual lines or groups from a program. As RetroFOCAL does not support editing, this option is not available.
+* `ERASE <lineno>` deletes the specified program line from the stored program.
+* `ERASE <groupno>` deletes all lines in the specified group. In FOCAL, groups are indicated by the integer portion of the line number, e.g. `1` represents group `1.xx`.
+* `ERASE ALL` deletes all stored program lines.
 
-<!-- TOC --><a name="if-lexp-then-linestatmntstatmnt"></a>
+Line/group/ALL erasure is only supported from the interactive CLI prompt. If an `ERASE` statement with an argument is encountered during program execution, RetroFOCAL returns an error.
+
+<!-- TOC --><a name="if"></a>
 ### `IF` (*exp*) *lineno*{;|[,*lineno*][{;|,*lineno*]}}
 
 `IF` calculates the value of the expression *exp*. It then branches to one of the three optional line numbers following; if the value is negative it branches to the first number, the second if it is zero, and the third if it is positive. FOCAL does not include any logical expressions, to branch if the value of a variable is a particular value, one subtracts the value from the variable and then branches if the result is zero.
@@ -286,7 +431,7 @@ Has no direct equivalent in FOCAL. Instead, one can use an `IF` to call the `TYP
     1.30 T "X IS FOUR"
     1.40 Q
 
-<!-- TOC --><a name="for-avaraexpr1-to-aexpr2-step-aexpr3-statmnt-and-next-avaravar"></a>
+<!-- TOC --><a name="for"></a>
 ### `FOR` *var*=*expr1*,*expr2*[,*expr3*];*statmnt*[;*statmnt*...]
 
 Another of the common statements found in FOCAL is the FOR loop. When this is encountered at runtime, the system calculates the value *aexpr1* and assigns it to *var* in the same fashion as as `SET` statement. It then performs the statements, if any, found after the semicolon. When those are completed, it adds the value *expr2*, known as the *step value*, to *var*. It then checks that the result in *var* is less than *expr3*, the limit. If *var* is less than the *limit*, it performs the statements and repeats this process. When *var* does eventually reach or exceed the limit, execution moves to the next line.
@@ -332,13 +477,15 @@ This will produce:
     X=+   5
     A =+105.00
 
-<!-- TOC --><a name="end"></a>
+<!-- TOC --><a name="quit"></a>
 ### `QUIT`
 
 `QUIT` stops the execution of the program and exits RetroFOCAL, returning you to the console shell. `QUIT` is optional, but adding it was considered good form. `QUIT` does not have to be at the end of the source code, it was often found higher in the code with subroutines below it, preventing them from running unless explicitly called. `QUIT` is used in places where `STOP` or `END` would be seen in BASIC.
 
-<!-- TOC --><a name="gosub-and-return"></a>
-### ``RETURN`
+A RetroBASIC extension is that if `QUIT` is entered manually in the command line, RetroFOCAL exits and returns to the user shell. This works in a fashion similar to `BYE` seen in other languages.
+
+<!-- TOC --><a name="return"></a>
+### `RETURN`
 
 FOCAL programs normally call subroutines using the `DO` statement, which automatically returns to the statement after the `DO` when the reaches the end of the referenced group or line. There are situations where the subroutine needs to exit earlier. `RETURN` is called in these situations.
 
@@ -349,7 +496,7 @@ As the lines of code making up subroutines are normal statements, programs might
 
 This section describes the input/output statements that are used to access and display data.
 
-<!-- TOC --><a name="input-sexpvarvar"></a>
+<!-- TOC --><a name="ask"></a>
 ### `ASK` [*sexp*,]*var*[,*sexp*][,*var*][,...]
 
 `ASK` is the primary statement for asking the user for data from the keyboard. When it is encountered in a program, execution pauses and a colon prompt, `:`, is displayed on the console to indicate the computer is waiting for input. If the optional *sexp* is included, that text will be printed in front of the colon as an additional prompt. The user then enters their response and indicates they are done by pressing the <return> key. The value that they typed in is then processed and assigned to corresponding *var*.
@@ -394,7 +541,7 @@ The difference here is the way that the user's input is interpreted. The user ca
     : 1
     The total is 6
 
-<!-- TOC --><a name="print-exp"></a>
+<!-- TOC --><a name="type"></a>
 ### `TYPE` [*exp*{|[,|!|#|:]},...]]
 
 `TYPE` is used to produce output on the user's console. It is one of the most common statements found in most FOCAL programs. The statement is designed to be very flexible, able to output values from any type of expression. In the case of string expressions, the output is sent unchanged to the console. For numeric values, it is formatted to ensure very large or small numbers do not fill the screen. `TYPE` can accept any number of subsequent expressions, including zero. These expressions are separated with one of the three "print separators", the comma, the semicolon, or if the preceding expression is a string constant, nothing.
@@ -429,27 +576,27 @@ Another difference is that FOCAL allows expressions to be bracketed with parenth
 <!-- TOC --><a name="mathematical-functions"></a>
 ## Mathematical functions
 
-<!-- TOC --><a name="absaexp"></a>
+<!-- TOC --><a name="fabs"></a>
 ### `FABS`(*exp*)
 
 Returns the absolute value of a number without regard to whether it is positive or negative. The returned value is always positive.
 
-<!-- TOC --><a name="expaexp"></a>
+<!-- TOC --><a name="fexp"></a>
 ### `FEXP`(*exp*)
 
 Returns the value of *e* (approximately 2.7182828), raised to the power specified by the expression in parentheses. For instance, `EXP(3)`, returns 20.0855365.
 
-<!-- TOC --><a name="intaexp"></a>
+<!-- TOC --><a name="fitr"></a>
 ### `FITR`(*exp*)
 
 Returns the greatest integer less than or equal to the value of the expression. This is true whether the expression evaluates to a positive or negative number. Thus, `FITR(3.445)` returns 3, while `FITR(-3.445)` returns -4. This function is similar to the `floor` function found in most programming languages, or `INT` in most dialects of BASIC.
 
-<!-- TOC --><a name="logaexp"></a>
+<!-- TOC --><a name="flog"></a>
 ### `FLOG`(*exp*)
 
 Returns the natural logarithm of the number or expression. `FLOG(0)` gives an error, and `FLOG(1)` equals 0.
 
-<!-- TOC --><a name="rndaexp"></a>
+<!-- TOC --><a name="fran"></a>
 ### `FRAN`()
 
 Returns a random number between -1 and +1.
@@ -460,7 +607,7 @@ This random number generator varies rather significantly from most languages, wh
 
 FOCAL does not require a dummy expression in the parens.
 
-<!-- TOC --><a name="sgnaexp"></a>
+<!-- TOC --><a name="fsgn"></a>
 ### `FSGN`(*exp*)
 
 Returns a — 1 if *exp* evaluates to a negative number, or a 1 if *exp* evaluates to a positive number, or zero if *exp* is exactly zero.
@@ -469,7 +616,7 @@ Returns a — 1 if *exp* evaluates to a negative number, or a 1 if *exp* evaluat
 
 FOCAL-69 evaluated to 1 if *exp* was zero. This was changed in FOCAL-71, which is what RetroBASIC implements. This may introduce subtle bugs in earlier programs.
 
-<!-- TOC --><a name="sqraexp"></a>
+<!-- TOC --><a name="fsqt"></a>
 ### `FSQT`(*exp*)
 
 Returns the square root of the *exp* which must be positive. If *exp* is negative, an error will be raised.
@@ -479,32 +626,32 @@ Returns the square root of the *exp* which must be positive. If *exp* is negativ
 
 Trigonometric functions in FOCAL are carried out using radians. These functions were optional in PDP-8 FOCAL, but always available in RetroFOCAL.
 
-<!-- TOC --><a name="atnaexp"></a>
+<!-- TOC --><a name="fatn"></a>
 ### `FATN`(*exp*)
 
 Returns the arctangent of the variable or expression in parentheses.
 
-<!-- TOC --><a name="cosaexp"></a>
+<!-- TOC --><a name="fcos"></a>
 ### `FCOS`(*exp*)
 
 Returns the cosine of the expression in parentheses.
 
-<!-- TOC --><a name="sinaexp"></a>
+<!-- TOC --><a name="fsin"></a>
 ### `FSIN`(*exp*)
 
 Returns the sine of the expression in parentheses.
 
-<!-- TOC --><a name="string-functions"></a>
+<!-- TOC --><a name="character-functions"></a>
 ## Character functions
 
 FOCAL includes only two string functions, added in FOCAL-71. It is important to note that these functions use ASCII values, and were added specifically to aid programs that needed to work with ASCII as it became universal by the late 1960s. This contrasts with the conversions that occur using the `ASK` command or assigning a string constant to a variable, in which case the value will be a 6-bit DEC character value. This means that one cannot `ASK A` and then test the value using these functions, they will return different values.
 
-<!-- TOC --><a name="ascsexp"></a>
+<!-- TOC --><a name="fin"></a>
 ### `FIN`(*scon*)
 
 This function returns the ASCII code number for the first character of the string constant *scon*. For instance, `FIN("Hello")` returns 72, the decimal ASCII value for "H".
 
-<!-- TOC --><a name="chraexp"></a>
+<!-- TOC --><a name="fout"></a>
 ### `FOUT`(*exp*)
 
 Returns a single-character string, represented by the ASCII code number in parentheses. `FOUT(72)` writes "H".

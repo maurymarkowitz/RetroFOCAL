@@ -26,8 +26,14 @@ Carthage/Build/
 # User settings
 .DS_Store
 
+# Plans
+plans/
+
 # Logs
 *.log
+
+# Test files and outputs
+/tests/
 
 # Temporary files
 *.swp

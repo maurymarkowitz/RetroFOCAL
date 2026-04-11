@@ -25,11 +25,24 @@ the Free Software Foundation, 59 Temple Place - Suite 330,
 Boston, MA 02111-1307, USA.  */
 
 #include <getopt.h>
+#include <signal.h>
+#include <unistd.h>
 
 #include "retrofocal.h"
 #include "version.h"
 #include "statistics.h"
 #include "parse.h"
+#include "io.h"
+
+extern void interpreter_cli(void);
+
+/* signal handler for SIGINT - does not exit in interactive mode */
+static void sigint_handler(int sig)
+{
+  (void)sig;
+  /* Exit on Ctrl-C or Ctrl-X in both interactive and batch mode */
+  terminate_retrofocal(EXIT_SUCCESS);
+}
 
 /* simple version info for --version command line option */
 static void print_version()
@@ -48,7 +61,7 @@ static void print_usage(char *argv[])
 /* full usage notes, both for the user and for documenting the code below */
 static void print_help(char *argv[])
 {
-  printf("Usage: retrofocal [-hvnua] [-t spaces] [-r seed] [-p | -w stats_file] [-o output_file] [-i input_file] source_file\n");
+  printf("Usage: retrofocal [-hvnua] [-t spaces] [-r seed] [-p | -w stats_file] [-o output_file] [-i input_file] [--prompt PROMPT] [source_file]\n");
   puts("\nOptions:");
   puts("  -h, --help: print this description");
   puts("  -v, --version: print version info");
@@ -60,6 +73,7 @@ static void print_help(char *argv[])
   puts("  -w, --write-stats: on exit, write statistics to a file");
   puts("  -o, --output-file: redirect TYPE to the named file");
   puts("  -i, --input-file: redirect ASK from the named file");
+  puts("  --prompt: set the interactive prompt string (default is *)");
 }
 
 static struct option program_options[] =
@@ -74,6 +88,7 @@ static struct option program_options[] =
   {"print-stats", no_argument, NULL, 'p'},
   {"write-stats", required_argument, NULL, 'w'},
   {"no-run", no_argument, NULL, 'n'},
+  {"prompt", required_argument, NULL, 501},
   {0, 0, 0, 0}
 };
 
@@ -135,6 +150,13 @@ void parse_options(int argc, char *argv[])
         write_stats = 1;
         stats_file = optarg;
         break;
+      
+      case 501:
+        if (optarg == NULL || optarg[0] == '\0')
+          cli_prompt = "*";
+        else
+          cli_prompt = optarg;
+        break;
         
       case 'r':
         test = optarg;
@@ -154,17 +176,16 @@ void parse_options(int argc, char *argv[])
   } // while
   
   // now see if there's a filename
-  if (optind <= argc && argc > 1)
+  if (optind < argc)
     // we'll just assume one file if any
-    source_file = argv[argc - 1];
-  else
-    // not always a failure, we might have just been asked for usage
-    if (printed_help)
-      exit(EXIT_SUCCESS);
-    else {
-      print_usage(argv);
-      exit(EXIT_FAILURE);
-    }
+    source_file = argv[optind];
+  else if (!printed_help)
+    // no filename and no help - allow interactive mode or error
+    source_file = "";
+    
+  // if help or version was printed, exit
+  if (printed_help)
+    exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char *argv[])
@@ -183,27 +204,6 @@ int main(int argc, char *argv[])
   // reset any variable values
   interpreter_state.variable_values = NULL;
 
-  // open the file and see if it exists
-  if (strlen(source_file) == 0) {
-    fprintf(stderr, "No filename provided.\n");
-    exit(EXIT_FAILURE);
-  }
-  yyin = fopen(source_file, "r");
-  if (yyin == NULL) {
-    if (errno == ENOENT) {
-      fprintf(stderr, "File not found or invalid filename provided.\n");
-      exit(EXIT_FAILURE);
-    } else {
-      fprintf(stderr, "Error %i when opening file.\n", errno);
-      exit(EXIT_FAILURE);
-    }
-  }
-  // if we were able to open the file, parse it
-  yyparse();
-  
-  // prepare the code for running
-  interpreter_post_parse();
-  
   // seed the random with the provided number or randomize it
   if (random_seed > -1)
     srand(random_seed);
@@ -215,14 +215,46 @@ int main(int argc, char *argv[])
   (void)rand();
   (void)rand();
 
-  // and go!
-  if (run_program)
-    interpreter_run();
+  // install signal handler for Ctrl-C
+  signal(SIGINT, sigint_handler);
+
+  // enter interactive mode if no source file was provided
+  if (strlen(source_file) == 0) {
+    interpreter_state.interactive_mode = true;
+    setup_terminal_for_input();
+    interpreter_cli();
+    restore_terminal();
+  }
+  else {
+    // batch mode: load and run the file
+    interpreter_state.interactive_mode = false;
+    yyin = fopen(source_file, "r");
+    if (yyin == NULL) {
+      if (errno == ENOENT) {
+        fprintf(stderr, "File not found or invalid filename provided.\n");
+        terminate_retrofocal(EXIT_FAILURE);
+      } else {
+        fprintf(stderr, "Error %i when opening file.\n", errno);
+        terminate_retrofocal(EXIT_FAILURE);
+      }
+    }
+    // if we were able to open the file, parse it
+    yyparse();
+    
+    // prepare the code for running
+    interpreter_post_parse();
+    
+    // set terminal to raw mode for the run so ESC can be detected
+    setup_terminal_for_input();
+    if (run_program)
+      interpreter_run();
+    restore_terminal();
+  }
   
   // we're done, print/write desired stats
   if (print_stats || write_stats)
     print_statistics();
   
   // and exit
-  exit(EXIT_SUCCESS);
+  terminate_retrofocal(EXIT_SUCCESS);
 }

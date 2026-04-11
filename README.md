@@ -35,7 +35,7 @@ brew tap maurymarkowitz/tap https://github.com/maurymarkowitz/homebrew-tap
 brew install maurymarkowitz/tap/retrofocal
 ```
 
-**Note for Apple Silicon (M1/M2/M3) Macs:** Homebrew installs to `/opt/homebrew` instead of `/usr/local`. If `/opt/homebrew/bin` is not in your PATH, add it to your shell profile or run the executable directly from that directory.
+On Apple Silicon, Homebrew defaults to `/opt/homebrew` instead of `/usr/local`.
 
 On Windows, you can use Scoop:
 
