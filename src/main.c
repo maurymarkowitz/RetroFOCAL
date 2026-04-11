@@ -29,7 +29,6 @@ Boston, MA 02111-1307, USA.  */
 #include <unistd.h>
 
 #include "retrofocal.h"
-#include "version.h"
 #include "statistics.h"
 #include "parse.h"
 #include "io.h"
@@ -47,9 +46,7 @@ static void sigint_handler(int sig)
 /* simple version info for --version command line option */
 static void print_version()
 {
-  char verstr[40];
-  getVersionString(verstr);
-  puts(verstr);
+  puts(VERSION_STRING);
 }
 
 /* usage short form, just a list of the switches */
