@@ -51,3 +51,4 @@ parse.tab.h
 parse.tab.o
 lex.yy.c
 *.lex.c
+parse.output

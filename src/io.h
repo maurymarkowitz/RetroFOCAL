@@ -24,7 +24,7 @@
 #include "stdhdr.h"
 
 #if !defined(WIN32) && !defined(_WIN32)
-  #include <sys/termios.h>
+  #include <termios.h>
   #include <sys/select.h>
   #include <sys/time.h>
 #endif
