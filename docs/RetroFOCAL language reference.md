@@ -17,7 +17,7 @@ RetroFOCAL is a version of the FOCAL programming language intended to run classi
 
 The goal of RetroFOCAL is to allow you to run popular FOCAL programs written during the language's Golden Age in the late 1960s. As such, it does not currently suport file handling beyond `LIBRARY CALL`, `LIBRARY SAVE`, and `LIBRARY RUN`.
 
-There is only one major variation on FOCAL, U/W FOCAL, or UWF, from the University of Washington. Using memory overlays, UWF offers a range of new features and statements while still using less memory that the original FOCAL-8. UWF extensions are not currently supported in RetroFOCAL.
+There is only one major variation on FOCAL, U/W FOCAL, or UWF, from the University of Washington. Using memory overlays, UWF offers a range of new statements and functions while still using less memory that the original FOCAL-8. UWF extensions are not currently supported in RetroFOCAL.
 
 ## Contents
 
