@@ -33,6 +33,11 @@ Boston, MA 02111-1307, USA.  */
 extern int yyparse(void);
 extern void yyrestart(FILE *input_file);
 extern FILE *yyin;
+extern char *yytext;
+extern int yylineno;
+/* Flex functions for string-based scanning - YY_BUFFER_STATE is an opaque type defined by flex */
+extern void *yy_scan_string(const char *str);
+extern void yy_delete_buffer(void *buffer);
 extern char *cli_prompt;
 extern void delete_variables(void);
 
@@ -139,83 +144,50 @@ static void process_cli_line(const char *input_line)
       }
     } else {
       /* Line number followed by code - parse and store the line */
-      /* Create a file-based input using a unique temp file */
-      static int cli_parse_count = 0;
-      char temp_path[64];
-      snprintf(temp_path, sizeof(temp_path), "/tmp/retrofocal_cli_%d_%d.focal", getpid(), cli_parse_count++);
+      char statement_with_line[512];
+      snprintf(statement_with_line, sizeof(statement_with_line), "%s\n", input_line);
       
-      FILE *temp_file = fopen(temp_path, "w+");
-      if (!temp_file) {
-        return;
-      }
-      
-      /* Write the statement to the temp file (input_line already has newline stripped) */
-      fprintf(temp_file, "%s\n", input_line);
-      fflush(temp_file);
-      rewind(temp_file);
-      
-      /* Parse this as a program line */
-      FILE *old_yyin = yyin;
-      yyin = temp_file;
-      yyrestart(temp_file);
+      /* Parse this as a program line using string-based scanning */
+      void *buffer = yy_scan_string(statement_with_line);
       yyparse();
-      fclose(temp_file);
-      yyin = old_yyin;
-      
-      /* Clean up the temporary file */
-      unlink(temp_path);
+      yy_delete_buffer(buffer);
     }
   } else {
     /* No line number - this is immediate-mode execution */
-    /* Create a file-based input using a unique temp file */
-    static int cli_immed_count = 0;
-    char temp_path[64];
-    snprintf(temp_path, sizeof(temp_path), "/tmp/retrofocal_immed_%d_%d.focal", getpid(), cli_immed_count++);
+    char statement_with_line[512];
+    snprintf(statement_with_line, sizeof(statement_with_line), "0.00 %s\n", input_line);
     
-    FILE *temp_file = fopen(temp_path, "w+");
-    if (!temp_file) {
-      return;
-    }
-    
-    /* Write the statement to the temp file with a valid temporary line number (99.00) */
-    fprintf(temp_file, "99.00 %s\n", input_line);
-    fflush(temp_file);
-    rewind(temp_file);
-    
-    /* Parse this line into the current program storage */
-    FILE *old_yyin = yyin;
-    yyin = temp_file;
-    yyrestart(temp_file);
+    /* Parse this line into the current program storage using string-based scanning */
+    void *buffer = yy_scan_string(statement_with_line);
     yyparse();
-    fclose(temp_file);
-    yyin = old_yyin;
+    yy_delete_buffer(buffer);
     
     /* Check if this is a QUIT statement - if so, set a flag to exit CLI */
     bool should_exit_cli = false;
-    if (interpreter_state.lines[9900] != NULL && interpreter_state.lines[9900]->data != NULL) {
-      statement_t *stmt = (statement_t *)interpreter_state.lines[9900]->data;
+    if (interpreter_state.lines[0] != NULL && interpreter_state.lines[0]->data != NULL) {
+      statement_t *stmt = (statement_t *)interpreter_state.lines[0]->data;
       if (stmt->type == QUIT) {
         should_exit_cli = true;
       }
     }
     
     /* Execute the immediate line in the context of the existing program. */
-    interpreter_state.first_line_index = 9900;
-    interpreter_state.current_statement = interpreter_state.lines[9900];
+    /* Save the current first_line_index to restore after execution */
+    int saved_first_line_index = interpreter_state.first_line_index;
+    
+    interpreter_state.current_statement = interpreter_state.lines[0];
     interpreter_state.running_state = 1;
     interpreter_run();
 
+    /* Restore the saved first_line_index (needed for GO statements in immediate mode) */
+    interpreter_state.first_line_index = saved_first_line_index;
+
     /* Remove the temporary line and restore line links */
-    if (interpreter_state.lines[9900] != NULL) {
-      lst_free(interpreter_state.lines[9900]);
-      interpreter_state.lines[9900] = NULL;
+    if (interpreter_state.lines[0] != NULL) {
+      lst_free(interpreter_state.lines[0]);
+      interpreter_state.lines[0] = NULL;
     }
     interpreter_post_parse();
-    
-    /* Clean up the temporary file */
-    unlink(temp_path);
-    
-    /* Exit CLI if QUIT was executed */
     if (should_exit_cli) {
       terminate_retrofocal(EXIT_SUCCESS);
     }

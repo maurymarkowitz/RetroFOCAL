@@ -17,14 +17,13 @@ RetroFOCAL is a version of the FOCAL programming language intended to run classi
 
 The goal of RetroFOCAL is to allow you to run popular FOCAL programs written during the language's Golden Age in the late 1960s. As such, it does not currently suport file handling beyond `LIBRARY CALL`, `LIBRARY SAVE`, and `LIBRARY RUN`.
 
+## Contents
+
 <!-- TOC start (generated with https://github.com/derlin/bitdowntoc) -->
 
 - [About this manual](#about-this-manual)
    * [Abbreviations](#abbreviations)
    * [Formatting and notation](#formatting-and-notation)
-- [Introduction](#introduction)
-   * [What is RetroFOCAL?](#what-is-retrofocal)
-   * [What RetroFOCAL is not](#what-retrofocal-is-not)
 - [Some underlying concepts](#some-underlying-concepts)
    * [Syntax example](#syntax-example)
 - [Data in FOCAL programs](#data-in-focal-programs)
@@ -115,7 +114,7 @@ Like most computer languages, FOCAL has a number of **keywords** that are reserv
 
 In FOCAL, the individual instructions that make up the program are known as **statements**. A statement consists of a keyword and then zero or more **expressions**. Only certain keywords can appear at the front of a statement, others only as part of an expression. To confuse matters, the subset of keywords that can appear at the front are often referred to as "statements" as well, while other dialects refer to these special keywords simply as "keywords". To avoid confusion, this manual will use the term **statement keywords** for this subset of reserved words and to clearly separate the concept of a statement from a keyword.
 
-FOCAL also included a number of **commands**. Commands look exactly like statements and work in the same fashion, but they generally cannot be used as program instructions, only as user-entered interactive instructions. Commands include things like loading and saving a program, sending the code to a printer, and managing files on a disk. RetroFOCAL generally does not support commands.
+FOCAL also included a number of **commands**. Commands look exactly like statements and work in the same fashion, but they generally cannot be used as program instructions, only as user-entered interactive instructions. Commands include things like loading and saving a program, sending the code to a printer, and managing files on a disk.
 
 The purpose of an **expression** is to provide data to be acted on by the statements. There are many different types of expressions and much of a program's complexity is found within them. The primary types of expressions are classified by type:
 

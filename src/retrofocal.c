@@ -815,6 +815,13 @@ static list_t *find_line(double linenumber)
   char buffer[50];
 	int group = trunc(linenumber);
 	int step = round((linenumber - group) * 100);
+	
+	/* Line 0 is reserved for internal immediate-mode use and cannot be jumped to */
+	if (linenumber == 0.0) {
+		sprintf(buffer, "Line 0 is reserved for internal use and cannot be referenced");
+		focal_error(buffer);
+		return NULL;
+	}
   
   // negative numbers are not allowed
   if (linenumber < 0) {
@@ -984,6 +991,12 @@ static void perform_statement(list_t *list_item)
 				}
 
 				int index = (int)round(statement->parms.modify_line * 100);
+				
+				/* Line 0 is reserved for temporary CLI statements */
+				if (index == 0) {
+					focal_error("Cannot modify line 0 (reserved for internal use)");
+				}
+				
 				if (index < 0 || index >= MAXLINE || interpreter_state.lines[index] == NULL) {
 					focal_error("Line does not exist");
 				}
@@ -1025,9 +1038,19 @@ static void perform_statement(list_t *list_item)
 				
 			case GOTO:
 			{
-				if (statement->parms.go == 0)
-					interpreter_state.next_statement = find_line(interpreter_state.first_line_index);
-				else
+				if (statement->parms.go == 0) {
+					/* Jump to the actual first line of the program (not first_line_index,
+					 * which might have been overridden by immediate-mode execution).
+					 * Search for the first non-null line and jump there. */
+					list_t *first_stmt = NULL;
+					for (int i = 1; i < MAXLINE - 1; i++) {
+						if (interpreter_state.lines[i] != NULL) {
+							first_stmt = interpreter_state.lines[i];
+							break;
+						}
+					}
+					interpreter_state.next_statement = first_stmt;
+				} else
 					interpreter_state.next_statement = find_line(statement->parms.go);
 			}
 				break;
@@ -1098,12 +1121,12 @@ static void perform_statement(list_t *list_item)
 			case WRITE:
 			{
 				// WRITE outputs the program; optionally with a line/group specification
-				// WRITE alone outputs entire program (excluding line 99, which is reserved for temporary CLI statements)
+				// WRITE alone outputs entire program (excluding line 0, which is reserved for temporary CLI statements)
 				// WRITE 2 or WRITE 2.0 outputs group 2 (lines 2.00-2.99)
 				// WRITE 2.1 outputs single line 2.1
 				
 				int start_line = 1;
-				int end_line = 9900;  // Exclude line 99 (indices 9900-9999) which is reserved for temporary CLI statements
+				int end_line = MAXLINE;  // Default: output all lines from 1 to MAXLINE (excluding line 0)
 				
 				if (statement->parms.write_spec != NULL) {
 					double value = evaluate_expression(statement->parms.write_spec).number;
@@ -1171,8 +1194,8 @@ static void perform_statement(list_t *list_item)
                     // Prepare the new program for execution
                     interpreter_post_parse();
                 } else if (statement->parms.library.action == 0) {
-                    // LIBRARY SAVE: write the current program to a file (excluding line 99, reserved for temporary CLI statements)
-                    char *output = write_program(1, 9900);
+                    // LIBRARY SAVE: write the current program to a file (excluding line 0, reserved for temporary CLI statements)
+                    char *output = write_program(1, MAXLINE);
                     if (output) {
                         FILE *save_file = fopen(statement->parms.library.filename, "w");
                         if (save_file == NULL) {
