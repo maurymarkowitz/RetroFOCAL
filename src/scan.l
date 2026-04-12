@@ -29,6 +29,9 @@ Boston, MA 02111-1307, USA.  */
 #include "strng.h"
 #include "parse.h"
 
+/* Track whether the last keyword was abbreviated (single character) or full */
+bool last_keyword_abbreviated = true;
+
 %}
 
 %option noyywrap
@@ -56,22 +59,22 @@ Boston, MA 02111-1307, USA.  */
     https://stackoverflow.com/questions/59117309/rest-of-line-in-bison/59122569#59122569
   */
 <INITIAL>{
-C.*|COMMENT.*|CONTINUE.* { yylval.s = str_new(str_copy(yytext, yyleng - strlen(yytext))); return COMMENT; } // manual lists CONTINUE separately, but its a comment
-A|ASK     { BEGIN(KEYWORD_FOUND); return ASK; }     // INPUT
-D|DO      { BEGIN(KEYWORD_FOUND); return DO; }      // combines GOTO and GOSUB
-F|FOR     { BEGIN(KEYWORD_FOUND); return FOR; }     // one-line only, no NEXT
-I|IF      { BEGIN(KEYWORD_FOUND); return IF; }      // branches only
-Q|QUIT    { BEGIN(KEYWORD_FOUND); return QUIT; }    // END/STOP/BYE
-R|RETURN  { BEGIN(KEYWORD_FOUND); return RETURN; }  // optional RETURNs at end of group anyway
-S|SET     { BEGIN(KEYWORD_FOUND); return SET; }     // LET
-T|TYPE    { BEGIN(KEYWORD_FOUND); return TYPE; }    // PRINT
+C.*|COMMENT.*|CONTINUE.* { yylval.s = str_new(str_copy(yytext, yyleng - strlen(yytext))); last_keyword_abbreviated = (yyleng == 1); return COMMENT; } // manual lists CONTINUE separately, but its a comment
+A|ASK     { BEGIN(KEYWORD_FOUND); last_keyword_abbreviated = (yyleng == 1); return ASK; }     // INPUT
+D|DO      { BEGIN(KEYWORD_FOUND); last_keyword_abbreviated = (yyleng == 1); return DO; }      // combines GOTO and GOSUB
+F|FOR     { BEGIN(KEYWORD_FOUND); last_keyword_abbreviated = (yyleng == 1); return FOR; }     // one-line only, no NEXT
+I|IF      { BEGIN(KEYWORD_FOUND); last_keyword_abbreviated = (yyleng == 1); return IF; }      // branches only
+Q|QUIT    { BEGIN(KEYWORD_FOUND); last_keyword_abbreviated = (yyleng == 1); return QUIT; }    // END/STOP/BYE
+R|RETURN  { BEGIN(KEYWORD_FOUND); last_keyword_abbreviated = (yyleng == 1); return RETURN; }  // optional RETURNs at end of group anyway
+S|SET     { BEGIN(KEYWORD_FOUND); last_keyword_abbreviated = (yyleng == 1); return SET; }     // LET
+T|TYPE    { BEGIN(KEYWORD_FOUND); last_keyword_abbreviated = (yyleng == 1); return TYPE; }    // PRINT
 
  /* non-program statements (mostly) */
-E|ERASE   { BEGIN(KEYWORD_FOUND); return ERASE; }   // erases lines of source, but also double-duty as CLR to reset variables
-G|GO|GOTO    { BEGIN(KEYWORD_FOUND); return GOTO; }    // RUN, optional line number
-L|LIBRARY { BEGIN(KEYWORD_FOUND); return LIBRARY; } // LIBRARY CALL or LIBRARY SAVE
-M|MODIFY  { BEGIN(KEYWORD_FOUND); return MODIFY; }  // edits a single line
-W|WRITE   { BEGIN(KEYWORD_FOUND); return WRITE; }   // LIST
+E|ERASE   { BEGIN(KEYWORD_FOUND); last_keyword_abbreviated = (yyleng == 1); return ERASE; }   // erases lines of source, but also double-duty as CLR to reset variables
+G|GO|GOTO    { BEGIN(KEYWORD_FOUND); last_keyword_abbreviated = (yyleng == 1); return GOTO; }    // RUN, optional line number
+L|LIBRARY { BEGIN(KEYWORD_FOUND); last_keyword_abbreviated = (yyleng == 1); return LIBRARY; } // LIBRARY CALL or LIBRARY SAVE
+M|MODIFY  { BEGIN(KEYWORD_FOUND); last_keyword_abbreviated = (yyleng == 1); return MODIFY; }  // edits a single line
+W|WRITE   { BEGIN(KEYWORD_FOUND); last_keyword_abbreviated = (yyleng == 1); return WRITE; }   // LIST
 }
 
  /* the following are only valid after one of the keyworda above */

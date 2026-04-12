@@ -257,13 +257,13 @@ static void statement_to_string(statement_t *stmt, string_builder_t *sb)
     
   switch (stmt->type) {
     case COMMENT:
-      sb_append(sb, "C");
+      sb_append(sb, stmt->abbreviated ? "C" : "COMMENT");
       if (stmt->parms.rem)
         sb_append(sb, stmt->parms.rem);
       break;
       
     case SET:
-      sb_append(sb, "S ");
+      sb_append(sb, stmt->abbreviated ? "S " : "SET ");
       if (stmt->parms.set.variable && stmt->parms.set.variable->name)
         sb_append(sb, stmt->parms.set.variable->name);
       sb_append(sb, "=");
@@ -271,15 +271,21 @@ static void statement_to_string(statement_t *stmt, string_builder_t *sb)
       break;
       
     case DO:
-      sb_append_fmt(sb, "D %2.2f", stmt->parms._do);
+      if (stmt->abbreviated)
+        sb_append_fmt(sb, "D %2.2f", stmt->parms._do);
+      else
+        sb_append_fmt(sb, "DO %2.2f", stmt->parms._do);
       break;
       
     case GOTO:
-      sb_append_fmt(sb, "G %2.2f", stmt->parms.go);
+      if (stmt->abbreviated)
+        sb_append_fmt(sb, "G %2.2f", stmt->parms.go);
+      else
+        sb_append_fmt(sb, "GOTO %2.2f", stmt->parms.go);
       break;
       
     case FOR:
-      sb_append(sb, "F ");
+      sb_append(sb, stmt->abbreviated ? "F " : "FOR ");
       if (stmt->parms._for.variable && stmt->parms._for.variable->name)
         sb_append(sb, stmt->parms._for.variable->name);
       sb_append(sb, "=");
@@ -292,7 +298,7 @@ static void statement_to_string(statement_t *stmt, string_builder_t *sb)
       
     case IF:
     {
-      sb_append(sb, "I (");
+      sb_append(sb, stmt->abbreviated ? "I (" : "IF (");
       expression_to_string(stmt->parms._if.condition, sb);
       sb_append(sb, ")");
       
@@ -319,7 +325,7 @@ static void statement_to_string(statement_t *stmt, string_builder_t *sb)
       
     case ASK:
     {
-      sb_append(sb, "A ");
+      sb_append(sb, stmt->abbreviated ? "A " : "ASK ");
       bool first = true;
       for (list_t *node = stmt->parms.input; node != NULL; node = node->next) {
         if (!first)
@@ -336,7 +342,7 @@ static void statement_to_string(statement_t *stmt, string_builder_t *sb)
       
     case TYPE:
     {
-      sb_append(sb, "T ");
+      sb_append(sb, stmt->abbreviated ? "T " : "TYPE ");
       bool first = true;
       for (list_t *node = stmt->parms.print; node != NULL; node = node->next) {
         if (!first)
@@ -367,15 +373,35 @@ static void statement_to_string(statement_t *stmt, string_builder_t *sb)
     }
       
     case RETURN:
-      sb_append(sb, "R");
+      sb_append(sb, stmt->abbreviated ? "R" : "RETURN");
       break;
       
     case QUIT:
-      sb_append(sb, "Q");
+      sb_append(sb, stmt->abbreviated ? "Q" : "QUIT");
       break;
       
     case ERASE:
-      sb_append(sb, "E");
+      sb_append(sb, stmt->abbreviated ? "E" : "ERASE");
+      break;
+      
+    case LIBRARY:
+      sb_append(sb, stmt->abbreviated ? "L " : "LIBRARY ");
+      switch (stmt->parms.library.action) {
+        case 0:
+          sb_append(sb, "SAVE ");
+          break;
+        case 1:
+          sb_append(sb, "CALL ");
+          break;
+        case 2:
+          sb_append(sb, "RUN ");
+          break;
+        default:
+          sb_append(sb, "UNKNOWN ");
+          break;
+      }
+      if (stmt->parms.library.filename)
+        sb_append(sb, stmt->parms.library.filename);
       break;
       
     default:

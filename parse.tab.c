@@ -197,10 +197,18 @@ Boston, MA 02111-1307, USA.  */
     that errors can report it */
 static double errline;
 
+extern jmp_buf parse_error_jmp_buf;
+extern bool parse_in_cli_mode;
+extern bool last_keyword_abbreviated;  /* from lexer, indicates if keyword was abbreviated */
+
 void yyerror(const char *message)
 {
   fprintf(stderr, "Syntax error at line %g: %s\n", errline, message);
-  exit(1);
+  if (parse_in_cli_mode) {
+    longjmp(parse_error_jmp_buf, 1);
+  } else {
+    exit(1);
+  }
 }
 
 int yylex(void);
@@ -209,6 +217,15 @@ static statement_t *make_statement(int t)
 {
   statement_t *new = malloc(sizeof(*new));
   new->type = t;
+  new->abbreviated = true;  /* default to abbreviated (single character) */
+  return new;
+}
+
+static statement_t *make_statement_with_abbrev(int t, bool abbrev)
+{
+  statement_t *new = malloc(sizeof(*new));
+  new->type = t;
+  new->abbreviated = abbrev;
   return new;
 }
 
@@ -253,7 +270,7 @@ static expression_t *make_operator(int arity, int o)
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE
-#line 75 "src/parse.y"
+#line 92 "src/parse.y"
 {
   double d;
   int i;
@@ -264,7 +281,7 @@ typedef union YYSTYPE
   variable_t *variable;
 }
 /* Line 193 of yacc.c.  */
-#line 268 "parse.tab.c"
+#line 285 "parse.tab.c"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
@@ -277,7 +294,7 @@ typedef union YYSTYPE
 
 
 /* Line 216 of yacc.c.  */
-#line 281 "parse.tab.c"
+#line 298 "parse.tab.c"
 
 #ifdef short
 # undef short
@@ -601,16 +618,16 @@ static const yytype_int8 yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
-       0,   158,   158,   160,   162,   164,   169,   169,   182,   187,
-     196,   200,   207,   214,   232,   239,   246,   257,   264,   278,
-     291,   298,   307,   325,   344,   371,   406,   414,   421,   428,
-     434,   440,   460,   467,   473,   480,   512,   515,   517,   537,
-     538,   542,   544,   553,   554,   555,   558,   560,   569,   573,
-     576,   583,   589,   595,   602,   609,   616,   623,   630,   637,
-     647,   648,   653,   654,   655,   656,   657,   658,   659,   660,
-     661,   662,   663,   664,   665,   666,   667,   675,   707,   714,
-     726,   733,   738,   743,   750,   761,   772,   780,   789,   797,
-     811,   819,   828,   836,   847,   852,   857,   862,   871,   876
+       0,   175,   175,   177,   179,   181,   186,   186,   199,   204,
+     213,   217,   224,   231,   249,   256,   263,   274,   281,   295,
+     308,   315,   324,   342,   361,   388,   423,   431,   438,   445,
+     451,   457,   477,   484,   490,   497,   529,   532,   534,   554,
+     555,   559,   561,   570,   571,   572,   575,   577,   586,   590,
+     593,   600,   606,   612,   619,   626,   633,   640,   647,   654,
+     664,   665,   670,   671,   672,   673,   674,   675,   676,   677,
+     678,   679,   680,   681,   682,   683,   684,   692,   724,   731,
+     743,   750,   755,   760,   767,   778,   789,   797,   806,   814,
+     828,   836,   845,   853,   864,   869,   874,   879,   888,   893
 };
 #endif
 
@@ -1684,12 +1701,12 @@ yyreduce:
   switch (yyn)
     {
         case 6:
-#line 169 "src/parse.y"
+#line 186 "src/parse.y"
     { errline = (yyvsp[(1) - (1)].d); ;}
     break;
 
   case 7:
-#line 170 "src/parse.y"
+#line 187 "src/parse.y"
     {
     // there are only 3199 possible lines so we make an array that large
     // even though it ends up mostly empty. to convert the X.Y format, we
@@ -1701,48 +1718,48 @@ yyreduce:
     break;
 
   case 8:
-#line 183 "src/parse.y"
+#line 200 "src/parse.y"
     {
 	  (yyval.l) = lst_prepend(NULL, (yyvsp[(1) - (1)].statement));
   ;}
     break;
 
   case 9:
-#line 188 "src/parse.y"
+#line 205 "src/parse.y"
     {
     (yyval.l) = lst_prepend((yyvsp[(3) - (3)].l), (yyvsp[(1) - (3)].statement));
   ;}
     break;
 
   case 10:
-#line 196 "src/parse.y"
+#line 213 "src/parse.y"
     {
 	  (yyval.statement) = NULL;
 	;}
     break;
 
   case 11:
-#line 201 "src/parse.y"
+#line 218 "src/parse.y"
     {
-    statement_t *new = make_statement(ASK);
+    statement_t *new = make_statement_with_abbrev(ASK, last_keyword_abbreviated);
     new->parms.input = (yyvsp[(2) - (2)].l);
     (yyval.statement) = new;
   ;}
     break;
 
   case 12:
-#line 208 "src/parse.y"
+#line 225 "src/parse.y"
     {
-    statement_t *new = make_statement(COMMENT);
+    statement_t *new = make_statement_with_abbrev(COMMENT, last_keyword_abbreviated);
     new->parms.rem = yylval.s;
     (yyval.statement) = new;
   ;}
     break;
 
   case 13:
-#line 215 "src/parse.y"
+#line 232 "src/parse.y"
     {
-    statement_t *new = make_statement(DO);
+    statement_t *new = make_statement_with_abbrev(DO, last_keyword_abbreviated);
     new->parms._do = (yyvsp[(2) - (2)].d);
     (yyval.statement) = new;
       
@@ -1760,27 +1777,27 @@ yyreduce:
     break;
 
   case 14:
-#line 233 "src/parse.y"
+#line 250 "src/parse.y"
     {
-    statement_t *new = make_statement(ERASE);
+    statement_t *new = make_statement_with_abbrev(ERASE, last_keyword_abbreviated);
     new->parms.erase.mode = 0;
     (yyval.statement) = new;
   ;}
     break;
 
   case 15:
-#line 240 "src/parse.y"
+#line 257 "src/parse.y"
     {
-    statement_t *new = make_statement(ERASE);
+    statement_t *new = make_statement_with_abbrev(ERASE, last_keyword_abbreviated);
     new->parms.erase.mode = 3;
     (yyval.statement) = new;
   ;}
     break;
 
   case 16:
-#line 247 "src/parse.y"
+#line 264 "src/parse.y"
     {
-    statement_t *new = make_statement(ERASE);
+    statement_t *new = make_statement_with_abbrev(ERASE, last_keyword_abbreviated);
     new->parms.erase.target = (yyvsp[(2) - (2)].d);
     if (fabs((yyvsp[(2) - (2)].d) - trunc((yyvsp[(2) - (2)].d))) < 0.00001)
       new->parms.erase.mode = 2;
@@ -1791,18 +1808,18 @@ yyreduce:
     break;
 
   case 17:
-#line 258 "src/parse.y"
+#line 275 "src/parse.y"
     {
-    statement_t *new = make_statement(MODIFY);
+    statement_t *new = make_statement_with_abbrev(MODIFY, last_keyword_abbreviated);
     new->parms.modify_line = (yyvsp[(2) - (2)].d);
     (yyval.statement) = new;
   ;}
     break;
 
   case 18:
-#line 265 "src/parse.y"
+#line 282 "src/parse.y"
     {
-	  statement_t *new = make_statement(FOR);
+	  statement_t *new = make_statement_with_abbrev(FOR, last_keyword_abbreviated);
 	  new->parms._for.variable = (yyvsp[(2) - (6)].variable);
 	  new->parms._for.begin = (yyvsp[(4) - (6)].expression);
 	  new->parms._for.end = (yyvsp[(6) - (6)].expression);
@@ -1816,9 +1833,9 @@ yyreduce:
     break;
 
   case 19:
-#line 279 "src/parse.y"
+#line 296 "src/parse.y"
     {
-	  statement_t *new = make_statement(FOR);
+	  statement_t *new = make_statement_with_abbrev(FOR, last_keyword_abbreviated);
 	  new->parms._for.variable = (yyvsp[(2) - (8)].variable);
 	  new->parms._for.begin = (yyvsp[(4) - (8)].expression);
 	  new->parms._for.step = (yyvsp[(6) - (8)].expression);
@@ -1831,18 +1848,18 @@ yyreduce:
     break;
 
   case 20:
-#line 292 "src/parse.y"
+#line 309 "src/parse.y"
     {
-    statement_t *new = make_statement(GOTO);
+    statement_t *new = make_statement_with_abbrev(GOTO, last_keyword_abbreviated);
     new->parms.go = 0;
     (yyval.statement) = new;
   ;}
     break;
 
   case 21:
-#line 299 "src/parse.y"
+#line 316 "src/parse.y"
     {
-    statement_t *new = make_statement(GOTO);
+    statement_t *new = make_statement_with_abbrev(GOTO, last_keyword_abbreviated);
     new->parms.go = 0;
     (yyval.statement) = new;
     
@@ -1851,9 +1868,9 @@ yyreduce:
     break;
 
   case 22:
-#line 308 "src/parse.y"
+#line 325 "src/parse.y"
     {
-    statement_t *new = make_statement(GOTO);
+    statement_t *new = make_statement_with_abbrev(GOTO, last_keyword_abbreviated);
     new->parms.go = (yyvsp[(2) - (2)].d);
     (yyval.statement) = new;
     
@@ -1871,9 +1888,9 @@ yyreduce:
     break;
 
   case 23:
-#line 326 "src/parse.y"
+#line 343 "src/parse.y"
     {
-    statement_t *new = make_statement(IF);
+    statement_t *new = make_statement_with_abbrev(IF, last_keyword_abbreviated);
     new->parms._if.condition = (yyvsp[(3) - (5)].expression);
     new->parms._if.less_line = (yyvsp[(5) - (5)].d);
     (yyval.statement) = new;
@@ -1892,9 +1909,9 @@ yyreduce:
     break;
 
   case 24:
-#line 345 "src/parse.y"
+#line 362 "src/parse.y"
     {
-    statement_t *new = make_statement(IF);
+    statement_t *new = make_statement_with_abbrev(IF, last_keyword_abbreviated);
     new->parms._if.condition = (yyvsp[(3) - (7)].expression);
     new->parms._if.less_line = (yyvsp[(5) - (7)].d);
     new->parms._if.zero_line = (yyvsp[(7) - (7)].d);
@@ -1921,9 +1938,9 @@ yyreduce:
     break;
 
   case 25:
-#line 372 "src/parse.y"
+#line 389 "src/parse.y"
     {
-    statement_t *new = make_statement(IF);
+    statement_t *new = make_statement_with_abbrev(IF, last_keyword_abbreviated);
     new->parms._if.condition = (yyvsp[(3) - (9)].expression);
     new->parms._if.less_line = (yyvsp[(5) - (9)].d);
     new->parms._if.zero_line = (yyvsp[(7) - (9)].d);
@@ -1958,9 +1975,9 @@ yyreduce:
     break;
 
   case 26:
-#line 407 "src/parse.y"
+#line 424 "src/parse.y"
     {
-    statement_t *new = make_statement(LIBRARY);
+    statement_t *new = make_statement_with_abbrev(LIBRARY, last_keyword_abbreviated);
     new->parms.library.filename = (yyvsp[(3) - (3)].s);
     new->parms.library.action = 1;
     (yyval.statement) = new;
@@ -1968,9 +1985,9 @@ yyreduce:
     break;
 
   case 27:
-#line 415 "src/parse.y"
+#line 432 "src/parse.y"
     {
-    statement_t *new = make_statement(LIBRARY);
+    statement_t *new = make_statement_with_abbrev(LIBRARY, last_keyword_abbreviated);
     new->parms.library.filename = (yyvsp[(3) - (3)].s);
     new->parms.library.action = 0;
     (yyval.statement) = new;
@@ -1978,9 +1995,9 @@ yyreduce:
     break;
 
   case 28:
-#line 422 "src/parse.y"
+#line 439 "src/parse.y"
     {
-    statement_t *new = make_statement(LIBRARY);
+    statement_t *new = make_statement_with_abbrev(LIBRARY, last_keyword_abbreviated);
     new->parms.library.filename = (yyvsp[(3) - (3)].s);
     new->parms.library.action = 2;
     (yyval.statement) = new;
@@ -1988,25 +2005,25 @@ yyreduce:
     break;
 
   case 29:
-#line 429 "src/parse.y"
+#line 446 "src/parse.y"
     {
-    statement_t *new = make_statement(QUIT);
+    statement_t *new = make_statement_with_abbrev(QUIT, last_keyword_abbreviated);
     (yyval.statement) = new;
   ;}
     break;
 
   case 30:
-#line 435 "src/parse.y"
+#line 452 "src/parse.y"
     {
-	  statement_t *new = make_statement(RETURN);
+	  statement_t *new = make_statement_with_abbrev(RETURN, last_keyword_abbreviated);
 	  (yyval.statement) = new;
 	;}
     break;
 
   case 31:
-#line 441 "src/parse.y"
+#line 458 "src/parse.y"
     {
-    statement_t *new = make_statement(SET);
+    statement_t *new = make_statement_with_abbrev(SET, last_keyword_abbreviated);
     new->parms.set.variable = (yyvsp[(2) - (4)].variable);
     new->parms.set.expression = (yyvsp[(4) - (4)].expression);
     (yyval.statement) = new;
@@ -2026,42 +2043,42 @@ yyreduce:
     break;
 
   case 32:
-#line 461 "src/parse.y"
+#line 478 "src/parse.y"
     {
-    statement_t *new = make_statement(TYPE);
+    statement_t *new = make_statement_with_abbrev(TYPE, last_keyword_abbreviated);
     new->parms.print = (yyvsp[(2) - (2)].l);
     (yyval.statement) = new;
   ;}
     break;
 
   case 33:
-#line 468 "src/parse.y"
+#line 485 "src/parse.y"
     {
-	  statement_t *new = make_statement(VARLIST);
+	  statement_t *new = make_statement_with_abbrev(VARLIST, last_keyword_abbreviated);
 	  (yyval.statement) = new;
 	;}
     break;
 
   case 34:
-#line 474 "src/parse.y"
+#line 491 "src/parse.y"
     {
-    statement_t *new = make_statement(WRITE);
+    statement_t *new = make_statement_with_abbrev(WRITE, last_keyword_abbreviated);
     new->parms.write_spec = NULL;
     (yyval.statement) = new;
   ;}
     break;
 
   case 35:
-#line 481 "src/parse.y"
+#line 498 "src/parse.y"
     {
-    statement_t *new = make_statement(WRITE);
+    statement_t *new = make_statement_with_abbrev(WRITE, last_keyword_abbreviated);
     new->parms.write_spec = (yyvsp[(2) - (2)].expression);
     (yyval.statement) = new;
   ;}
     break;
 
   case 38:
-#line 518 "src/parse.y"
+#line 535 "src/parse.y"
     {
 	  expression_t *new = make_operator(2, (yyvsp[(2) - (3)].i));
 	  new->parms.op.p[0] = (yyvsp[(1) - (3)].expression);
@@ -2082,17 +2099,17 @@ yyreduce:
     break;
 
   case 39:
-#line 537 "src/parse.y"
+#line 554 "src/parse.y"
     { (yyval.i) = '+'; ;}
     break;
 
   case 40:
-#line 538 "src/parse.y"
+#line 555 "src/parse.y"
     { (yyval.i) = '-'; ;}
     break;
 
   case 42:
-#line 545 "src/parse.y"
+#line 562 "src/parse.y"
     {
 	  expression_t *new = make_operator(2, (yyvsp[(2) - (3)].i));
 	  new->parms.op.p[0] = (yyvsp[(1) - (3)].expression);
@@ -2102,22 +2119,22 @@ yyreduce:
     break;
 
   case 43:
-#line 553 "src/parse.y"
+#line 570 "src/parse.y"
     { (yyval.i) = '*'; ;}
     break;
 
   case 44:
-#line 554 "src/parse.y"
+#line 571 "src/parse.y"
     { (yyval.i) = '/'; ;}
     break;
 
   case 45:
-#line 555 "src/parse.y"
+#line 572 "src/parse.y"
     { (yyval.i) = '^'; ;}
     break;
 
   case 47:
-#line 561 "src/parse.y"
+#line 578 "src/parse.y"
     {
 	  expression_t *new = make_operator(1, (yyvsp[(1) - (2)].i));
 	  new->parms.op.p[0] = (yyvsp[(2) - (2)].expression);
@@ -2126,12 +2143,12 @@ yyreduce:
     break;
 
   case 48:
-#line 569 "src/parse.y"
+#line 586 "src/parse.y"
     { (yyval.i) = '-'; ;}
     break;
 
   case 50:
-#line 577 "src/parse.y"
+#line 594 "src/parse.y"
     {
     expression_t *new = make_operator(0, (yyvsp[(1) - (1)].i));
     (yyval.expression) = new;
@@ -2139,7 +2156,7 @@ yyreduce:
     break;
 
   case 51:
-#line 584 "src/parse.y"
+#line 601 "src/parse.y"
     {
     expression_t *new = make_operator(0, (yyvsp[(1) - (3)].i));
     (yyval.expression) = new;
@@ -2147,7 +2164,7 @@ yyreduce:
     break;
 
   case 52:
-#line 590 "src/parse.y"
+#line 607 "src/parse.y"
     {
     expression_t *new = make_operator(0, (yyvsp[(1) - (3)].i));
     (yyval.expression) = new;
@@ -2155,7 +2172,7 @@ yyreduce:
     break;
 
   case 53:
-#line 596 "src/parse.y"
+#line 613 "src/parse.y"
     {
     expression_t *new = make_operator(0, (yyvsp[(1) - (3)].i));
     (yyval.expression) = new;
@@ -2163,7 +2180,7 @@ yyreduce:
     break;
 
   case 54:
-#line 603 "src/parse.y"
+#line 620 "src/parse.y"
     {
     expression_t *new = make_operator(0, (yyvsp[(1) - (4)].i));
     new->parms.op.p[0] = (yyvsp[(3) - (4)].expression);
@@ -2172,7 +2189,7 @@ yyreduce:
     break;
 
   case 55:
-#line 610 "src/parse.y"
+#line 627 "src/parse.y"
     {
     expression_t *new = make_operator(0, (yyvsp[(1) - (4)].i));
     new->parms.op.p[0] = (yyvsp[(3) - (4)].expression);
@@ -2181,7 +2198,7 @@ yyreduce:
     break;
 
   case 56:
-#line 617 "src/parse.y"
+#line 634 "src/parse.y"
     {
     expression_t *new = make_operator(0, (yyvsp[(1) - (4)].i));
     new->parms.op.p[0] = (yyvsp[(3) - (4)].expression);
@@ -2190,7 +2207,7 @@ yyreduce:
     break;
 
   case 57:
-#line 624 "src/parse.y"
+#line 641 "src/parse.y"
     {
     expression_t *new = make_operator(1, (yyvsp[(1) - (4)].i));
     new->parms.op.p[0] = (yyvsp[(3) - (4)].expression);
@@ -2199,7 +2216,7 @@ yyreduce:
     break;
 
   case 58:
-#line 631 "src/parse.y"
+#line 648 "src/parse.y"
     {
     expression_t *new = make_operator(1, (yyvsp[(1) - (4)].i));
     new->parms.op.p[0] = (yyvsp[(3) - (4)].expression);
@@ -2208,7 +2225,7 @@ yyreduce:
     break;
 
   case 59:
-#line 638 "src/parse.y"
+#line 655 "src/parse.y"
     {
 	  expression_t *new = make_operator(1, (yyvsp[(1) - (4)].i));
 	  new->parms.op.p[0] = (yyvsp[(3) - (4)].expression);
@@ -2217,92 +2234,92 @@ yyreduce:
     break;
 
   case 60:
-#line 647 "src/parse.y"
+#line 664 "src/parse.y"
     { (yyval.i) = FRAN; ;}
     break;
 
   case 61:
-#line 648 "src/parse.y"
+#line 665 "src/parse.y"
     { (yyval.i) = FIN; ;}
     break;
 
   case 62:
-#line 653 "src/parse.y"
+#line 670 "src/parse.y"
     { (yyval.i) = FABS; ;}
     break;
 
   case 63:
-#line 654 "src/parse.y"
+#line 671 "src/parse.y"
     { (yyval.i) = FADC; ;}
     break;
 
   case 64:
-#line 655 "src/parse.y"
+#line 672 "src/parse.y"
     { (yyval.i) = FATN; ;}
     break;
 
   case 65:
-#line 656 "src/parse.y"
+#line 673 "src/parse.y"
     { (yyval.i) = FCOM; ;}
     break;
 
   case 66:
-#line 657 "src/parse.y"
+#line 674 "src/parse.y"
     { (yyval.i) = FCOS; ;}
     break;
 
   case 67:
-#line 658 "src/parse.y"
+#line 675 "src/parse.y"
     { (yyval.i) = FEXP; ;}
     break;
 
   case 68:
-#line 659 "src/parse.y"
+#line 676 "src/parse.y"
     { (yyval.i) = FDIS; ;}
     break;
 
   case 69:
-#line 660 "src/parse.y"
+#line 677 "src/parse.y"
     { (yyval.i) = FDXS; ;}
     break;
 
   case 70:
-#line 661 "src/parse.y"
+#line 678 "src/parse.y"
     { (yyval.i) = FITR; ;}
     break;
 
   case 71:
-#line 662 "src/parse.y"
+#line 679 "src/parse.y"
     { (yyval.i) = FLOG; ;}
     break;
 
   case 72:
-#line 663 "src/parse.y"
+#line 680 "src/parse.y"
     { (yyval.i) = FNEW; ;}
     break;
 
   case 73:
-#line 664 "src/parse.y"
+#line 681 "src/parse.y"
     { (yyval.i) = FSQT; ;}
     break;
 
   case 74:
-#line 665 "src/parse.y"
+#line 682 "src/parse.y"
     { (yyval.i) = FSGN; ;}
     break;
 
   case 75:
-#line 666 "src/parse.y"
+#line 683 "src/parse.y"
     { (yyval.i) = FSIN; ;}
     break;
 
   case 76:
-#line 667 "src/parse.y"
+#line 684 "src/parse.y"
     { (yyval.i) = FOUT; ;}
     break;
 
   case 77:
-#line 676 "src/parse.y"
+#line 693 "src/parse.y"
     {
 	  expression_t *new = make_expression(number);
 	  new->parms.number = (yyvsp[(1) - (1)].d);
@@ -2336,7 +2353,7 @@ yyreduce:
     break;
 
   case 78:
-#line 708 "src/parse.y"
+#line 725 "src/parse.y"
     {
     expression_t *new = make_expression(numstr);
     new->parms.string = (yyvsp[(1) - (1)].s);
@@ -2345,7 +2362,7 @@ yyreduce:
     break;
 
   case 79:
-#line 715 "src/parse.y"
+#line 732 "src/parse.y"
     {
 	  expression_t *new = make_expression(string);
 	  new->parms.string = (yyvsp[(1) - (1)].s);
@@ -2359,7 +2376,7 @@ yyreduce:
     break;
 
   case 80:
-#line 727 "src/parse.y"
+#line 744 "src/parse.y"
     {
     expression_t *new = make_expression(variable);
     new->parms.variable = (yyvsp[(1) - (1)].variable);
@@ -2368,28 +2385,28 @@ yyreduce:
     break;
 
   case 81:
-#line 734 "src/parse.y"
+#line 751 "src/parse.y"
     {
     (yyval.expression) = (yyvsp[(2) - (3)].expression);
   ;}
     break;
 
   case 82:
-#line 739 "src/parse.y"
+#line 756 "src/parse.y"
     {
     (yyval.expression) = (yyvsp[(2) - (3)].expression);
   ;}
     break;
 
   case 83:
-#line 744 "src/parse.y"
+#line 761 "src/parse.y"
     {
     (yyval.expression) = (yyvsp[(2) - (3)].expression);
   ;}
     break;
 
   case 84:
-#line 751 "src/parse.y"
+#line 768 "src/parse.y"
     {
 	  variable_t *new = malloc(sizeof(*new));
 	  new->name = (yyvsp[(1) - (1)].s);
@@ -2402,7 +2419,7 @@ yyreduce:
     break;
 
   case 85:
-#line 762 "src/parse.y"
+#line 779 "src/parse.y"
     {
     variable_t *new = malloc(sizeof(*new));
     new->name = (yyvsp[(1) - (4)].s);
@@ -2414,7 +2431,7 @@ yyreduce:
     break;
 
   case 86:
-#line 773 "src/parse.y"
+#line 790 "src/parse.y"
     {
     printitem_t *new = malloc(sizeof(*new));
     new->expression = (yyvsp[(1) - (1)].expression);
@@ -2424,7 +2441,7 @@ yyreduce:
     break;
 
   case 87:
-#line 781 "src/parse.y"
+#line 798 "src/parse.y"
     {
     printitem_t *new = malloc(sizeof(*new));
     new->expression = (yyvsp[(2) - (2)].expression);
@@ -2434,7 +2451,7 @@ yyreduce:
     break;
 
   case 88:
-#line 790 "src/parse.y"
+#line 807 "src/parse.y"
     {
     printitem_t *new = malloc(sizeof(*new));
     new->expression = NULL;
@@ -2444,7 +2461,7 @@ yyreduce:
     break;
 
   case 89:
-#line 798 "src/parse.y"
+#line 815 "src/parse.y"
     {
     printitem_t *new = malloc(sizeof(*new));
     new->expression = NULL;
@@ -2454,7 +2471,7 @@ yyreduce:
     break;
 
   case 90:
-#line 812 "src/parse.y"
+#line 829 "src/parse.y"
     {
     printitem_t *new = malloc(sizeof(*new));
     new->expression = NULL;
@@ -2464,7 +2481,7 @@ yyreduce:
     break;
 
   case 91:
-#line 820 "src/parse.y"
+#line 837 "src/parse.y"
     {
     printitem_t *new = malloc(sizeof(*new));
     new->expression = NULL;
@@ -2474,7 +2491,7 @@ yyreduce:
     break;
 
   case 92:
-#line 829 "src/parse.y"
+#line 846 "src/parse.y"
     {
     printitem_t *new = malloc(sizeof(*new));
     new->expression = NULL;
@@ -2484,7 +2501,7 @@ yyreduce:
     break;
 
   case 93:
-#line 837 "src/parse.y"
+#line 854 "src/parse.y"
     {
     printitem_t *new = malloc(sizeof(*new));
     new->expression = NULL;
@@ -2494,42 +2511,42 @@ yyreduce:
     break;
 
   case 94:
-#line 848 "src/parse.y"
+#line 865 "src/parse.y"
     {
 	  (yyval.i) = ','; // this is the main separator, comparable to semicolon in BASIC
 	;}
     break;
 
   case 95:
-#line 853 "src/parse.y"
+#line 870 "src/parse.y"
     {
 	  (yyval.i) = '!'; // inserts a cr/lf
 	;}
     break;
 
   case 96:
-#line 858 "src/parse.y"
+#line 875 "src/parse.y"
     {
     (yyval.i) = '#'; // inserts a cr
   ;}
     break;
 
   case 97:
-#line 863 "src/parse.y"
+#line 880 "src/parse.y"
     {
     (yyval.i) = ':'; // inserts a tab
   ;}
     break;
 
   case 98:
-#line 872 "src/parse.y"
+#line 889 "src/parse.y"
     {
 	  (yyval.l) = lst_prepend(NULL, (yyvsp[(1) - (1)].expression));
 	;}
     break;
 
   case 99:
-#line 877 "src/parse.y"
+#line 894 "src/parse.y"
     {
 	  (yyval.l) = lst_append((yyvsp[(1) - (3)].l), (yyvsp[(3) - (3)].expression));
 	;}
@@ -2537,7 +2554,7 @@ yyreduce:
 
 
 /* Line 1267 of yacc.c.  */
-#line 2541 "parse.tab.c"
+#line 2558 "parse.tab.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -2751,6 +2768,6 @@ yyreturn:
 }
 
 
-#line 882 "src/parse.y"
+#line 899 "src/parse.y"
 
 

@@ -180,31 +180,40 @@ static void process_cli_line(const char *input_line)
     bool should_exit_cli = false;
     bool should_skip_execution = false;
     
+    fprintf(stderr, "DEBUG: Checking statements at line 0\n");
     if (interpreter_state.lines[0] != NULL && interpreter_state.lines[0]->data != NULL) {
       statement_t *stmt = (statement_t *)interpreter_state.lines[0]->data;
+      fprintf(stderr, "DEBUG: Statement type = %d (LIBRARY=%d)\n", stmt->type, LIBRARY);
       
       /* LIBRARY statements must be handled specially in CLI mode to avoid replacing the program
          during execution, which causes undefined behavior in interpreter_run() */
       if (stmt->type == LIBRARY) {
+        fprintf(stderr, "DEBUG: Detected LIBRARY statement, action = %d\n", stmt->parms.library.action);
+        fprintf(stderr, "DEBUG: Filename = %s\n", stmt->parms.library.filename);
         /* Extract and perform the LIBRARY operation directly, don't execute through interpreter_run */
         if (stmt->parms.library.action == 1) {
           /* LIBRARY CALL: load and parse a file */
+          fprintf(stderr, "DEBUG: Opening file %s\n", stmt->parms.library.filename);
           FILE *lib_file = fopen(stmt->parms.library.filename, "r");
           if (lib_file == NULL) {
             fprintf(stderr, "Cannot open library file: %s\n", stmt->parms.library.filename);
           } else {
+            fprintf(stderr, "DEBUG: File opened successfully\n");
             /* Read the entire file into memory and parse it with string-based scanning */
             fseek(lib_file, 0, SEEK_END);
             long file_size = ftell(lib_file);
+            fprintf(stderr, "DEBUG: File size = %ld\n", file_size);
             fseek(lib_file, 0, SEEK_SET);
             
             char *file_content = malloc(file_size + 1);
             if (file_content == NULL) {
               fprintf(stderr, "Memory allocation error reading library file\n");
             } else {
+              fprintf(stderr, "DEBUG: Reading file content\n");
               size_t read_size = fread(file_content, 1, file_size, lib_file);
               file_content[read_size] = '\0';
               fclose(lib_file);
+              fprintf(stderr, "DEBUG: File read (%zu bytes)\n", read_size);
               
               /* Clear the current program */
               for (int i = 0; i < MAXLINE; i++) {
@@ -213,8 +222,11 @@ static void process_cli_line(const char *input_line)
               
               /* Parse the file content using string-based scanning */
               extern int yyparse(void);
+              fprintf(stderr, "DEBUG: Calling yy_scan_string\n");
               void *buffer = yy_scan_string(file_content);
+              fprintf(stderr, "DEBUG: Calling yyparse\n");
               yyparse();
+              fprintf(stderr, "DEBUG: yyparse returned\n");
               yy_delete_buffer(buffer);
               
               free(file_content);
@@ -225,6 +237,8 @@ static void process_cli_line(const char *input_line)
                 first_line++;
               interpreter_state.first_line_index = first_line;
               interpreter_state.current_statement = interpreter_state.lines[first_line];
+              fprintf(stderr, "DEBUG: Program loaded, first_line_index = %d\n", first_line);
+              fprintf(stderr, "DEBUG: LIBRARY CALL completed\n");
             }
           }
         } else if (stmt->parms.library.action == 0) {
@@ -293,6 +307,7 @@ static void process_cli_line(const char *input_line)
       }
     }
     
+    fprintf(stderr, "DEBUG: should_skip_execution = %d\n", should_skip_execution);
     
     /* Execute the immediate line in the context of the existing program (unless it was a LIBRARY command) */
     if (!should_skip_execution) {
@@ -307,12 +322,15 @@ static void process_cli_line(const char *input_line)
       interpreter_state.first_line_index = saved_first_line_index;
     }
 
+    fprintf(stderr, "DEBUG: Cleaning up line 0\n");
     /* Remove the temporary line and restore line links */
     if (interpreter_state.lines[0] != NULL) {
       lst_free(interpreter_state.lines[0]);
       interpreter_state.lines[0] = NULL;
     }
+    fprintf(stderr, "DEBUG: Calling interpreter_post_parse\n");
     interpreter_post_parse();
+    fprintf(stderr, "DEBUG: process_cli_line returning\n");
     if (should_exit_cli) {
       terminate_retrofocal(EXIT_SUCCESS);
     }

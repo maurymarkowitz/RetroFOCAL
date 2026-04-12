@@ -32,10 +32,18 @@ Boston, MA 02111-1307, USA.  */
     that errors can report it */
 static double errline;
 
+extern jmp_buf parse_error_jmp_buf;
+extern bool parse_in_cli_mode;
+extern bool last_keyword_abbreviated;  /* from lexer, indicates if keyword was abbreviated */
+
 void yyerror(const char *message)
 {
   fprintf(stderr, "Syntax error at line %g: %s\n", errline, message);
-  exit(1);
+  if (parse_in_cli_mode) {
+    longjmp(parse_error_jmp_buf, 1);
+  } else {
+    exit(1);
+  }
 }
 
 int yylex(void);
@@ -44,6 +52,15 @@ static statement_t *make_statement(int t)
 {
   statement_t *new = malloc(sizeof(*new));
   new->type = t;
+  new->abbreviated = true;  /* default to abbreviated (single character) */
+  return new;
+}
+
+static statement_t *make_statement_with_abbrev(int t, bool abbrev)
+{
+  statement_t *new = malloc(sizeof(*new));
+  new->type = t;
+  new->abbreviated = abbrev;
   return new;
 }
 
@@ -199,21 +216,21 @@ statement:
   |
   ASK printlist
   {
-    statement_t *new = make_statement(ASK);
+    statement_t *new = make_statement_with_abbrev(ASK, last_keyword_abbreviated);
     new->parms.input = $2;
     $$ = new;
   }
   |
   COMMENT /* the PDP-8 documentation separately lists CONTINUE as a COMMENT */
   {
-    statement_t *new = make_statement(COMMENT);
+    statement_t *new = make_statement_with_abbrev(COMMENT, last_keyword_abbreviated);
     new->parms.rem = yylval.s;
     $$ = new;
   }
   |
   DO NUMBER /* PDP-8 manual shows "DO ALL", but it is not explained, same as GO? */
   {
-    statement_t *new = make_statement(DO);
+    statement_t *new = make_statement_with_abbrev(DO, last_keyword_abbreviated);
     new->parms._do = $2;
     $$ = new;
       
@@ -231,21 +248,21 @@ statement:
   |
   ERASE /* ERASE can also be followed by a line or group number to erase those lines. this code only handles clearing out variable values */
   {
-    statement_t *new = make_statement(ERASE);
+    statement_t *new = make_statement_with_abbrev(ERASE, last_keyword_abbreviated);
     new->parms.erase.mode = 0;
     $$ = new;
   }
   |
   ERASE ALL
   {
-    statement_t *new = make_statement(ERASE);
+    statement_t *new = make_statement_with_abbrev(ERASE, last_keyword_abbreviated);
     new->parms.erase.mode = 3;
     $$ = new;
   }
   |
   ERASE NUMBER
   {
-    statement_t *new = make_statement(ERASE);
+    statement_t *new = make_statement_with_abbrev(ERASE, last_keyword_abbreviated);
     new->parms.erase.target = $2;
     if (fabs($2 - trunc($2)) < 0.00001)
       new->parms.erase.mode = 2;
@@ -256,14 +273,14 @@ statement:
   |
   MODIFY NUMBER
   {
-    statement_t *new = make_statement(MODIFY);
+    statement_t *new = make_statement_with_abbrev(MODIFY, last_keyword_abbreviated);
     new->parms.modify_line = $2;
     $$ = new;
   }
 	|
 	FOR variable '=' expression ',' expression
 	{
-	  statement_t *new = make_statement(FOR);
+	  statement_t *new = make_statement_with_abbrev(FOR, last_keyword_abbreviated);
 	  new->parms._for.variable = $2;
 	  new->parms._for.begin = $4;
 	  new->parms._for.end = $6;
@@ -277,7 +294,7 @@ statement:
 	|
 	FOR variable '=' expression ',' expression ',' expression /* note the FORTRAN-like syntax with the step in the middle */
 	{
-	  statement_t *new = make_statement(FOR);
+	  statement_t *new = make_statement_with_abbrev(FOR, last_keyword_abbreviated);
 	  new->parms._for.variable = $2;
 	  new->parms._for.begin = $4;
 	  new->parms._for.step = $6;
@@ -290,14 +307,14 @@ statement:
   |
   GO /* same as BASIC's RUN */
   {
-    statement_t *new = make_statement(GOTO);
+    statement_t *new = make_statement_with_abbrev(GOTO, last_keyword_abbreviated);
     new->parms.go = 0;
     $$ = new;
   }
   |
   GOTO /* essentially identical to above, but in the documentation they never put line numbers on a GO */
   {
-    statement_t *new = make_statement(GOTO);
+    statement_t *new = make_statement_with_abbrev(GOTO, last_keyword_abbreviated);
     new->parms.go = 0;
     $$ = new;
     
@@ -306,7 +323,7 @@ statement:
   |
   GOTO NUMBER
   {
-    statement_t *new = make_statement(GOTO);
+    statement_t *new = make_statement_with_abbrev(GOTO, last_keyword_abbreviated);
     new->parms.go = $2;
     $$ = new;
     
@@ -324,7 +341,7 @@ statement:
 	|
 	IF '(' expression ')' NUMBER /* IF requires parens, like C */
   {
-    statement_t *new = make_statement(IF);
+    statement_t *new = make_statement_with_abbrev(IF, last_keyword_abbreviated);
     new->parms._if.condition = $3;
     new->parms._if.less_line = $5;
     $$ = new;
@@ -343,7 +360,7 @@ statement:
   |
   IF '(' expression ')' NUMBER ',' NUMBER
   {
-    statement_t *new = make_statement(IF);
+    statement_t *new = make_statement_with_abbrev(IF, last_keyword_abbreviated);
     new->parms._if.condition = $3;
     new->parms._if.less_line = $5;
     new->parms._if.zero_line = $7;
@@ -370,7 +387,7 @@ statement:
   |
   IF '(' expression ')' NUMBER ',' NUMBER ',' NUMBER
   {
-    statement_t *new = make_statement(IF);
+    statement_t *new = make_statement_with_abbrev(IF, last_keyword_abbreviated);
     new->parms._if.condition = $3;
     new->parms._if.less_line = $5;
     new->parms._if.zero_line = $7;
@@ -405,7 +422,7 @@ statement:
   |
   LIBRARY CALL STRING
   {
-    statement_t *new = make_statement(LIBRARY);
+    statement_t *new = make_statement_with_abbrev(LIBRARY, last_keyword_abbreviated);
     new->parms.library.filename = $3;
     new->parms.library.action = 1;
     $$ = new;
@@ -413,33 +430,33 @@ statement:
   |
   LIBRARY SAVE STRING
   {
-    statement_t *new = make_statement(LIBRARY);
+    statement_t *new = make_statement_with_abbrev(LIBRARY, last_keyword_abbreviated);
     new->parms.library.filename = $3;
     new->parms.library.action = 0;
     $$ = new;
   }
   |  LIBRARY RUN STRING
   {
-    statement_t *new = make_statement(LIBRARY);
+    statement_t *new = make_statement_with_abbrev(LIBRARY, last_keyword_abbreviated);
     new->parms.library.filename = $3;
     new->parms.library.action = 2;
     $$ = new;
   }
   |  QUIT
   {
-    statement_t *new = make_statement(QUIT);
+    statement_t *new = make_statement_with_abbrev(QUIT, last_keyword_abbreviated);
     $$ = new;
   }
 	|
 	RETURN
 	{
-	  statement_t *new = make_statement(RETURN);
+	  statement_t *new = make_statement_with_abbrev(RETURN, last_keyword_abbreviated);
 	  $$ = new;
 	}
   |
   SET variable '=' expression /* explicit SET, no implicit version like in BASIC */
   {
-    statement_t *new = make_statement(SET);
+    statement_t *new = make_statement_with_abbrev(SET, last_keyword_abbreviated);
     new->parms.set.variable = $2;
     new->parms.set.expression = $4;
     $$ = new;
@@ -459,27 +476,27 @@ statement:
   |
   TYPE printlist /* unlike BASIC, the formatter can be anywhere in the line, and there can be more than one */
   {
-    statement_t *new = make_statement(TYPE);
+    statement_t *new = make_statement_with_abbrev(TYPE, last_keyword_abbreviated);
     new->parms.print = $2;
     $$ = new;
   }
 	|
 	TYPE '$' /* lists out all the variables and their values */
 	{
-	  statement_t *new = make_statement(VARLIST);
+	  statement_t *new = make_statement_with_abbrev(VARLIST, last_keyword_abbreviated);
 	  $$ = new;
 	}
   |
   WRITE
   {
-    statement_t *new = make_statement(WRITE);
+    statement_t *new = make_statement_with_abbrev(WRITE, last_keyword_abbreviated);
     new->parms.write_spec = NULL;
     $$ = new;
   }
   |
   WRITE expression
   {
-    statement_t *new = make_statement(WRITE);
+    statement_t *new = make_statement_with_abbrev(WRITE, last_keyword_abbreviated);
     new->parms.write_spec = $2;
     $$ = new;
   }

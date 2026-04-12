@@ -663,12 +663,15 @@ Boston, MA 02111-1307, USA.  */
 #include "strng.h"
 #include "parse.h"
 
-#line 666 "lex.yy.c"
-#line 39 "src/scan.l"
+/* Track whether the last keyword was abbreviated (single character) or full */
+bool last_keyword_abbreviated = true;
+
+#line 669 "lex.yy.c"
+#line 42 "src/scan.l"
  // used to track where we are in the statement so we can have keywords
  // and variables with the same name
 
-#line 671 "lex.yy.c"
+#line 674 "lex.yy.c"
 
 #define INITIAL 0
 #define KEYWORD_FOUND 1
@@ -886,11 +889,11 @@ YY_DECL
 		}
 
 	{
-#line 43 "src/scan.l"
+#line 46 "src/scan.l"
 
   
  /* end of file */
-#line 893 "lex.yy.c"
+#line 896 "lex.yy.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -959,14 +962,14 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 46 "src/scan.l"
+#line 49 "src/scan.l"
 {
           yyterminate();
         }
 	YY_BREAK
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(KEYWORD_FOUND):
-#line 49 "src/scan.l"
+#line 52 "src/scan.l"
 {
           yyterminate();
         }
@@ -980,74 +983,74 @@ case YY_STATE_EOF(KEYWORD_FOUND):
 
 case 2:
 YY_RULE_SETUP
-#line 60 "src/scan.l"
-{ yylval.s = str_new(str_copy(yytext, yyleng - strlen(yytext))); return COMMENT; } // manual lists CONTINUE separately, but its a comment
+#line 63 "src/scan.l"
+{ yylval.s = str_new(str_copy(yytext, yyleng - strlen(yytext))); last_keyword_abbreviated = (yyleng == 1); return COMMENT; } // manual lists CONTINUE separately, but its a comment
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 61 "src/scan.l"
-{ BEGIN(KEYWORD_FOUND); return ASK; }     // INPUT
+#line 64 "src/scan.l"
+{ BEGIN(KEYWORD_FOUND); last_keyword_abbreviated = (yyleng == 1); return ASK; }     // INPUT
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 62 "src/scan.l"
-{ BEGIN(KEYWORD_FOUND); return DO; }      // combines GOTO and GOSUB
+#line 65 "src/scan.l"
+{ BEGIN(KEYWORD_FOUND); last_keyword_abbreviated = (yyleng == 1); return DO; }      // combines GOTO and GOSUB
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 63 "src/scan.l"
-{ BEGIN(KEYWORD_FOUND); return FOR; }     // one-line only, no NEXT
+#line 66 "src/scan.l"
+{ BEGIN(KEYWORD_FOUND); last_keyword_abbreviated = (yyleng == 1); return FOR; }     // one-line only, no NEXT
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 64 "src/scan.l"
-{ BEGIN(KEYWORD_FOUND); return IF; }      // branches only
+#line 67 "src/scan.l"
+{ BEGIN(KEYWORD_FOUND); last_keyword_abbreviated = (yyleng == 1); return IF; }      // branches only
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 65 "src/scan.l"
-{ BEGIN(KEYWORD_FOUND); return QUIT; }    // END/STOP/BYE
+#line 68 "src/scan.l"
+{ BEGIN(KEYWORD_FOUND); last_keyword_abbreviated = (yyleng == 1); return QUIT; }    // END/STOP/BYE
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 66 "src/scan.l"
-{ BEGIN(KEYWORD_FOUND); return RETURN; }  // optional RETURNs at end of group anyway
+#line 69 "src/scan.l"
+{ BEGIN(KEYWORD_FOUND); last_keyword_abbreviated = (yyleng == 1); return RETURN; }  // optional RETURNs at end of group anyway
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 67 "src/scan.l"
-{ BEGIN(KEYWORD_FOUND); return SET; }     // LET
+#line 70 "src/scan.l"
+{ BEGIN(KEYWORD_FOUND); last_keyword_abbreviated = (yyleng == 1); return SET; }     // LET
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 68 "src/scan.l"
-{ BEGIN(KEYWORD_FOUND); return TYPE; }    // PRINT
+#line 71 "src/scan.l"
+{ BEGIN(KEYWORD_FOUND); last_keyword_abbreviated = (yyleng == 1); return TYPE; }    // PRINT
 	YY_BREAK
 /* non-program statements (mostly) */
 case 11:
 YY_RULE_SETUP
-#line 71 "src/scan.l"
-{ BEGIN(KEYWORD_FOUND); return ERASE; }   // erases lines of source, but also double-duty as CLR to reset variables
+#line 74 "src/scan.l"
+{ BEGIN(KEYWORD_FOUND); last_keyword_abbreviated = (yyleng == 1); return ERASE; }   // erases lines of source, but also double-duty as CLR to reset variables
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 72 "src/scan.l"
-{ BEGIN(KEYWORD_FOUND); return GOTO; }    // RUN, optional line number
+#line 75 "src/scan.l"
+{ BEGIN(KEYWORD_FOUND); last_keyword_abbreviated = (yyleng == 1); return GOTO; }    // RUN, optional line number
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 73 "src/scan.l"
-{ BEGIN(KEYWORD_FOUND); return LIBRARY; } // LIBRARY CALL or LIBRARY SAVE
+#line 76 "src/scan.l"
+{ BEGIN(KEYWORD_FOUND); last_keyword_abbreviated = (yyleng == 1); return LIBRARY; } // LIBRARY CALL or LIBRARY SAVE
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 74 "src/scan.l"
-{ BEGIN(KEYWORD_FOUND); return MODIFY; }  // edits a single line
+#line 77 "src/scan.l"
+{ BEGIN(KEYWORD_FOUND); last_keyword_abbreviated = (yyleng == 1); return MODIFY; }  // edits a single line
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 75 "src/scan.l"
-{ BEGIN(KEYWORD_FOUND); return WRITE; }   // LIST
+#line 78 "src/scan.l"
+{ BEGIN(KEYWORD_FOUND); last_keyword_abbreviated = (yyleng == 1); return WRITE; }   // LIST
 	YY_BREAK
 
 /* the following are only valid after one of the keyworda above */
@@ -1055,124 +1058,124 @@ YY_RULE_SETUP
 /* keywords that follow LIBRARY */
 case 16:
 YY_RULE_SETUP
-#line 81 "src/scan.l"
+#line 84 "src/scan.l"
 { return CALL; }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 82 "src/scan.l"
+#line 85 "src/scan.l"
 { return SAVE; }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 83 "src/scan.l"
+#line 86 "src/scan.l"
 { return RUN; }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 84 "src/scan.l"
+#line 87 "src/scan.l"
 { return ALL; }
 	YY_BREAK
 /* math functions */
 case 20:
 YY_RULE_SETUP
-#line 87 "src/scan.l"
+#line 90 "src/scan.l"
 { return FABS; }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 88 "src/scan.l"
+#line 91 "src/scan.l"
 { return FATN; }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 89 "src/scan.l"
+#line 92 "src/scan.l"
 { return FCOS; }
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 90 "src/scan.l"
+#line 93 "src/scan.l"
 { return FEXP; }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 91 "src/scan.l"
+#line 94 "src/scan.l"
 { return FITR; }
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 92 "src/scan.l"
+#line 95 "src/scan.l"
 { return FLOG; }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 93 "src/scan.l"
+#line 96 "src/scan.l"
 { return FRAN; }
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 94 "src/scan.l"
+#line 97 "src/scan.l"
 { return FSGN; }
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 95 "src/scan.l"
+#line 98 "src/scan.l"
 { return FSIN; }
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 96 "src/scan.l"
+#line 99 "src/scan.l"
 { return FSQT; }
 	YY_BREAK
 /* other functions */
 case 30:
 YY_RULE_SETUP
-#line 99 "src/scan.l"
+#line 102 "src/scan.l"
 { return FADC; }
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 100 "src/scan.l"
+#line 103 "src/scan.l"
 { return FDIS; }
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 101 "src/scan.l"
+#line 104 "src/scan.l"
 { return FDXS; }
 	YY_BREAK
 /* these are listed in the 1970 programming languages manual, but are not explained */
 case 33:
 YY_RULE_SETUP
-#line 104 "src/scan.l"
+#line 107 "src/scan.l"
 { return FNEW; } // like a BASIC SYS or CALL, calls a machine-code routine
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 105 "src/scan.l"
+#line 108 "src/scan.l"
 { return FCOM; } // UW-FOCAL explains this sets up common memory to share data between programs
 	YY_BREAK
 /* FOCAL-71 additions */
 case 35:
 YY_RULE_SETUP
-#line 108 "src/scan.l"
+#line 111 "src/scan.l"
 { return FIN; }
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 109 "src/scan.l"
+#line 112 "src/scan.l"
 { return FOUT; }
 	YY_BREAK
 /* various operators and punctuation */
 case 37:
 YY_RULE_SETUP
-#line 112 "src/scan.l"
+#line 115 "src/scan.l"
 { return yytext[0]; }
 	YY_BREAK
 /* variable references, only first two characters are used but we save them all. F is not allowed. */
 /* NOTE: underscore is supported here but unlikely to have been used in actual code. */
 case 38:
 YY_RULE_SETUP
-#line 116 "src/scan.l"
+#line 119 "src/scan.l"
 {
             yylval.s = str_new(yytext);
             return VARIABLE_NAME;
@@ -1182,7 +1185,7 @@ YY_RULE_SETUP
 case 39:
 /* rule 39 can match eol */
 YY_RULE_SETUP
-#line 122 "src/scan.l"
+#line 125 "src/scan.l"
 {
             // new string, trim the leading quote
             char *s = str_new(yytext + 1);
@@ -1205,7 +1208,7 @@ YY_RULE_SETUP
 /* FOCAL has a second number format used for string inputs, it starts with a 0 like 0YES */
 case 40:
 YY_RULE_SETUP
-#line 142 "src/scan.l"
+#line 145 "src/scan.l"
 {
             yylval.s = str_new(yytext);
               return NUMSTR;
@@ -1214,7 +1217,7 @@ YY_RULE_SETUP
 /* and we have to do format strings separately as well, to preserve the trailing zero */
 case 41:
 YY_RULE_SETUP
-#line 148 "src/scan.l"
+#line 151 "src/scan.l"
 {
               yylval.s = str_new(yytext + 1);
               return FMTSTR;
@@ -1224,7 +1227,7 @@ YY_RULE_SETUP
 /* other numeric constants and line numbers */
 case 42:
 YY_RULE_SETUP
-#line 156 "src/scan.l"
+#line 159 "src/scan.l"
 {
               yylval.d = strtod(yytext, NULL);
               return NUMBER;
@@ -1233,34 +1236,34 @@ YY_RULE_SETUP
 /* semis outside strings are used to trigger statement-start */
 case 43:
 YY_RULE_SETUP
-#line 162 "src/scan.l"
+#line 165 "src/scan.l"
 { BEGIN(INITIAL); return ';'; }
 	YY_BREAK
 /* preserve line ends */
 case 44:
 /* rule 44 can match eol */
 YY_RULE_SETUP
-#line 165 "src/scan.l"
+#line 168 "src/scan.l"
 { BEGIN(INITIAL); return '\n'; }
 	YY_BREAK
 /* eat other whitespace */
 case 45:
 YY_RULE_SETUP
-#line 168 "src/scan.l"
+#line 171 "src/scan.l"
 {  }
 	YY_BREAK
 /* default rule to report any leftover chars */
 case 46:
 YY_RULE_SETUP
-#line 171 "src/scan.l"
+#line 174 "src/scan.l"
 printf("Bad input character '%s' at line %d\n", yytext, yylineno);
 	YY_BREAK
 case 47:
 YY_RULE_SETUP
-#line 173 "src/scan.l"
+#line 176 "src/scan.l"
 ECHO;
 	YY_BREAK
-#line 1263 "lex.yy.c"
+#line 1266 "lex.yy.c"
 
 	case YY_END_OF_BUFFER:
 		{
@@ -2275,6 +2278,6 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 173 "src/scan.l"
+#line 176 "src/scan.l"
 
 

@@ -64,6 +64,10 @@ extern char *print_file;
 extern char *stats_file;
 extern char *cli_prompt;      // prompt string for interactive mode
 
+/* Parse error handling for CLI mode */
+extern jmp_buf parse_error_jmp_buf;
+extern bool parse_in_cli_mode;
+
 /* variable **references** */
 /* this is used to record a reference to a variable in the code,
    not it's value. So this might be A or A$ or A(1,2).
@@ -124,6 +128,7 @@ typedef struct {
  */
 typedef struct statement_struct {
   int type;
+  bool abbreviated;  /* indicates whether keyword was abbreviated (e.g., 'S' vs 'SET') */
   union {
     struct {
       variable_t *variable;

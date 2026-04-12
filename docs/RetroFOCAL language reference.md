@@ -17,6 +17,8 @@ RetroFOCAL is a version of the FOCAL programming language intended to run classi
 
 The goal of RetroFOCAL is to allow you to run popular FOCAL programs written during the language's Golden Age in the late 1960s. As such, it does not currently suport file handling beyond `LIBRARY CALL`, `LIBRARY SAVE`, and `LIBRARY RUN`.
 
+There is only one major variation on FOCAL, U/W FOCAL, or UWF, from the University of Washington. Using memory overlays, UWF offers a range of new features and statements while still using less memory that the original FOCAL-8. UWF extensions are not currently supported in RetroFOCAL.
+
 ## Contents
 
 <!-- TOC start (generated with https://github.com/derlin/bitdowntoc) -->
@@ -171,7 +173,7 @@ Command-line options:
 - `--stats`: Print program statistics after execution
 - `--help` or `-h`: Display help message
 
-Example:
+#### Examples:
 
     retrofocal myprogram.fc --no-run
     retrofocal myprogram.fc --stats
@@ -202,7 +204,7 @@ Command-line options for interactive mode:
 
 - `--prompt` or `-p`: Set the CLI prompt (default: `*`)
 
-Example:
+#### Examples:
 
     retrofocal --prompt "FOCAL> "
     FOCAL> 1.10 SET A=10
@@ -262,19 +264,23 @@ FOCAL consisted of two separate programs, the FOCAL runtime, and a shell program
 RetroFOCAL implements several commands as statements, allowing program code to control program loading, saving, execution, and display. These include `WRITE` for program listing, `MODIFY` for editing, and `LIBRARY CALL`, `LIBRARY SAVE`, and `LIBRARY RUN` for disk operations. FOCAL also re-uses or re-purposes several other keywords to have different meanings whether they are included inside a program or are used at the command line. These are documented below in the program statements area, and include `DO`, `GO` and `ERASE`.
 
 <!-- TOC --><a name="modify"></a>
-#### `MODIFY` *lineno*
+### `MODIFY` *lineno*
 
 The `MODIFY` command displays the content of a stored program line if it exists. This is useful for inspecting the exact contents of a line before editing or deleting it.
 
-Example usage:
+#### Examples:
 ```
 MODIFY 1.10
 ```
 
-This will print line 1.10 to the console, or show an error if the line does not exist.
+This will print line 1.10 to the console and ready it for editing, or show an error if the line does not exist.
+
+#### Variations:
+
+Although there is no change in the command or how it works, U/W FOCAL sometimes refers to this as `MOVE`.
 
 <!-- TOC --><a name="write"></a>
-#### `WRITE` [*exp*]
+### `WRITE` [*exp*]
 
 The `WRITE` statement outputs the FOCAL program (or a portion of it) to the console in canonical format. This is the FOCAL equivalent to the `LIST` command in BASIC.
 
@@ -284,7 +290,7 @@ If *exp* is provided, the output is filtered based on the value:
 - If *exp* evaluates to an integer (e.g., `2` or `2.0`), all lines in that group are listed (e.g., `WRITE 2` lists lines 2.00 through 2.99)
 - If *exp* evaluates to a non-integer (e.g., `2.1`), only that specific line is listed
 
-Example usage:
+#### Examples:
 ```
 WRITE
 ```
@@ -301,11 +307,11 @@ WRITE 2.5
 Lists only line 2.50.
 
 <!-- TOC --><a name="library-call"></a>
-#### `LIBRARY CALL` *filename*
+### `LIBRARY CALL` *filename*
 
 The `LIBRARY CALL` statement loads a FOCAL program from disk and replaces the current program in memory. The *filename* should be a string constant representing the path to the FOCAL source file.
 
-Example usage:
+#### Examples:
 ```
 LIBRARY CALL "myprogram.fc"
 ```
@@ -313,11 +319,11 @@ LIBRARY CALL "myprogram.fc"
 After a successful `LIBRARY CALL`, the newly loaded program replaces the current program. Execution does not automatically begin; the program can be run using the `GO` statement or by pressing Enter/Return at the CLI prompt.
 
 <!-- TOC --><a name="library-save"></a>
-#### `LIBRARY SAVE` *filename*
+### `LIBRARY SAVE` *filename*
 
 The `LIBRARY SAVE` statement writes the current FOCAL program to the named file in canonical format. The *filename* should be a string constant representing the path where the file should be saved.
 
-Example usage:
+#### Examples:
 ```
 LIBRARY SAVE "backup.fc"
 ```
@@ -325,11 +331,11 @@ LIBRARY SAVE "backup.fc"
 This will write the current program to the specified file, overwriting any existing file with that name.
 
 <!-- TOC --><a name="library-run"></a>
-#### `LIBRARY RUN` *filename*
+### `LIBRARY RUN` *filename*
 
 The `LIBRARY RUN` statement loads a FOCAL program from disk and begins executing it immediately. The *filename* should be a string constant representing the path to the FOCAL source file.
 
-Example usage:
+#### Examples:
 ```
 LIBRARY RUN "myprogram.fc"
 ```
@@ -370,8 +376,6 @@ FOCAL progresses through a program by performing statements one at a time, movin
 As FOCAL only reads the first letter of the keyword, this same instruction was also used in the shell to run programs. In this case it was almost always shortened to `GO` and no line number was provided. In this case, execution starts at the first line in the program.
 
 In RetroFOCAL, `GO`ing occurs automatically after the program is loaded, so a `GO` with no line number found within the program text is a branch to the start of the problem.
-
-#### Examples:
 
 <!-- TOC --><a name="erase"></a>
 ### `ERASE` {[*lineno*|*groupno*|ALL]}

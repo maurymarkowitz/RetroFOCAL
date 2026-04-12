@@ -136,7 +136,7 @@
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE
-#line 75 "src/parse.y"
+#line 92 "src/parse.y"
 {
   double d;
   int i;

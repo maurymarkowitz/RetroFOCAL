@@ -48,6 +48,7 @@ Boston, MA 02111-1307, USA.  */
 #include <limits.h> // gives INT_MAX
 
 #include <time.h>   // used for TIME and DATE in main and stats
+#include <setjmp.h>  // used for parse error recovery in CLI mode
 
 #include "strng.h"  // our replacement for GLib.String
 #include "list.h"   // ... and GLib.List and .Tree
