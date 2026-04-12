@@ -38,3 +38,16 @@ plans/
 # Temporary files
 *.swp
 *~
+
+# Build artifacts and executables
+retrofocal
+retrofocal.exe
+retrofocal.o
+*.o
+
+# Generated files from flex and bison
+parse.tab.c
+parse.tab.h
+parse.tab.o
+lex.yy.c
+*.lex.c
