@@ -49,6 +49,17 @@ Boston, MA 02111-1307, USA.  */
 
 #include <time.h>   // used for TIME and DATE in main and stats
 #include <signal.h> // used for signal handling
+
+#if defined(_WIN32) || defined(WIN32)
+  #include <io.h>
+  #ifndef isatty
+  #define isatty _isatty
+  #endif
+  #ifndef fileno
+  #define fileno _fileno
+  #endif
+#endif
+
 #include <setjmp.h>  // used for parse error recovery in CLI mode
 
 #include "strng.h"  // our replacement for GLib.String

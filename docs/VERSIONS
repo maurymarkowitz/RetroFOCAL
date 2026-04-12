@@ -1,6 +1,11 @@
 RetroFOCAL version history
 ==========================
 
+Version 2.0.0 - 11 April 2026
+
+- added the CLI from RetroBASIC to add interactive mode
+- as part of this, add extensive BREAK handling including in ASK
+
 Version 1.2.0 - 1 April 2026
 
 - adding CI machinery to build releases and binaries
