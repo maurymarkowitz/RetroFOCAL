@@ -812,13 +812,13 @@ static double current_line()
 /* returns a pointer to the named line or returns an error if it's not found */
 static list_t *find_line(double linenumber)
 {
-  char buffer[50];
+  char buffer[128];
 	int group = trunc(linenumber);
 	int step = round((linenumber - group) * 100);
 	
 	/* Line 0 is reserved for internal immediate-mode use and cannot be jumped to */
 	if (linenumber == 0.0) {
-		sprintf(buffer, "Line 0 is reserved for internal use and cannot be referenced");
+		snprintf(buffer, sizeof(buffer), "Line 0 is reserved for internal use and cannot be referenced");
 		focal_error(buffer);
 		return NULL;
 	}
@@ -826,10 +826,10 @@ static list_t *find_line(double linenumber)
   // negative numbers are not allowed
   if (linenumber < 0) {
 		if (linenumber != floor(linenumber)) {
-			sprintf(buffer, "Negative target line %i.%i in branch", group, step);
+			snprintf(buffer, sizeof(buffer), "Negative target line %i.%i in branch", group, step);
 			focal_error(buffer);
 		} else {
-			sprintf(buffer, "Negative target group %i.%i in branch", group, step);
+			snprintf(buffer, sizeof(buffer), "Negative target group %i.%i in branch", group, step);
 			focal_error(buffer);
 		}
     return NULL;
@@ -868,14 +868,14 @@ static list_t *find_line(double linenumber)
 			return lv;
 		}
 		else {
-			sprintf(buffer, "Undefined target line %i in branch", group);
+			snprintf(buffer, sizeof(buffer), "Undefined target line %i in branch", group);
 			focal_error(buffer);
 			return NULL;
 		}
 	}
 	
 	// failsafe
-	sprintf(buffer, "Undefined target line %i.%i in branch", group, step);
+	snprintf(buffer, sizeof(buffer), "Undefined target line %i.%i in branch", group, step);
 	focal_error(buffer);
 	return NULL;
 } /*find_line */

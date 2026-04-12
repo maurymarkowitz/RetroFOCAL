@@ -51,12 +51,24 @@ Boston, MA 02111-1307, USA.  */
 #include <signal.h> // used for signal handling
 
 #if defined(_WIN32) || defined(WIN32)
-  #include <io.h>
+  #if defined(__has_include_next)
+    #if __has_include_next(<io.h>)
+      #include_next <io.h>
+    #else
+      #include <io.h>
+    #endif
+  #else
+    #include <io.h>
+  #endif
   #ifndef isatty
   #define isatty _isatty
   #endif
   #ifndef fileno
   #define fileno _fileno
+  #endif
+  #if !defined(_IO_H_)
+    int _isatty(int _FileHandle);
+    int _fileno(FILE *_File);
   #endif
 #endif
 
