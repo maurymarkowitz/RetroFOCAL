@@ -13,8 +13,7 @@ Version 1.1.3
 
 RetroFOCAL is a version of the FOCAL programming language intended to run classic FOCAL programs. RetroFOCAL is designed to run any program that ran on FOCAL-71, which is a superset of the otherwise similar FOCAL-69. Practically any major program should run properly without conversion. Programs must be provided in plain text, better known as "source code", which was the normal way to distribute FOCAL code.
 
-RetroFOCAL also supports an interactive CLI mode. When started without a source file, it enters a prompt where users can type FOCAL statements directly, edit numbered lines, and execute code immediately. The prompt defaults to `*`, and can be changed via the `--prompt` command-line option.
-
+RetroFOCAL also supports an interactive CLI mode. When started without a source file, it enters a prompt where users can type FOCAL statements directly, edit numbered lines, and execute code immediately.
 ### What RetroFOCAL is not
 
 The goal of RetroFOCAL is to allow you to run popular FOCAL programs written during the language's Golden Age in the late 1960s. As such, it does not currently suport file handling beyond `LIBRARY CALL`, `LIBRARY SAVE`, and `LIBRARY RUN`.
@@ -124,7 +123,7 @@ The purpose of an **expression** is to provide data to be acted on by the statem
 
 - **number** - such as 10 or -1.75. Also known as **numeric constants**.
 - **string** - a series of characters surrounded by double-quote marks, like "Hello, World!". Also known as **string constants**.
-- **variable** - a symbolic name which can store the value of a number or a string for future recall.
+- **variable** - a symbolic name which can store the value of a number for future recall.
 - **array** - a type of variable that stores multiple values at once.
 - **operator** - symbol characters, typically from mathematics, that take one or two expressions and produce a number.
 - **function** - operators using names instead of symbols.

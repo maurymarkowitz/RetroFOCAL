@@ -8,15 +8,19 @@ RetroFOCAL
 ## Contents
 
 * [Introduction](#introduction)
-* [Running RetroFOCAL](#running-retrofocal)
+* [Installing RetroFOCAL](#installing-retrofocal)
 * [Building RetroFOCAL](#building-retrofocal)
-* [Missing features and Erata](#missing-features-and-erata)
+* [Running RetroFOCAL with an existing program](#running-retrofocal-with-an-existing-program)
+* [Running RetroFOCAL interactively](#running-retrofocal-interactively)
+* [Missing features and Errata](#missing-features-and-errata)
 
 ## Introduction
 
-RetroFOCAL is an interpreter for programs written in the FOCAL language seen on DEC machines like the PDP-8. FOCAL is very similar to early BASIC interpreters and anyone familiar with BASIC will feel at home in FOCAL. FOCAL was only used for a short time from 1968 until the early 1970s, when DEC started promoting their own versions of BASIC as the market moved to that language *en mass*. In spite of this short lifetime, a number of historically important programs were intially created in this language, including [Lunar Lander](https://www.cs.brandeis.edu/~storer/LunarLander/LunarLander.html) and [The Sumerian Game](https://en.wikipedia.org/wiki/The_Sumerian_Game), better known today as [Hamurabi](https://en.wikipedia.org/wiki/Hamurabi_(video_game)).
+RetroFOCAL is an interpreter for programs written in the FOCAL language seen on DEC machines like the PDP-8. FOCAL is very similar to early BASIC interpreters and anyone familiar with BASIC will feel at home in FOCAL. FOCAL was only used for a short time from 1968 until the early 1970s, when DEC started promoting their own versions of BASIC as the market moved to that language *en mass*. In spite of this short lifetime, a number of historically important programs were initially created in this language, including [Lunar Lander](https://www.cs.brandeis.edu/~storer/LunarLander/LunarLander.html) and [The Sumerian Game](https://en.wikipedia.org/wiki/The_Sumerian_Game), better known today as [Hamurabi](https://en.wikipedia.org/wiki/Hamurabi_(video_game)).
 
 RetroFOCAL can redirect the output from `TYPE` statements and `ASK` prompts to a file, and read the responses to `ASK` statements from a file. This can be used to provide the same input to a program multiple times, and then the output can be `diff`ed to look for changes. This is aided by a command-line option to set the random number seed value, so that the random numbers are always the same. It also includes a simple static analyzer that (optionally) prints statistics for the program after it completes. This includes the length of the program and its line number range, the number and types of variables used, and similar details.
+
+The installation also includes an extensive reference manual which includes a complete list of the FOCAL language and how it differs across various platforms. This can be used both as a reference for RetroFOCAL as well as a general guide to FOCAL and a useful resource for porting older programs.
 
 RetroFOCAL is based on [RetroBASIC](https://github.com/maurymarkowitz/RetroBASIC) by Maury Markowitz, which is based on gnbasic by James Bowman.
 
@@ -35,7 +39,7 @@ brew tap maurymarkowitz/tap https://github.com/maurymarkowitz/homebrew-tap
 brew install maurymarkowitz/tap/retrofocal
 ```
 
-On Apple Silicon, Homebrew defaults to `/opt/homebrew` instead of `/usr/local`.
+**Note** Homebrew installs to `/opt/homebrew/bin` instead of `/usr/local/bin` on Apple Silicon Macs.
 
 On Windows, you can use Scoop:
 
@@ -46,17 +50,19 @@ scoop install retrofocal
 
 ## Building RetroFOCAL
 
-The project is built using Make (with `flex` and `bison` for lex/yacc). On macOS and Linux, all of the dependancies and tools should already be installed. On windows, the system uses MinGW, which you will need to install before building. See [docs/BUILD.md](docs/BUILD.md) for full instructions for Linux/macOS and Windows, including install/uninstall paths and required packages.
+You can also easily build the project from source. It is a makefile project that does not require `autoconfig` or other steps. A simple `make` in the root directory should produce a working executable on practically any unix-like system.
 
-## Running RetroFOCAL
+Windows compatibility is provided using MinGW, which needs to be installed manually. The same makefile is used for both Unix and Windows, and the `make` utility supplied with MinGW works perfectly. Flex and Bison will generally have to be manually specified as most basic MinGW installs will not include them by default.
 
-RetroFOCAL is normally used with an existing program source file. To run it, use:
+Both platforms support `make install` which adds the manuals to the proper locations, and `make uninstall` to cleanly remove all the parts. `make install` defaults to `/usr/local`; override with `PREFIX` if needed (for example `make PREFIX=/opt/retrofocal install`).
+
+## Running RetroFOCAL with an existing program
+
+RetroFOCAL is generally used to run existing programs, saved to a text file normally with the extension `.fc`. You can use it this way using a command similar to this example, replacing the `program.fc` with the name of the text file containing the FOCAL program you wish to run:
 
 ```./retrofocal program.fc```
 
 It will accept any text file as input and report (cryptic) errors if it cannot properly parse it. If parsing succeeds, the program (normally) begins running immediately.
-
-If no source file is provided, RetroFOCAL starts in interactive CLI mode. In this mode you can enter FOCAL statements directly, edit program lines by line number, and use the interpreter as a simple CLI.
 
 Command-line options include:
 
@@ -69,13 +75,41 @@ Command-line options include:
 `--no-run`, `-n`: do not run the FOCAL program, simply read and parse it and then exit  
 `--print-stats`, `-p`: send a selection of statistics to the console  
 `--write-stats`, `-w`: write the statistics to the named file in a machine readable format  
-`--prompt`: set the interactive prompt string, default is `*`. 
 
 If you wish to use RetroFOCAL to simply check syntax or collect statistics, use the `-n` and `-p` switches.
 
-Short options with no parameters can be ganged, for instance `-unp`.
+Short options with no parameters can be ganged, for instance, `-unp`.
 
-## Missing features and Erata
+## Running RetroFOCAL interactively
+
+RetroFOCAL includes a simple line-oriented editor that allows you to create and edit programs interactively, as well as run them. To enter interactive mode, launch RetroFOCAL with no parameters:
+
+```
+./retrofocal
+
+RetroFOCAL CLI
+
+* 
+```
+
+In interactive mode you can:
+
+- Type program lines with line numbers to store them (e.g., `1.10 SET A=10`)
+- Type just a line number to delete that line
+- Type FOCAL statements without a line number to execute them immediately
+- Use `DO` to run the stored program
+- Use `MODIFY <line>` to print a specified stored line
+- Use `WRITE` to display the current program
+- Use `ERASE` to remove stored lines
+- Use `LIBRARY CALL` to load a program from disk
+
+You can customize the interactive prompt with the `--prompt` option. For example, to use a `>` prompt instead of the default `*`:
+
+```./retrofocal --prompt ">```
+
+The break key (Esc on Unix/macOS) can be used in interactive mode to return to the prompt, or in non-interactive mode to exit directly to the shell.
+
+## Missing features and Errata
 
 A complete list of ongoing changes is maintained in the TODO file, but here are some important limitations:
 
