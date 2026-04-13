@@ -53,7 +53,6 @@ bool print_stats = false;               // do not print or write stats by defaul
 bool write_stats = false;
 int tab_columns = 10;                   // based on PET BASIC, which is a good enough target
 bool trace_lines = false;								// turned on or off with a ?
-bool ask_colon = true;          				// print a colon in ASK
 bool type_equals = false;								// print the = in TYPEs
 bool type_space = true;								  // print a leading space in TYPE
 bool upper_case = true;          				// force ASK input to upper case, which is generally the case for DEC
@@ -916,9 +915,8 @@ static void perform_statement(list_t *list_item)
 						either_t *value;
 						int type = 0;
 						
-						// print the colon if that option is turned on
-						if (ask_colon)	
-							printf(":");
+						// print the colon prompt for ASK input
+						printf(":");
 						
 						// see if we can get some data using raw mode line input
 						fflush(stdout);

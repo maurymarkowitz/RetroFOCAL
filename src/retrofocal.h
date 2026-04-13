@@ -53,7 +53,6 @@ extern bool write_stats;      // ... or write them to a file?
 
 extern int tab_columns;       // based on PET BASIC, which is a good enough target
 extern bool trace_lines;
-extern bool ask_colon;        // print a colon before each ASK input (like BASIC's ?)
 extern bool type_equals;      // print an equals before each TYPE output?
 extern bool upper_case;       // force ASK inputs to upper case
 extern int random_seed;       // reset with RANDOMIZE, if -1 then auto-seeds

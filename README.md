@@ -50,11 +50,13 @@ The project is built using Make (with `flex` and `bison` for lex/yacc). On macOS
 
 ## Running RetroFOCAL
 
-RetroFOCAL is meant to be used with an existing program source file, not interactively. To run it, use:
+RetroFOCAL is normally used with an existing program source file. To run it, use:
 
 ```./retrofocal program.fc```
 
 It will accept any text file as input and report (cryptic) errors if it cannot properly parse it. If parsing succeeds, the program (normally) begins running immediately.
+
+If no source file is provided, RetroFOCAL starts in interactive CLI mode. In this mode you can enter FOCAL statements directly, edit program lines by line number, and use the interpreter as a simple CLI.
 
 Command-line options include:
 
@@ -64,9 +66,10 @@ Command-line options include:
 `--random`, `-r`: seed the random number generator  
 `--output-file`, `-o`: redirect TYPE to the named file  
 `--input-file`, `-i`: redirect ASK from the named file, one value per line  
-`--no_run`, `-n`: do not run the FOCAL program, simply read and parse it and then exit  
-`--print_statistics`, `-p`: send a selection of statistics to the console  
-`--write_statistics`, `-w`: write the statistics to the named file in a machine readable format
+`--no-run`, `-n`: do not run the FOCAL program, simply read and parse it and then exit  
+`--print-stats`, `-p`: send a selection of statistics to the console  
+`--write-stats`, `-w`: write the statistics to the named file in a machine readable format  
+`--prompt`: set the interactive prompt string, default is `*`. 
 
 If you wish to use RetroFOCAL to simply check syntax or collect statistics, use the `-n` and `-p` switches.
 
@@ -77,6 +80,4 @@ Short options with no parameters can be ganged, for instance `-unp`.
 A complete list of ongoing changes is maintained in the TODO file, but here are some important limitations:
 
 * ASK statements with multiple values currently have to be entered with return/enter between each value, spaces do not work.
-* The system does not support "immediate mode" (command line) input. It is not supposed to, but could potentially do so.
-* WRITE, LIBRARY, MODIFY and ERASE (lines) are currently not implemented, in keeping with the use-case.
 * File I/O is not supported, commands like OPEN will be parsed but have no effect.

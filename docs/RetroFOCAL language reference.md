@@ -13,6 +13,8 @@ Version 1.1.3
 
 RetroFOCAL is a version of the FOCAL programming language intended to run classic FOCAL programs. RetroFOCAL is designed to run any program that ran on FOCAL-71, which is a superset of the otherwise similar FOCAL-69. Practically any major program should run properly without conversion. Programs must be provided in plain text, better known as "source code", which was the normal way to distribute FOCAL code.
 
+RetroFOCAL also supports an interactive CLI mode. When started without a source file, it enters a prompt where users can type FOCAL statements directly, edit numbered lines, and execute code immediately. The prompt defaults to `*`, and can be changed via the `--prompt` command-line option.
+
 ### What RetroFOCAL is not
 
 The goal of RetroFOCAL is to allow you to run popular FOCAL programs written during the language's Golden Age in the late 1960s. As such, it does not currently suport file handling beyond `LIBRARY CALL`, `LIBRARY SAVE`, and `LIBRARY RUN`.
