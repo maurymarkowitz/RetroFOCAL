@@ -1,9 +1,11 @@
 RetroFOCAL version history
 ==========================
 
-Version 2.0.1 - 26 May 2026
+Version 2.0.2 - 26 May 2026
 
-- minor fixes in parser and make to match changes in RetroBASIC
+- applies RetroBASIC 3.0.2 fixes: malloc -> calloc for zero-init, variable default initialization
+- optional debug build with DEBUG=1 makefile flag
+- .gitignore updated to exclude generated parse.h and lex.yy.c
 
 Version 2.0.0 - 11 April 2026
 

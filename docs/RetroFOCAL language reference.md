@@ -3,7 +3,7 @@ RetroFOCAL Language Reference Manual
 
 **Copyright © 2023 Maury Markowitz**
 
-Version 1.1.3
+Version 2.0.2
 
 [![GPL license](http://img.shields.io/badge/license-GPL-brightgreen.svg)](https://opensource.org/licenses/gpl-license)
 
