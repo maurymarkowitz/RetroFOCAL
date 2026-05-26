@@ -1,6 +1,10 @@
 RetroFOCAL version history
 ==========================
 
+Version 2.0.1 - 26 May 2026
+
+- minor fixes in parser and make to match changes in RetroBASIC
+
 Version 2.0.0 - 11 April 2026
 
 - added the CLI from RetroBASIC to add interactive mode

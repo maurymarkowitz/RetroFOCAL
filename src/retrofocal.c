@@ -158,7 +158,11 @@ either_t *variable_value(const variable_t *variable, int *type)
     
     // now calloc the result and insert it into the values tree
     storage->value = calloc(slots, sizeof(storage->value[0]));
-		interpreter_state.variable_values = lst_insert_with_key_sorted(interpreter_state.variable_values, storage, storage_name);
+    // explicitly initialize all values to 0.0 (FOCAL only has numeric variables)
+    for (int i = 0; i < slots; i++) {
+      storage->value[i].number = 0.0;
+    }
+	interpreter_state.variable_values = lst_insert_with_key_sorted(interpreter_state.variable_values, storage, storage_name);
   }
   
   // if we haven't started runnning yet, we were being called during parsing to

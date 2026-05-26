@@ -7,8 +7,12 @@ LEX = flex
 LFLAGS = -lfl
 YAC = bison
 YFLAGS =-dtv
-CC = gcc -g
-CFLAGS = -DYYDEBUG=1
+CC = gcc
+DEBUG ?= 0
+CFLAGS ?=
+ifeq ($(DEBUG),1)
+  CFLAGS += -g -DYYDEBUG=1
+endif
 CLIBS = -ly -ll
 
 rm=/bin/rm -f
@@ -19,7 +23,7 @@ TARGET = retrofocal
 
 # the final program has three inputs, the lex/yacc and the interpreter source
 $(TARGET): $(wildcard src/*.c) parse.tab.c lex.yy.c
-	$(CC) -Isrc $^ -o $(TARGET) -lm
+	$(CC) $(CFLAGS) -Isrc $^ -o $(TARGET) -lm
 
 # if the lex or .tab.h file is changed, run lex again
 lex.yy.c: src/scan.l parse.tab.h

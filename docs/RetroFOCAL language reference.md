@@ -169,15 +169,22 @@ The program will be loaded and executed immediately, and the interpreter will ex
 
 Command-line options:
 
-- `--run` or `-r`: Automatically run the program after loading (default behavior)
-- `--no-run` or `-n`: Load the program but do not run it automatically
-- `--stats`: Print program statistics after execution
 - `--help` or `-h`: Display help message
+- `--version` or `-v`: Print version information
+- `--upper-case` or `-u`: Convert all input to upper-case
+- `--random` or `-r`: Seed the random number generator
+- `--output-file` or `-o`: Redirect TYPE output to the named file
+- `--input-file` or `-i`: Redirect ASK input from the named file
+- `--no-run` or `-n`: Load the program but do not run it automatically
+- `--print-stats` or `-p`: Print program statistics after execution
+- `--write-stats` or `-w`: Write program statistics to the named file
 
 #### Examples:
 
+    retrofocal myprogram.fc
     retrofocal myprogram.fc --no-run
-    retrofocal myprogram.fc --stats
+    retrofocal myprogram.fc --print-stats
+    retrofocal myprogram.fc -r 12345 -o output.txt
 
 ### Interactive mode
 

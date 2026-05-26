@@ -46,8 +46,10 @@ retrofocal.o
 *.o
 
 # Generated files from flex and bison
+parse.h
 parse.tab.c
 parse.tab.h
+lex.yy.c
 parse.tab.o
 lex.yy.c
 *.lex.c
